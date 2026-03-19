@@ -2,95 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 230 25% 97%;
+    --foreground: 230 35% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 230 35% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 230 35% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 38 78% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 230 25% 94%;
+    --secondary-foreground: 230 35% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 230 18% 93%;
+    --muted-foreground: 230 10% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 38 55% 94%;
+    --accent-foreground: 38 78% 40%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+    --border: 230 18% 90%;
+    --input: 230 18% 90%;
+    --ring: 38 78% 52%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --radius: 0.875rem;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --gold: 38 78% 52%;
+    --gold-light: 38 55% 94%;
+    --gold-dark: 38 78% 35%;
+    --navy: 230 35% 12%;
+    --navy-light: 230 28% 20%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Vibrant accent palette */
+    --violet: 262 83% 58%;
+    --violet-light: 262 60% 95%;
+    --cyan: 192 91% 50%;
+    --cyan-light: 192 60% 94%;
+    --rose: 340 82% 52%;
+    --rose-light: 340 60% 95%;
+    --amber: 38 92% 50%;
+    --amber-light: 38 60% 95%;
+    --emerald: 160 84% 39%;
+    --emerald-light: 160 60% 95%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-background: 240 30% 8%;
+    --sidebar-foreground: 230 20% 85%;
+    --sidebar-primary: 38 78% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 25% 14%;
+    --sidebar-accent-foreground: 230 20% 92%;
+    --sidebar-border: 240 20% 15%;
+    --sidebar-ring: 38 78% 52%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --chart-1: 340 82% 52%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 192 91% 50%;
+    --chart-5: 38 92% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 240 30% 5%;
+    --foreground: 230 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 25% 9%;
+    --card-foreground: 230 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 25% 9%;
+    --popover-foreground: 230 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 38 78% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 20% 15%;
+    --secondary-foreground: 230 20% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 20% 12%;
+    --muted-foreground: 230 10% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38 30% 18%;
+    --accent-foreground: 38 78% 70%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --success: 160 70% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 80% 45%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 240 18% 16%;
+    --input: 240 18% 16%;
+    --ring: 38 78% 52%;
+
+    --violet: 262 83% 62%;
+    --cyan: 192 91% 55%;
+    --rose: 340 82% 58%;
+    --amber: 38 92% 55%;
+    --emerald: 160 84% 42%;
+
+    --sidebar-background: 240 35% 4%;
+    --sidebar-foreground: 230 20% 85%;
+    --sidebar-primary: 38 78% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 25% 10%;
+    --sidebar-accent-foreground: 230 20% 92%;
+    --sidebar-border: 240 20% 10%;
+    --sidebar-ring: 38 78% 52%;
   }
 }
 
@@ -100,6 +134,303 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  [dir="rtl"] {
+    text-align: right;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(38 78% 52%), hsl(42 88% 62%), hsl(38 78% 42%));
+  }
+
+  .text-gradient-vibrant {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--violet)), hsl(var(--rose)), hsl(var(--amber)));
+  }
+
+  .bg-gradient-gold {
+    background-image: linear-gradient(135deg, hsl(38 78% 50%), hsl(42 88% 60%));
+  }
+
+  .bg-gradient-vibrant {
+    background-image: linear-gradient(135deg, hsl(var(--violet)), hsl(var(--cyan)));
+  }
+
+  .bg-gradient-warm {
+    background-image: linear-gradient(135deg, hsl(var(--rose)), hsl(var(--amber)));
+  }
+
+  .bg-gradient-cool {
+    background-image: linear-gradient(135deg, hsl(var(--cyan)), hsl(var(--emerald)));
+  }
+
+  .bg-gradient-navy {
+    background-image: linear-gradient(135deg, hsl(240 30% 8%), hsl(240 25% 14%));
+  }
+
+  .bg-gradient-sidebar {
+    background-image: linear-gradient(180deg, hsl(240 30% 8%), hsl(260 30% 10%));
+  }
+
+  .shadow-gold {
+    box-shadow: 0 4px 20px -4px hsl(38 78% 52% / 0.35);
+  }
+
+  .shadow-vibrant {
+    box-shadow: 0 4px 20px -4px hsl(var(--violet) / 0.3);
+  }
+
+  .shadow-rose {
+    box-shadow: 0 4px 20px -4px hsl(var(--rose) / 0.3);
+  }
+
+  .shadow-cyan {
+    box-shadow: 0 4px 20px -4px hsl(var(--cyan) / 0.3);
+  }
+
+  .shadow-card {
+    box-shadow:
+      0 1px 2px 0 hsl(222 28% 14% / 0.03),
+      0 1px 6px -1px hsl(222 28% 14% / 0.04),
+      0 2px 12px -2px hsl(222 28% 14% / 0.03);
+  }
+
+  .shadow-card-hover {
+    box-shadow:
+      0 4px 12px -2px hsl(222 28% 14% / 0.06),
+      0 8px 24px -4px hsl(222 28% 14% / 0.08);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Staggered card entrance animations */
+  .animate-card-in {
+    animation: card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-card-in:nth-child(1) { animation-delay: 0ms; }
+  .animate-card-in:nth-child(2) { animation-delay: 50ms; }
+  .animate-card-in:nth-child(3) { animation-delay: 100ms; }
+  .animate-card-in:nth-child(4) { animation-delay: 150ms; }
+  .animate-card-in:nth-child(5) { animation-delay: 200ms; }
+  .animate-card-in:nth-child(6) { animation-delay: 250ms; }
+  .animate-card-in:nth-child(7) { animation-delay: 300ms; }
+  .animate-card-in:nth-child(8) { animation-delay: 350ms; }
+  .animate-card-in:nth-child(n+9) { animation-delay: 380ms; }
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Table row entrance animation */
+  .animate-row-in {
+    animation: row-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-row-in:nth-child(1) { animation-delay: 0ms; }
+  .animate-row-in:nth-child(2) { animation-delay: 30ms; }
+  .animate-row-in:nth-child(3) { animation-delay: 60ms; }
+  .animate-row-in:nth-child(4) { animation-delay: 90ms; }
+  .animate-row-in:nth-child(5) { animation-delay: 120ms; }
+  .animate-row-in:nth-child(6) { animation-delay: 150ms; }
+  .animate-row-in:nth-child(7) { animation-delay: 180ms; }
+  .animate-row-in:nth-child(n+8) { animation-delay: 200ms; }
+
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Interactive card hover */
+  .card-interactive {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-interactive:hover {
+    @apply -translate-y-1;
+    box-shadow:
+      0 8px 24px -4px hsl(222 28% 14% / 0.08),
+      0 16px 40px -8px hsl(222 28% 14% / 0.06);
+  }
+  .card-interactive:active {
+    @apply scale-[0.99] translate-y-0;
+  }
+
+  /* Interactive table row hover */
+  .row-interactive {
+    @apply transition-all duration-150 ease-out;
+  }
+  .row-interactive:hover {
+    @apply bg-muted/40;
+  }
+
+  /* Stat card with gradient border effect */
+  .stat-card {
+    @apply relative overflow-hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .stat-card:hover::before {
+    opacity: 1;
+  }
+  .stat-card-emerald::before {
+    background: linear-gradient(90deg, hsl(var(--emerald)), hsl(var(--cyan)));
+  }
+  .stat-card-destructive::before {
+    background: linear-gradient(90deg, hsl(var(--rose)), hsl(var(--amber)));
+  }
+  .stat-card-primary::before {
+    background: linear-gradient(90deg, hsl(var(--violet)), hsl(var(--rose)));
+  }
+  .stat-card-blue::before {
+    background: linear-gradient(90deg, hsl(var(--cyan)), hsl(var(--violet)));
+  }
+
+  /* Custom scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px) saturate(1.8);
+    -webkit-backdrop-filter: blur(12px) saturate(1.8);
+  }
+}
+
+/* Global scrollbar refinement */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.12);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Sidebar-specific scrollbar */
+[class*="bg-sidebar"] *::-webkit-scrollbar-thumb,
+aside *::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--sidebar-border));
+}
+[class*="bg-sidebar"] *::-webkit-scrollbar-thumb:hover,
+aside *::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--sidebar-foreground) / 0.25);
+}
+
+/* Mobile touch optimizations */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Print styles for invoices and reports */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  body > * {
+    display: none !important;
+  }
+  
+  #invoice-preview {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  .bg-emerald-100, .bg-blue-100, .bg-red-100, .bg-gray-100, .bg-gray-50, .bg-amber-50 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Finance report print styles */
+@media print {
+  .print-report {
+    display: block !important;
+  }
+  .print-report .print\:block {
+    display: block !important;
+  }
+  .print-report .print\:hidden {
+    display: none !important;
+  }
+  .print-report table {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-report .print\:break-inside-avoid {
+    break-inside: avoid;
   }
 }
