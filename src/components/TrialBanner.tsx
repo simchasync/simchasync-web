@@ -1,35 +1,57 @@
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Link } from "react-router-dom";
-import { Crown, X } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
-export default function TrialBanner() {
-  const { trialActive, trialDaysLeft, trialExpired, subscribed } = useSubscription();
-  const [dismissed, setDismissed] = useState(false);
+export function TrialBanner() {
+  const { plan, trialActive, trialDaysLeft, trialExpired, subscribed, loading } = useSubscription();
+  const navigate = useNavigate();
 
-  if (dismissed || subscribed || (!trialActive && !trialExpired)) return null;
+  // Don't show any banner while loading
+  if (loading || subscribed || plan !== "trial") return null;
 
-  return (
-    <div className={`flex items-center justify-between px-4 py-2 text-sm ${trialExpired ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-      <div className="flex items-center gap-2">
-        <Crown className="h-4 w-4" />
-        <span>
-          {trialExpired
-            ? "Your trial has expired. Upgrade to continue."
-            : `${trialDaysLeft} days left in your trial.`}
+  const handleViewPlans = () => {
+    console.log("[TrialBanner] ViewPlansTapped");
+    navigate("/app/upgrade");
+  };
+
+  if (trialExpired) {
+    return (
+      <div className="flex items-center justify-between bg-destructive/10 px-4 py-2 text-sm text-destructive">
+        <span className="flex items-center gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5" />
+          Your trial has ended. Choose a plan to continue.
         </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/app/upgrade">Upgrade</Link>
+        <Button
+          size="sm"
+          variant="destructive"
+          className="min-h-[36px] min-w-[100px] touch-manipulation"
+          onClick={handleViewPlans}
+        >
+          Upgrade Now
         </Button>
-        {!trialExpired && (
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDismissed(true)}>
-            <X className="h-3 w-3" />
-          </Button>
-        )}
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (trialActive) {
+    return (
+      <div className="flex items-center justify-between bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-400">
+        <span className="flex items-center gap-1.5">
+          <Clock className="h-3.5 w-3.5" />
+          {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} left in your free trial
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-[36px] text-xs touch-manipulation"
+          onClick={handleViewPlans}
+        >
+          View Plans
+        </Button>
+      </div>
+    );
+  }
+
+  return null;
 }
