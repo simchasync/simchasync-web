@@ -18,8 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || null;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
@@ -93,7 +92,7 @@ serve(async (req) => {
     let productId = null;
     let subscriptionEnd = workspaceSubscription.current_period_end;
 
-    if (isActive && workspaceSubscription.stripe_subscription_id) {
+    if (isActive && workspaceSubscription.stripe_subscription_id && stripeKey) {
       try {
         const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
         const subscription = await stripe.subscriptions.retrieve(workspaceSubscription.stripe_subscription_id);
