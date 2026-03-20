@@ -36,7 +36,7 @@ export default function AppShell() {
     { path: "/app/booking-page", label: "Booking Page", icon: Paintbrush, show: !isSocialOnly },
     { path: "/app/support", label: nav.support, icon: HelpCircle, show: true },
     { path: "/app/settings", label: nav.settings, icon: Settings, show: true },
-    { path: "/app/upgrade", label: nav.upgrade, icon: Crown, show: true },
+    { path: "/app/upgrade", label: "Upgrade", icon: Crown, show: true },
   ].filter((l) => l.show);
 
   const isActive = (path: string) => path === "/app" ? location.pathname === "/app" : location.pathname.startsWith(path);
