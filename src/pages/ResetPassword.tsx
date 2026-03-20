@@ -18,25 +18,47 @@ export default function ResetPassword() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const tenantId = new URLSearchParams(window.location.search).get("tenant");
+
+  // Detect if this is an invite flow from the hash (before Supabase consumes it)
   const hash = window.location.hash;
   const isInvite = hash.includes("type=invite");
 
   useEffect(() => {
+    // Listen for auth state changes — Supabase will process the hash tokens
+    // and fire TOKEN_REFRESHED or SIGNED_IN when the session is established
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN" || event === "PASSWORD_RECOVERY") {
-        if (session) { setSessionReady(true); setChecking(false); }
+        if (session) {
+          setSessionReady(true);
+          setChecking(false);
+        }
       }
     });
+
+    // Also check if there's already a session (e.g., page refresh after token exchange)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true);
+      if (session) {
+        setSessionReady(true);
+      }
       setChecking(false);
     });
-    const timeout = setTimeout(() => setChecking(false), 10000);
-    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
+
+    // Timeout: if no session after 10s, redirect to auth
+    const timeout = setTimeout(() => {
+      setChecking(false);
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
+  // If checking is done and no session, redirect to auth
   useEffect(() => {
-    if (!checking && !sessionReady) navigate(tenantId ? `/auth?tenant=${tenantId}` : "/auth");
+    if (!checking && !sessionReady) {
+      navigate(tenantId ? `/auth?tenant=${tenantId}` : "/auth");
+    }
   }, [checking, sessionReady, navigate, tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,14 +71,18 @@ export default function ResetPassword() {
       navigate(tenantId ? `/app?tenant=${tenantId}` : "/app");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (checking) return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-navy p-4">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-navy p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-navy p-4">
@@ -70,7 +96,11 @@ export default function ResetPassword() {
             <CardTitle className="font-display text-2xl text-secondary-foreground">
               {isInvite ? "Set Your Password" : t.auth.resetPassword}
             </CardTitle>
-            {isInvite && <p className="text-sm text-secondary-foreground/60 mt-2">Create a password to access your team workspace.</p>}
+            {isInvite && (
+              <p className="text-sm text-secondary-foreground/60 mt-2">
+                Create a password to access your team workspace.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -13,12 +13,23 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     if (!invoiceId) { setChecking(false); return; }
+    // Poll invoice status for up to 30s
     let attempts = 0;
     const interval = setInterval(async () => {
       attempts++;
-      const { data } = await (supabase as any).from("invoices").select("status").eq("id", invoiceId).single();
-      if ((data as any)?.status === "paid") { setVerified(true); setChecking(false); clearInterval(interval); }
-      else if (attempts >= 10) { setChecking(false); clearInterval(interval); }
+      const { data } = await supabase
+        .from("invoices")
+        .select("status")
+        .eq("id", invoiceId)
+        .single();
+      if (data?.status === "paid") {
+        setVerified(true);
+        setChecking(false);
+        clearInterval(interval);
+      } else if (attempts >= 10) {
+        setChecking(false);
+        clearInterval(interval);
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [invoiceId]);
@@ -38,9 +49,13 @@ export default function PaymentSuccess() {
               <CheckCircle className="h-16 w-16 text-emerald-500" />
               <h2 className="text-2xl font-bold">Payment Successful!</h2>
               <p className="text-muted-foreground text-center">
-                {verified ? "Your payment has been confirmed and the invoice has been marked as paid." : "Your payment is being processed. The invoice will be updated shortly."}
+                {verified
+                  ? "Your payment has been confirmed and the invoice has been marked as paid."
+                  : "Your payment is being processed. The invoice will be updated shortly."}
               </p>
-              <Button asChild className="mt-4"><Link to="/app/invoices">Back to Invoices</Link></Button>
+              <Button asChild className="mt-4">
+                <Link to="/app/invoices">Back to Invoices</Link>
+              </Button>
             </>
           )}
         </CardContent>
