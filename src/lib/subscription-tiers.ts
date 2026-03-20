@@ -42,6 +42,7 @@ export function getTierFromProductId(productId: string | null, priceId?: string 
     if (productId === SUBSCRIPTION_TIERS.lite.product_id) return "lite";
     if (productId === SUBSCRIPTION_TIERS.full.product_id) return "full";
   }
+  // Fallback: detect by price_id if product_id doesn't match
   if (priceId) {
     if (priceId === SUBSCRIPTION_TIERS.lite.price_id) return "lite";
     if (priceId === SUBSCRIPTION_TIERS.full.price_id) return "full";
@@ -55,8 +56,11 @@ export function canAccessFeature(
   trialActive: boolean,
   feature: "stripe_connect" | "social_media" | "expenses_profit"
 ): boolean {
+  // During trial, everything is accessible
   if (plan === "trial" && trialActive) return true;
+  // Full plan has everything
   if (tier === "full") return true;
+  // Lite plan only has core features (no stripe_connect, social_media, expenses_profit)
   if (tier === "lite") return false;
   return false;
 }

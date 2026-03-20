@@ -5,6 +5,7 @@
 export function toHebrewDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   try {
+    // Use Intl.DateTimeFormat with Hebrew calendar
     const formatter = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", {
       day: "numeric",
       month: "long",

@@ -12,7 +12,7 @@ export function useUserRole() {
   const { data: role, isLoading } = useQuery({
     queryKey: ["user-role", user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_tenant_member_role", {
+      const { data, error } = await supabase.rpc("get_tenant_member_role", {
         _tenant_id: tenantId!,
         _user_id: user!.id,
       });
@@ -25,6 +25,7 @@ export function useUserRole() {
 
   const { trialExpired, subscribed, loading: subLoading } = useSubscription();
 
+  // Allow writes while subscription is still loading (don't block prematurely)
   const canWrite =
     (role === "owner" || role === "booking_manager") &&
     (subLoading || !trialExpired || subscribed);
