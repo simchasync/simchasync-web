@@ -1342,7 +1342,67 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_create_workspace: { Args: { _user_id: string }; Returns: boolean }
+      can_view_event: {
+        Args: { _event_id: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      compute_workspace_limits: { Args: { _plan_id: string }; Returns: Json }
+      get_tenant_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      get_tenant_member_role: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: string
+      }
+      get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      get_user_tenants: {
+        Args: { _user_id: string }
+        Returns: {
+          role: string
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+        }[]
+      }
+      get_user_workspace_count: { Args: { _user_id: string }; Returns: number }
+      get_workspace_subscription: {
+        Args: { _workspace_id: string }
+        Returns: {
+          current_period_end: string
+          plan_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          subscription_status: string
+          user_id: string
+          workspace_id: string
+          workspace_limits: Json
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_internal_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      workspace_subscription_is_active: {
+        Args: { _workspace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "support_agent" | "billing_admin"
