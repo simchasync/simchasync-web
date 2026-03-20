@@ -25,7 +25,7 @@ export function useTenantId() {
   const { data: primaryTenantId, isLoading: primaryLoading } = useQuery({
     queryKey: ["tenant-id", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_tenant_id", {
+      const { data, error } = await (supabase.rpc as any)("get_user_tenant_id", {
         _user_id: user!.id,
       });
       if (error) throw error;

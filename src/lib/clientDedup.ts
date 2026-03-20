@@ -1,8 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Client = Tables<"clients">;
-type ClientRecord = Pick<Client, "id" | "tenant_id" | "name" | "email" | "phone" | "notes">;
+interface ClientRecord {
+  id: string;
+  tenant_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+}
 
 interface ClientInput {
   tenantId: string;
@@ -16,6 +21,8 @@ interface ClientResolution {
   client: ClientRecord;
   wasCreated: boolean;
 }
+
+const db = supabase as any;
 
 const normalizeText = (value?: string | null) => {
   const trimmed = value?.trim();
@@ -33,7 +40,7 @@ const normalizePhone = (value?: string | null) => {
 };
 
 async function findClientByEmail(tenantId: string, email: string): Promise<ClientRecord | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("clients")
     .select("id, tenant_id, name, email, phone, notes")
     .eq("tenant_id", tenantId)
@@ -46,7 +53,7 @@ async function findClientByEmail(tenantId: string, email: string): Promise<Clien
 }
 
 async function findClientByPhone(tenantId: string, phone: string): Promise<ClientRecord | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("clients")
     .select("id, tenant_id, name, email, phone, notes")
     .eq("tenant_id", tenantId)
@@ -55,11 +62,11 @@ async function findClientByPhone(tenantId: string, phone: string): Promise<Clien
     .limit(1000);
 
   if (error) throw error;
-  return data.find((client) => normalizePhone(client.phone) === phone) ?? null;
+  return data.find((client: any) => normalizePhone(client.phone) === phone) ?? null;
 }
 
 async function findClientByName(tenantId: string, name: string): Promise<ClientRecord | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("clients")
     .select("id, tenant_id, name, email, phone, notes")
     .eq("tenant_id", tenantId)
@@ -71,8 +78,8 @@ async function findClientByName(tenantId: string, name: string): Promise<ClientR
   return data?.[0] ?? null;
 }
 
-async function syncClient(existing: ClientRecord, input: Required<Pick<ClientInput, "name">> & { email: string | null; phone: string | null; notes: string | null }) {
-  const updates: Partial<Client> = {};
+async function syncClient(existing: ClientRecord, input: { name: string; email: string | null; phone: string | null; notes: string | null }) {
+  const updates: Record<string, any> = {};
 
   if (input.email && normalizeEmail(existing.email) !== input.email) {
     updates.email = input.email;
@@ -94,13 +101,10 @@ async function syncClient(existing: ClientRecord, input: Required<Pick<ClientInp
     return existing;
   }
 
-  const { error } = await supabase.from("clients").update(updates).eq("id", existing.id);
+  const { error } = await db.from("clients").update(updates).eq("id", existing.id);
   if (error) throw error;
 
-  return {
-    ...existing,
-    ...updates,
-  };
+  return { ...existing, ...updates };
 }
 
 export async function getOrCreateClient(input: ClientInput): Promise<ClientResolution> {
@@ -132,7 +136,7 @@ export async function getOrCreateClient(input: ClientInput): Promise<ClientResol
     return { client, wasCreated: false };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("clients")
     .insert({
       tenant_id: input.tenantId,
@@ -152,12 +156,8 @@ export async function getOrCreateClient(input: ClientInput): Promise<ClientResol
         return { client, wasCreated: false };
       }
     }
-
     throw error;
   }
 
-  return {
-    client: data,
-    wasCreated: true,
-  };
+  return { client: data, wasCreated: true };
 }

@@ -106,7 +106,7 @@ export default function AppShell() {
             <NotificationsDropdown />
           </div>
           <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70" onClick={signOut}>
-            <LogOut className="mr-2 h-4 w-4" /> {t.auth.logout}
+            <LogOut className="mr-2 h-4 w-4" /> Log Out
           </Button>
         </div>
       </aside>
