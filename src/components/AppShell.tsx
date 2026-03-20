@@ -31,12 +31,12 @@ export default function AppShell() {
     { path: "/app/invoices", label: nav.invoices, icon: FileText, show: !isSocialOnly },
     { path: "/app/finance", label: "Finance", icon: DollarSign, show: !isSocialOnly },
     { path: "/app/team", label: nav.team, icon: UsersRound, show: true },
-    { path: "/app/social", label: nav.socialMedia, icon: Share2, show: true },
+    { path: "/app/social", label: nav.social, icon: Share2, show: true },
     { path: "/app/agents", label: "Agents", icon: UserCheck, show: !isSocialOnly },
     { path: "/app/booking-page", label: "Booking Page", icon: Paintbrush, show: !isSocialOnly },
     { path: "/app/support", label: nav.support, icon: HelpCircle, show: true },
     { path: "/app/settings", label: nav.settings, icon: Settings, show: true },
-    { path: "/app/upgrade", label: nav.upgrade, icon: Crown, show: true },
+    { path: "/app/upgrade", label: "Upgrade", icon: Crown, show: true },
   ].filter((l) => l.show);
 
   const isActive = (path: string) => path === "/app" ? location.pathname === "/app" : location.pathname.startsWith(path);
@@ -106,7 +106,7 @@ export default function AppShell() {
             <NotificationsDropdown />
           </div>
           <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70" onClick={signOut}>
-            <LogOut className="mr-2 h-4 w-4" /> {t.auth.logout}
+            <LogOut className="mr-2 h-4 w-4" /> Log Out
           </Button>
         </div>
       </aside>

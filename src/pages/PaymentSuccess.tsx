@@ -16,8 +16,8 @@ export default function PaymentSuccess() {
     let attempts = 0;
     const interval = setInterval(async () => {
       attempts++;
-      const { data } = await supabase.from("invoices").select("status").eq("id", invoiceId).single();
-      if (data?.status === "paid") { setVerified(true); setChecking(false); clearInterval(interval); }
+      const { data } = await (supabase as any).from("invoices").select("status").eq("id", invoiceId).single();
+      if ((data as any)?.status === "paid") { setVerified(true); setChecking(false); clearInterval(interval); }
       else if (attempts >= 10) { setChecking(false); clearInterval(interval); }
     }, 3000);
     return () => clearInterval(interval);

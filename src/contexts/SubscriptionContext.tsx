@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { supabase } from "@/integrations/supabase/client";
-import { getTierFromProductId, SubscriptionTier, canAccessFeature, SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
+import { getTierFromProductId, SubscriptionTier, canAccessFeature } from "@/lib/subscription-tiers";
+
+const db = supabase as any;
 
 interface SubscriptionContextType {
   plan: string;
@@ -54,29 +56,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (!error && data) {
         if (data.subscribed) {
           const detectedTier = getTierFromProductId(data.product_id, data.price_id);
-
-          if (data.status === "trial" || data.plan_id === "trial") {
-            console.log("[SubscriptionContext] Trial workspace confirmed via check-subscription");
-            return;
-          }
-
+          if (data.status === "trial" || data.plan_id === "trial") return;
           if (detectedTier) {
             setSubscribed(true);
             setSubscriptionEnd(data.subscription_end);
             setTier(detectedTier);
             setPlan(detectedTier);
-            console.log("[SubscriptionContext] Paid subscription confirmed:", detectedTier);
           } else if (data.plan_id && data.plan_id !== "none") {
             setSubscribed(true);
             setSubscriptionEnd(data.subscription_end);
             setTier(data.plan_id as SubscriptionTier);
             setPlan(data.plan_id);
-            console.log("[SubscriptionContext] Subscription confirmed from DB plan:", data.plan_id);
           }
-        } else if (!dbSubscriptionActive.current) {
-          console.log("[SubscriptionContext] No active subscription for current workspace");
         }
-       }
+      }
     } catch (e) {
       console.error("Failed to check subscription:", e);
     }
@@ -96,7 +89,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           setTier(detectedTier);
           if (detectedTier) setPlan(detectedTier);
           if (tenantId) {
-            const { data: tenantData } = await supabase
+            const { data: tenantData } = await db
               .from("tenants")
               .select("plan, trial_ends_at")
               .eq("id", tenantId)
@@ -105,7 +98,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
               setPlan(tenantData.plan);
             }
           }
-          console.log("[SubscriptionContext] Current workspace subscription confirmed after polling");
           return true;
         }
       } catch (e) {
@@ -115,13 +107,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         await new Promise((r) => setTimeout(r, intervalMs));
       }
     }
-    console.log("[SubscriptionContext] Polling exhausted for current workspace");
     return false;
   }, [session?.access_token, tenantId]);
 
   const fetchTenantData = useCallback(async () => {
     if (!tenantId) return;
-    const { data } = await supabase
+    const { data } = await db
       .from("tenants")
       .select("plan, trial_ends_at, stripe_subscription_status, stripe_plan_price_id, stripe_current_period_end")
       .eq("id", tenantId)
@@ -149,7 +140,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (data.stripe_current_period_end) {
           setSubscriptionEnd(data.stripe_current_period_end);
         }
-        console.log("[SubscriptionContext] DB confirms active subscription:", data.plan);
       } else if (data.plan === "trial") {
         setSubscribed(false);
         setTier(null);
@@ -195,14 +185,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           table: 'tenants',
           filter: `id=eq.${tenantId}`,
         },
-        (payload) => {
-          console.log("[SubscriptionContext] Tenant updated via realtime:", payload.new);
+        (payload: any) => {
           const newData = payload.new as any;
           if (newData) {
             setPlan(newData.plan);
             setTrialEndsAt(newData.trial_ends_at);
             setCanceling(newData.stripe_subscription_status === "canceling");
-            
             const isActive = newData.stripe_subscription_status === "active" && newData.plan !== "trial";
             dbSubscriptionActive.current = isActive;
             if (isActive) {
