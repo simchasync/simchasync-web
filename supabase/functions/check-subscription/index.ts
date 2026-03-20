@@ -92,7 +92,7 @@ serve(async (req) => {
     let productId = null;
     let subscriptionEnd = workspaceSubscription.current_period_end;
 
-    if (isActive && workspaceSubscription.stripe_subscription_id) {
+    if (isActive && workspaceSubscription.stripe_subscription_id && stripeKey) {
       try {
         const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
         const subscription = await stripe.subscriptions.retrieve(workspaceSubscription.stripe_subscription_id);
