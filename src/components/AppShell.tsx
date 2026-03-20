@@ -31,7 +31,7 @@ export default function AppShell() {
     { path: "/app/invoices", label: nav.invoices, icon: FileText, show: !isSocialOnly },
     { path: "/app/finance", label: "Finance", icon: DollarSign, show: !isSocialOnly },
     { path: "/app/team", label: nav.team, icon: UsersRound, show: true },
-    { path: "/app/social", label: nav.socialMedia, icon: Share2, show: true },
+    { path: "/app/social", label: nav.social, icon: Share2, show: true },
     { path: "/app/agents", label: "Agents", icon: UserCheck, show: !isSocialOnly },
     { path: "/app/booking-page", label: "Booking Page", icon: Paintbrush, show: !isSocialOnly },
     { path: "/app/support", label: nav.support, icon: HelpCircle, show: true },
