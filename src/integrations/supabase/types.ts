@@ -1342,7 +1342,119 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_pending_workspace_invitations: {
+        Args: { _user_id: string }
+        Returns: number
+      }
+      can_create_workspace: { Args: { _user_id: string }; Returns: boolean }
+      can_view_event: {
+        Args: { _event_id: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      compute_workspace_limits: { Args: { _plan_id: string }; Returns: Json }
+      create_user_workspace: {
+        Args: { _name: string; _user_id: string }
+        Returns: string
+      }
+      delete_workspace: { Args: { _tenant_id: string }; Returns: undefined }
+      get_member_bookings: {
+        Args: { _tenant_id: string }
+        Returns: {
+          chuppah_time: string
+          client_name: string
+          created_at: string
+          event_date: string
+          event_start_time: string
+          event_type: string
+          first_dance_time: string
+          hebrew_date: string
+          id: string
+          location: string
+          meal_time: string
+          mitzvah_tanz_time: string
+          notes: string
+          second_dance_time: string
+          tenant_id: string
+          updated_at: string
+          venue: string
+        }[]
+      }
+      get_member_event_colleagues: {
+        Args: { _event_id: string }
+        Returns: {
+          colleague_id: string
+          colleague_type: string
+          created_at: string
+          email: string
+          event_id: string
+          id: string
+          invite_status: string
+          name: string
+          notes: string
+          phone: string
+          role_instrument: string
+        }[]
+      }
+      get_tenant_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      get_tenant_member_role: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: string
+      }
+      get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      get_user_tenants: {
+        Args: { _user_id: string }
+        Returns: {
+          role: string
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+        }[]
+      }
+      get_user_workspace_count: { Args: { _user_id: string }; Returns: number }
+      get_workspace_subscription: {
+        Args: { _workspace_id: string }
+        Returns: {
+          current_period_end: string
+          plan_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          subscription_status: string
+          user_id: string
+          workspace_id: string
+          workspace_limits: Json
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_internal_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      leave_workspace: { Args: { _tenant_id: string }; Returns: undefined }
+      sync_tenant_from_workspace_subscription: {
+        Args: { _workspace_id: string }
+        Returns: undefined
+      }
+      workspace_subscription_is_active: {
+        Args: { _workspace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "support_agent" | "billing_admin"
