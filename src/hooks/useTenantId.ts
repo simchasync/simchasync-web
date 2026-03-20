@@ -22,10 +22,11 @@ export function useTenantId() {
     () => requestedTenantId || localStorage.getItem(STORAGE_KEY) || null
   );
 
+  // Primary: get the user's first tenant (always works, in types)
   const { data: primaryTenantId, isLoading: primaryLoading } = useQuery({
     queryKey: ["tenant-id", user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_user_tenant_id", {
+      const { data, error } = await supabase.rpc("get_user_tenant_id", {
         _user_id: user!.id,
       });
       if (error) throw error;
@@ -36,6 +37,7 @@ export function useTenantId() {
     retry: 3,
   });
 
+  // Secondary: fetch all tenants for workspace switcher (may fail if function not yet deployed)
   const { data: userTenants = [] } = useQuery({
     queryKey: ["user-tenants", user?.id],
     queryFn: async () => {
@@ -70,6 +72,7 @@ export function useTenantId() {
     }
   }, [requestedTenantId, userTenants, activeTenantId]);
 
+  // Derive the effective tenantId
   const tenantId = (() => {
     if (userTenants.length > 0) {
       if (activeTenantId && userTenants.some((t) => t.tenant_id === activeTenantId)) {
@@ -83,9 +86,11 @@ export function useTenantId() {
   const switchTenant = useCallback((newTenantId: string) => {
     setActiveTenantId(newTenantId);
     localStorage.setItem(STORAGE_KEY, newTenantId);
+    // Force full page reload to reset all queries for new workspace
     window.location.reload();
   }, []);
 
+  // Sync localStorage when tenantId resolves for the first time
   useEffect(() => {
     if (tenantId && !activeTenantId) {
       localStorage.setItem(STORAGE_KEY, tenantId);

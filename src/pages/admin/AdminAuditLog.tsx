@@ -2,12 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { Loader2, Shield } from "lucide-react";
 import { format } from "date-fns";
 
 function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", { body: { action, ...body } });
+  return supabase.functions.invoke("admin-manage-tenant", {
+    body: { action, ...body },
+  });
 }
 
 const ACTION_COLORS: Record<string, string> = {
@@ -31,6 +35,7 @@ export default function AdminAuditLog() {
       return data.logs;
     },
   });
+
   const logs = data || [];
 
   return (
@@ -39,6 +44,7 @@ export default function AdminAuditLog() {
         <Shield className="h-5 w-5 text-primary" />
         <h1 className="font-display text-2xl font-bold">Audit Log</h1>
       </div>
+
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : (
@@ -46,22 +52,40 @@ export default function AdminAuditLog() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Time</TableHead><TableHead>Admin</TableHead><TableHead>Action</TableHead><TableHead>Details</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Admin</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {logs.map((log: any) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{format(new Date(log.created_at), "MMM d, HH:mm")}</TableCell>
-                  <TableCell><div className="text-sm font-medium">{log.profiles?.full_name || "Unknown"}</div><div className="text-xs text-muted-foreground">{log.profiles?.email}</div></TableCell>
-                  <TableCell><Badge variant="outline" className={`text-xs ${ACTION_COLORS[log.action] || ""}`}>{log.action.replace(/_/g, " ")}</Badge></TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                    {format(new Date(log.created_at), "MMM d, HH:mm")}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{log.profiles?.full_name || "Unknown"}</div>
+                    <div className="text-xs text-muted-foreground">{log.profiles?.email}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={`text-xs ${ACTION_COLORS[log.action] || ""}`}>
+                      {log.action.replace(/_/g, " ")}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
                     {log.target_tenant_id && <span className="font-mono">{log.target_tenant_id.slice(0, 8)}…</span>}
-                    {log.details && Object.keys(log.details).length > 0 && <span className="ml-2">{JSON.stringify(log.details)}</span>}
+                    {log.details && Object.keys(log.details).length > 0 && (
+                      <span className="ml-2">{JSON.stringify(log.details)}</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
-              {logs.length === 0 && <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No audit logs yet</TableCell></TableRow>}
+              {logs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No audit logs yet</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </Card>

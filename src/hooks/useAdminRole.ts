@@ -8,12 +8,12 @@ export function useAdminRole() {
   const { data: roles, isLoading: loading } = useQuery({
     queryKey: ["admin-roles", user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user!.id);
       if (error) throw error;
-      return (data || []).map((r: any) => r.role);
+      return (data || []).map((r) => r.role);
     },
     enabled: !!user,
   });
