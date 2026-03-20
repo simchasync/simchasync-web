@@ -1,1 +1,13 @@
 project_id = "sxoyeytjuhgshakandzs"
+
+[functions.ensure-user-onboarding]
+verify_jwt = false
+
+[functions.public-chat]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.invite-team-member]
+verify_jwt = false
