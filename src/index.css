@@ -1,130 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    --background: 230 25% 97%;
-    --foreground: 230 35% 12%;
+    /* Light: gold primary, mint as secondary pop (see --mint) */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 35% 12%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 35% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 38 78% 52%;
-    --primary-foreground: 0 0% 100%;
+    /* ~#E8A82E / #F2B84B — solid CTAs, logo, “Simchas” highlight */
+    --primary: 40 88% 52%;
+    --primary-foreground: 220 25% 7%;
 
-    --secondary: 230 25% 94%;
-    --secondary-foreground: 230 35% 12%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 40% 18%;
 
-    --muted: 230 18% 93%;
-    --muted-foreground: 230 10% 46%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 38 55% 94%;
-    --accent-foreground: 38 78% 40%;
+    --accent: 40 32% 94%;
+    --accent-foreground: 222 40% 18%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
+    --success: 160 60% 34%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 26 50% 16%;
 
-    --border: 230 18% 90%;
-    --input: 230 18% 90%;
-    --ring: 38 78% 52%;
+    --border: 214 20% 88%;
+    --input: 214 22% 80%;
+    /* Focus / keyboard: mint pairs with gold UI */
+    --ring: 150 100% 45%;
 
     --radius: 0.875rem;
 
-    --gold: 38 78% 52%;
-    --gold-light: 38 55% 94%;
-    --gold-dark: 38 78% 35%;
-    --navy: 230 35% 12%;
-    --navy-light: 230 28% 20%;
+    --shadow-elevate: 220 20% 40%;
 
-    /* Vibrant accent palette */
-    --violet: 262 83% 58%;
-    --violet-light: 262 60% 95%;
-    --cyan: 192 91% 50%;
-    --cyan-light: 192 60% 94%;
-    --rose: 340 82% 52%;
-    --rose-light: 340 60% 95%;
+    --gold: 40 88% 52%;
+    --gold-bright: 44 100% 64%;
+    --gold-light: 42 45% 92%;
+    --gold-dark: 34 78% 36%;
+    /* Secondary accent (neon) — use with gold, not instead of it */
+    --mint: 150 100% 48%;
+    --navy: 210 35% 96%;
+    --navy-light: 210 25% 90%;
+
+    --violet: 260 50% 48%;
+    --violet-light: 260 30% 94%;
+    --cyan: 201 80% 45%;
+    --cyan-light: 200 40% 92%;
+    --rose: 340 70% 50%;
+    --rose-light: 340 40% 94%;
     --amber: 38 92% 50%;
-    --amber-light: 38 60% 95%;
-    --emerald: 160 84% 39%;
-    --emerald-light: 160 60% 95%;
+    --amber-light: 38 50% 92%;
+    --emerald: 160 60% 36%;
+    --emerald-light: 160 40% 92%;
 
-    --sidebar-background: 240 30% 8%;
-    --sidebar-foreground: 230 20% 85%;
-    --sidebar-primary: 38 78% 52%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 25% 14%;
-    --sidebar-accent-foreground: 230 20% 92%;
-    --sidebar-border: 240 20% 15%;
-    --sidebar-ring: 38 78% 52%;
+    --sidebar-background: 0 0% 100%;
+    /* Match main app text; nav uses opacity modifiers for inactive states */
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 40 88% 52%;
+    --sidebar-primary-foreground: 220 25% 7%;
+    --sidebar-accent: 40 30% 94%;
+    --sidebar-accent-foreground: 222 40% 18%;
+    --sidebar-border: 214 20% 90%;
+    --sidebar-ring: 150 100% 45%;
 
-    --chart-1: 340 82% 52%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 262 83% 58%;
-    --chart-4: 192 91% 50%;
-    --chart-5: 38 92% 50%;
+    --sidebar-gradient-top: 210 40% 99%;
+    --sidebar-gradient-bottom: 210 35% 96%;
+
+    --chart-1: 201 80% 45%;
+    --chart-2: 40 88% 52%;
+    --chart-3: 190 70% 45%;
+    --chart-4: 217 50% 50%;
+    --chart-5: 150 100% 45%;
   }
 
   .dark {
-    --background: 240 30% 5%;
-    --foreground: 230 20% 95%;
+    /* Gold + dark surfaces; mint for focus and soft glows */
+    --background: 220 50% 5%;
+    --foreground: 210 40% 98%;
 
-    --card: 240 25% 9%;
-    --card-foreground: 230 20% 95%;
+    --card: 220 48% 9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 25% 9%;
-    --popover-foreground: 230 20% 95%;
+    --popover: 217 33% 12%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 38 78% 52%;
-    --primary-foreground: 0 0% 100%;
+    /* Solid buttons: warm gold, near-black type (~reference screenshot) */
+    --primary: 40 90% 58%;
+    --primary-foreground: 220 20% 6%;
 
-    --secondary: 240 20% 15%;
-    --secondary-foreground: 230 20% 90%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 20% 12%;
-    --muted-foreground: 230 10% 55%;
+    --muted: 220 30% 12%;
+    --muted-foreground: 215 20% 64%;
 
-    --accent: 38 30% 18%;
-    --accent-foreground: 38 78% 70%;
+    --accent: 40 32% 16%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 70% 35%;
+    --success: 160 70% 40%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 80% 45%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 220 50% 6%;
 
-    --border: 240 18% 16%;
-    --input: 240 18% 16%;
-    --ring: 38 78% 52%;
+    --border: 217 33% 17%;
+    --input: 217 33% 20%;
+    --ring: 150 100% 50%;
 
-    --violet: 262 83% 62%;
-    --cyan: 192 91% 55%;
-    --rose: 340 82% 58%;
+    --shadow-elevate: 220 50% 2%;
+
+    --gold: 40 90% 58%;
+    --gold-bright: 45 100% 68%;
+    --gold-light: 40 32% 18%;
+    --gold-dark: 32 75% 34%;
+    --mint: 150 100% 50%;
+    --navy: 220 48% 9%;
+    --navy-light: 217 33% 20%;
+
+    --violet: 260 55% 55%;
+    --violet-light: 260 35% 20%;
+    --cyan: 201 96% 59%;
+    --cyan-light: 199 35% 18%;
+    --rose: 340 78% 58%;
+    --rose-light: 340 40% 18%;
     --amber: 38 92% 55%;
-    --emerald: 160 84% 42%;
+    --amber-light: 38 50% 16%;
+    --emerald: 160 70% 42%;
+    --emerald-light: 160 40% 16%;
 
-    --sidebar-background: 240 35% 4%;
-    --sidebar-foreground: 230 20% 85%;
-    --sidebar-primary: 38 78% 52%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 25% 10%;
-    --sidebar-accent-foreground: 230 20% 92%;
-    --sidebar-border: 240 20% 10%;
-    --sidebar-ring: 38 78% 52%;
+    --sidebar-background: 220 48% 9%;
+    --sidebar-foreground: 210 25% 90%;
+    --sidebar-primary: 40 90% 58%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 40 35% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 16%;
+    --sidebar-ring: 150 100% 50%;
+
+    --sidebar-gradient-top: 220 48% 8%;
+    --sidebar-gradient-bottom: 220 48% 10%;
+
+    --chart-1: 201 96% 59%;
+    --chart-2: 40 90% 58%;
+    --chart-3: 190 80% 48%;
+    --chart-4: 217 50% 55%;
+    --chart-5: 150 100% 50%;
   }
 }
 
@@ -135,6 +172,16 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Keep form controls clearly visible in light mode */
+  :root :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    outline: 1px solid hsl(var(--input));
+    outline-offset: 0;
+  }
+
+  .dark :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    outline: none;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -150,7 +197,7 @@
 @layer utilities {
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(38 78% 52%), hsl(42 88% 62%), hsl(38 78% 42%));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--gold-bright)), hsl(var(--gold-dark)));
   }
 
   .text-gradient-vibrant {
@@ -159,7 +206,12 @@
   }
 
   .bg-gradient-gold {
-    background-image: linear-gradient(135deg, hsl(38 78% 50%), hsl(42 88% 60%));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--gold-bright)));
+  }
+
+  /* Gold + soft mint halo (landing pills, etc.) */
+  .shadow-mint-soft {
+    box-shadow: 0 0 28px -10px hsl(var(--mint) / 0.35);
   }
 
   .bg-gradient-vibrant {
@@ -175,15 +227,21 @@
   }
 
   .bg-gradient-navy {
-    background-image: linear-gradient(135deg, hsl(240 30% 8%), hsl(240 25% 14%));
+    background-image: linear-gradient(135deg, hsl(var(--navy)), hsl(var(--secondary)));
   }
 
   .bg-gradient-sidebar {
-    background-image: linear-gradient(180deg, hsl(240 30% 8%), hsl(260 30% 10%));
+    background-image: linear-gradient(
+      180deg,
+      hsl(var(--sidebar-gradient-top)),
+      hsl(var(--sidebar-gradient-bottom))
+    );
   }
 
   .shadow-gold {
-    box-shadow: 0 4px 20px -4px hsl(38 78% 52% / 0.35);
+    box-shadow:
+      0 4px 20px -4px hsl(var(--primary) / 0.5),
+      0 0 32px -12px hsl(var(--mint) / 0.25);
   }
 
   .shadow-vibrant {
@@ -200,15 +258,15 @@
 
   .shadow-card {
     box-shadow:
-      0 1px 2px 0 hsl(222 28% 14% / 0.03),
-      0 1px 6px -1px hsl(222 28% 14% / 0.04),
-      0 2px 12px -2px hsl(222 28% 14% / 0.03);
+      0 1px 2px 0 hsl(var(--shadow-elevate) / 0.12),
+      0 1px 6px -1px hsl(var(--primary) / 0.06),
+      0 2px 12px -2px hsl(var(--shadow-elevate) / 0.16);
   }
 
   .shadow-card-hover {
     box-shadow:
-      0 4px 12px -2px hsl(222 28% 14% / 0.06),
-      0 8px 24px -4px hsl(222 28% 14% / 0.08);
+      0 4px 12px -2px hsl(var(--primary) / 0.1),
+      0 8px 24px -4px hsl(var(--shadow-elevate) / 0.2);
   }
 
   .safe-area-bottom {
@@ -271,8 +329,8 @@
   .card-interactive:hover {
     @apply -translate-y-1;
     box-shadow:
-      0 8px 24px -4px hsl(222 28% 14% / 0.08),
-      0 16px 40px -8px hsl(222 28% 14% / 0.06);
+      0 8px 24px -4px hsl(var(--primary) / 0.12),
+      0 16px 40px -8px hsl(var(--shadow-elevate) / 0.22);
   }
   .card-interactive:active {
     @apply scale-[0.99] translate-y-0;

@@ -57,7 +57,7 @@ export default function ResetPassword() {
   // If checking is done and no session, redirect to auth
   useEffect(() => {
     if (!checking && !sessionReady) {
-      navigate(tenantId ? `/auth?tenant=${tenantId}` : "/auth");
+      navigate(tenantId ? `/auth/login?tenant=${tenantId}` : "/auth/login");
     }
   }, [checking, sessionReady, navigate, tenantId]);
 

@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const allNavItems = [
@@ -49,7 +50,7 @@ export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/auth");
+    if (!loading && !user) navigate("/auth/login");
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -160,7 +161,19 @@ export default function AppShell() {
         {/* Bottom Actions */}
         <div className="border-t border-sidebar-border p-2 space-y-1">
           {!collapsed && <LanguageSwitcher variant="compact" className="w-full justify-start" />}
-          <NotificationsDropdown />
+          {collapsed ? (
+            <div className="flex justify-center">
+              <ThemeToggle
+                variant="icon"
+                className="h-9 w-9 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              />
+            </div>
+          ) : (
+            <ThemeToggle
+              variant="default"
+              className="text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            />
+          )}
           <Button
             variant="ghost"
             onClick={signOut}
@@ -196,10 +209,10 @@ export default function AppShell() {
           <aside className="absolute left-0 top-0 h-full w-72 bg-gradient-sidebar shadow-2xl animate-slide-in-left">
             <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-vibrant shadow-vibrant">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-gold shrink-0">
                   <Music className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="font-display text-base font-bold text-sidebar-foreground">SimchaSync</span>
+                <span className="font-display text-base font-bold text-primary">SimchaSync</span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="text-sidebar-foreground hover:bg-sidebar-accent">
                 <X className="h-5 w-5" />
@@ -234,6 +247,10 @@ export default function AppShell() {
             </nav>
             <div className="border-t border-sidebar-border p-2 space-y-1">
               <LanguageSwitcher variant="compact" className="w-full justify-start" />
+              <ThemeToggle
+                variant="default"
+                className="text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              />
               <Button variant="ghost" onClick={signOut} className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground">
                 <LogOut className="h-[18px] w-[18px]" /> <span className="text-[13px]">Log Out</span>
               </Button>
@@ -245,18 +262,32 @@ export default function AppShell() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
         {role !== "social_media_manager" && workspaceActive && <TrialBanner />}
-        {/* Top bar (mobile) */}
-        <header className="flex h-14 items-center gap-3 border-b bg-card/80 glass px-4 md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="hover:bg-muted">
+        {/* Top bar: menu + title on mobile; notifications top-right on all sizes */}
+        <header
+          className={cn(
+            "flex h-14 shrink-0 items-center gap-3 border-b bg-card/80 glass px-4",
+            "max-md:dark:border-b-white/5 max-md:dark:!bg-[#0b111e] max-md:dark:backdrop-blur-xl"
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            className="hover:bg-muted md:hidden"
+            aria-label="Open menu"
+          >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-vibrant shadow-vibrant">
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary shadow-gold shrink-0">
               <Music className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-base font-bold text-foreground">SimchaSync</span>
+            <span className="font-display text-base font-bold text-primary">SimchaSync</span>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <div className="md:hidden">
+              <ThemeToggle variant="icon" className="hover:bg-muted" />
+            </div>
             <NotificationsDropdown />
           </div>
         </header>

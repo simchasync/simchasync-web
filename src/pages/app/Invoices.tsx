@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
@@ -26,6 +26,8 @@ import InvoicePreview from "@/components/invoices/InvoicePreview";
 import SendInvoiceDialog from "@/components/invoices/SendInvoiceDialog";
 import RecordPaymentDialog from "@/components/invoices/RecordPaymentDialog";
 import EditInvoiceDialog from "@/components/invoices/EditInvoiceDialog";
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog";
+import { useSearchParams } from "react-router-dom";
 
 type Invoice = Tables<"invoices">;
 
@@ -40,6 +42,7 @@ export default function Invoices() {
   const { user } = useAuth();
   const { canWrite } = useUserRole();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Invoice | null>(null);
@@ -52,6 +55,7 @@ export default function Invoices() {
   const [sendInvoice, setSendInvoice] = useState<any>(null);
   const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
   const [previewPayments, setPreviewPayments] = useState<any[]>([]);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -233,6 +237,20 @@ export default function Invoices() {
     pending: invoices.filter((i: any) => i.status === "sent").length,
   };
 
+  useEffect(() => {
+    const invoiceId = searchParams.get("invoice");
+    const eventId = searchParams.get("event");
+    if (!invoiceId && !eventId) return;
+
+    const matchedInvoice = invoiceId
+      ? invoices.find((inv: any) => inv.id === invoiceId)
+      : invoices.find((inv: any) => inv.event_id === eventId);
+
+    if (!matchedInvoice) return;
+    setEditing(matchedInvoice);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, invoices, setSearchParams]);
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -260,7 +278,10 @@ export default function Invoices() {
             className={statusFilter === tab.key ? "bg-gradient-gold text-primary-foreground" : ""}
           >
             {tab.label}
-            <Badge variant="secondary" className="ml-1.5 h-5 min-w-5 px-1 text-xs">
+            <Badge
+              variant="secondary"
+              className="ml-1.5 flex h-5 min-w-5 shrink-0 items-center justify-center px-1 py-0 text-xs font-semibold leading-none tabular-nums"
+            >
               {filterCounts[tab.key as keyof typeof filterCounts]}
             </Badge>
           </Button>
@@ -315,7 +336,7 @@ export default function Invoices() {
                         <Button variant="outline" size="sm" className="h-9" onClick={() => openEdit(i)}>
                           <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-9 text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(i.id)}>
+                        <Button variant="ghost" size="sm" className="h-9 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(i.id)}>
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                         </Button>
                       </>
@@ -384,7 +405,7 @@ export default function Invoices() {
                           </Button>
                         )}
                         {canWrite && (
-                          <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(i.id)}>
+                          <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(i.id)}>
                             <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                           </Button>
                         )}
@@ -515,6 +536,18 @@ export default function Invoices() {
           invoice={paymentInvoice}
         />
       )}
+
+      <ConfirmDestructiveDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+        title={inv.confirmDeleteTitle}
+        description={inv.confirmDeleteDescription}
+        confirmLabel={t.common.delete}
+        cancelLabel={t.common.cancel}
+        pendingLabel={t.common.deleting}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => { if (deleteTargetId) deleteMutation.mutate(deleteTargetId); }}
+      />
     </div>
   );
 }

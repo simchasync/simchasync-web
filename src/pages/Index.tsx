@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const featureIcons = [Calendar, Users, FileText, CreditCard, Share2, Globe];
 
@@ -39,21 +40,23 @@ export default function Index() {
             <Music className="h-7 w-7 text-primary" />
             <span className="font-display text-xl font-bold text-primary">SimchaSync</span>
           </Link>
-          <div className="hidden items-center gap-6 md:flex">
+          <div className="hidden items-center gap-4 md:flex">
+            <ThemeToggle variant="icon" className="hover:bg-secondary/50" />
             <a href="#features" className="text-sm text-secondary-foreground/70 hover:text-primary transition-colors">{l.nav.features}</a>
             <a href="#pricing" className="text-sm text-secondary-foreground/70 hover:text-primary transition-colors">{l.nav.pricing}</a>
-            <Link to="/auth">
+            <Link to="/auth/login">
               <Button variant="ghost" size="sm" className="text-secondary-foreground/70 hover:text-primary">{l.nav.login}</Button>
             </Link>
-            <Link to="/auth?mode=signup">
+            <Link to="/auth/register">
               <Button size="sm" className="bg-gradient-gold shadow-gold hover:opacity-90 text-primary-foreground font-semibold">{l.nav.signup}</Button>
             </Link>
           </div>
           <div className="flex items-center gap-2 md:hidden">
-            <Link to="/auth">
+            <ThemeToggle variant="icon" className="hover:bg-secondary/50" />
+            <Link to="/auth/login">
               <Button variant="ghost" size="sm" className="text-secondary-foreground/70">{l.nav.login}</Button>
             </Link>
-            <Link to="/auth?mode=signup">
+            <Link to="/auth/register">
               <Button size="sm" className="bg-gradient-gold text-primary-foreground font-semibold">{l.nav.signup}</Button>
             </Link>
           </div>
@@ -70,8 +73,8 @@ export default function Index() {
             transition={{ duration: 0.7 }}
             className="mx-auto max-w-3xl text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary">
-              <Sparkles className="h-4 w-4" />
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm text-primary shadow-mint-soft">
+              <Sparkles className="h-4 w-4 text-mint" />
               30-Day Free Trial — No Credit Card Required
             </div>
             <h1 className="mb-6 font-display text-4xl font-bold leading-tight tracking-tight text-secondary-foreground md:text-6xl lg:text-7xl">
@@ -83,7 +86,7 @@ export default function Index() {
               {l.hero.subtitle}
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link to="/auth?mode=signup">
+              <Link to="/auth/register">
                 <Button size="lg" className="bg-gradient-gold shadow-gold text-primary-foreground font-semibold text-lg px-8 py-6 hover:opacity-90">
                   {l.hero.cta}
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -187,7 +190,7 @@ export default function Index() {
                       );
                     })}
                   </ul>
-                  <Link to="/auth?mode=signup">
+                  <Link to="/auth/register">
                     <Button
                       className={`w-full font-semibold ${
                         plan.popular

@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import { useUserRole } from "@/hooks/useUserRole";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog";
 import { getOrCreateClient } from "@/lib/clientDedup";
 
 type Client = Tables<"clients">;
@@ -38,6 +39,7 @@ export default function Clients() {
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState("");
   const [historyClient, setHistoryClient] = useState<Client | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", tenantId],
@@ -176,7 +178,7 @@ export default function Clients() {
                         <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => openEdit(cl)}>
                           <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(cl.id)}>
+                        <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)}>
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                         </Button>
                       </>
@@ -214,7 +216,7 @@ export default function Clients() {
                             <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => openEdit(cl)}>
                               <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(cl.id)}>
+                            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)}>
                               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                             </Button>
                           </>
@@ -273,6 +275,18 @@ export default function Clients() {
           clientName={historyClient.name}
         />
       )}
+
+      <ConfirmDestructiveDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+        title={c.confirmDeleteTitle}
+        description={c.confirmDeleteDescription}
+        confirmLabel={t.common.delete}
+        cancelLabel={t.common.cancel}
+        pendingLabel={t.common.deleting}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => { if (deleteTargetId) deleteMutation.mutate(deleteTargetId); }}
+      />
     </div>
   );
 }
