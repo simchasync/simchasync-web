@@ -235,8 +235,8 @@ export default function LandingPageEditor() {
     }));
   };
 
-  const publishedOrigin = "https://simcha-harmony-hub.lovable.app";
-  const bookingUrl = tenant ? `${publishedOrigin}/book/${tenant.slug}` : "";
+  const publicBookingOrigin = (import.meta.env.VITE_PUBLIC_BOOKING_ORIGIN as string | undefined) || window.location.origin;
+  const bookingUrl = tenant ? `${publicBookingOrigin}/book/${tenant.slug}` : "";
   const [linkCopied, setLinkCopied] = useState(false);
 
   if (isLoading) {

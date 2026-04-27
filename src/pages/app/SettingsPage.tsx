@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Building2, Camera, CreditCard, CalendarDays, Copy, ExternalLink, Check, RefreshCw, Link2, FileText, Crown, Info, ChevronDown, Loader2, XCircle, Paintbrush, Trash2, AlertTriangle } from "lucide-react";
+import { User, Building2, Camera, CreditCard, CalendarDays, Copy, ExternalLink, Check, RefreshCw, Link2, FileText, Crown, Info, ChevronDown, Loader2, XCircle, Paintbrush, Trash2, AlertTriangle, Share2 } from "lucide-react";
 import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptionDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -313,6 +313,26 @@ export default function SettingsPage() {
     }
   };
 
+  const shareBookingUrl = async (bookingUrl: string) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${tenant?.name ?? "Our"} Booking Page`,
+          text: "Book with us using this link:",
+          url: bookingUrl,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(bookingUrl);
+      setBookingCopied(true);
+      toast({ title: s.bookingLinkCopied });
+      setTimeout(() => setBookingCopied(false), 2000);
+    } catch {
+      // User cancelled native share or clipboard unavailable.
+    }
+  };
+
   const initials = (name: string) =>
     name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
 
@@ -605,8 +625,8 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {(() => {
-              const publishedOrigin = "https://simcha-harmony-hub.lovable.app";
-              const bookingUrl = `${publishedOrigin}/book/${tenant.slug}`;
+              const publicBookingOrigin = (import.meta.env.VITE_PUBLIC_BOOKING_ORIGIN as string | undefined) || window.location.origin;
+              const bookingUrl = `${publicBookingOrigin}/book/${tenant.slug}`;
               return (
                 <>
                   <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
@@ -625,6 +645,14 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareBookingUrl(bookingUrl)}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share with Client
+                    </Button>
                     <Button variant="outline" size="sm" asChild>
                       <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="mr-2 h-4 w-4" />

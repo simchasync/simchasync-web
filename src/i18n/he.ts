@@ -47,6 +47,12 @@ export const he = {
     nav: { dashboard: "לוח בקרה", bookings: "הזמנות", clients: "לקוחות", invoices: "חשבוניות", team: "צוות", settings: "הגדרות", social: "מדיה חברתית", support: "תמיכה", bookingPage: "דף הזמנה", agents: "סוכנים", finance: "כספים" },
     languageBanner: "כרגע באנגלית",
     languageBannerHint: "ניתן לעבור לעברית בהגדרות",
+    theme: {
+      light: "בהיר",
+      dark: "כהה",
+      switchToLight: "מעבר למצב בהיר",
+      switchToDark: "מעבר למצב כהה",
+    },
     dashboard: { title: "לוח בקרה", upcoming: "אירועים קרובים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "ממתין", paid: "שולם", recentActivity: "פעילות אחרונה", noEvents: "אין אירועים קרובים" },
     bookings: {
       title: "הזמנות", newEvent: "אירוע חדש", client: "לקוח", date: "תאריך", hebrewDate: "תאריך עברי", venue: "מקום", location: "כתובת", eventType: "סוג אירוע", notes: "הערות", totalPrice: "מחיר כולל", deposit: "מקדמה", balanceDue: "יתרה לתשלום", dueDate: "תאריך לתשלום", status: "סטטוס",
@@ -98,8 +104,15 @@ export const he = {
         noExpenses: "אין הוצאות ידניות.",
         avgProfit: "רווח ממוצע / הזמנה",
       },
+      confirmDeleteTitle: "למחוק הזמנה זו?",
+      confirmDeleteDescription:
+        "ההזמנה תימחק לצמיתות. רשומות קשורות עשויות להיפגע. לא ניתן לבטל פעולה זו.",
     },
-    clients: { title: "לקוחות", newClient: "לקוח חדש", name: "שם", email: "אימייל", phone: "טלפון", notes: "הערות" },
+    clients: {
+      title: "לקוחות", newClient: "לקוח חדש", name: "שם", email: "אימייל", phone: "טלפון", notes: "הערות",
+      confirmDeleteTitle: "למחוק לקוח זה?",
+      confirmDeleteDescription: "הלקוח יימחק לצמיתות. לא ניתן לבטל פעולה זו.",
+    },
     invoices: {
       title: "חשבוניות", newInvoice: "חשבונית חדשה", amount: "סכום", status: "סטטוס", sentAt: "נשלח",
       statuses: { draft: "טיוטה", sent: "נשלח", paid: "שולם", overdue: "באיחור" },
@@ -112,6 +125,8 @@ export const he = {
       send: "שלח",
       recordPayment: "רשום תשלום",
       printPdf: "הדפס / שמור PDF",
+      confirmDeleteTitle: "למחוק חשבונית זו?",
+      confirmDeleteDescription: "החשבונית תימחק לצמיתות. לא ניתן לבטל פעולה זו.",
     },
     team: { title: "צוות", invite: "הזמן חבר צוות", role: "תפקיד", roles: { owner: "מנהל", booking_manager: "מנהל הזמנות", social_media_manager: "מנהל מדיה חברתית", member: "קולגה" } },
     settings: {
@@ -144,8 +159,16 @@ export const he = {
       ticketCreated: "כרטיס תמיכה נוצר בהצלחה",
     },
   },
-  auth: { login: "התחברות", signup: "הרשמה", email: "אימייל", password: "סיסמה", name: "שם מלא", forgotPassword: "שכחת סיסמה?", noAccount: "אין לך חשבון?", hasAccount: "יש לך כבר חשבון?", resetPassword: "איפוס סיסמה", sendReset: "שלח קישור איפוס", newPassword: "סיסמה חדשה", updatePassword: "עדכן סיסמה", trialNote: "הניסיון החינמי שלך ל-30 יום כולל גישה מלאה לכל התכונות." },
-  common: { save: "שמור", cancel: "ביטול", delete: "מחק", edit: "ערוך", create: "צור", search: "חיפוש...", loading: "טוען...", noData: "אין נתונים עדיין", back: "חזור" },
+  auth: { login: "התחברות", signup: "הרשמה", email: "אימייל", password: "סיסמה", name: "שם מלא", forgotPassword: "שכחת סיסמה?", noAccount: "אין לך חשבון?", hasAccount: "יש לך כבר חשבון?", resetPassword: "איפוס סיסמה", sendReset: "שלח קישור איפוס", newPassword: "סיסמה חדשה", updatePassword: "עדכן סיסמה", trialNote: "הניסיון החינמי שלך ל-30 יום כולל גישה מלאה לכל התכונות.", confirmPassword: "אימות סיסמה", passwordsDoNotMatch: "הסיסמאות אינן תואמות." },
+  common: { save: "שמור", cancel: "ביטול", delete: "מחק", deleting: "מוחק…", edit: "ערוך", create: "צור", search: "חיפוש...", loading: "טוען...", noData: "אין נתונים עדיין", back: "חזור" },
+  pageNotFound: {
+    code: "404",
+    title: "הדף הזה לא נמצא ברשימה",
+    description: "ייתכן שהקישור שגוי, או שהדף הוסר. בואו נחזור למקום הנכון.",
+    goHome: "חזרה לדף הבית",
+    goToApp: "לוח בקרה",
+  },
+
   publicBooking: {
     title: "הזמן אירוע",
     subtitle: "מלא את הטופס למטה לבקשת הזמנה.",

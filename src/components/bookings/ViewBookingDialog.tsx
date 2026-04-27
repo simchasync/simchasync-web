@@ -17,6 +17,7 @@ import ExpensesProfitSection from "./ExpensesProfitSection";
 import { Clock, History, UserCheck, DollarSign, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
+import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -47,7 +48,26 @@ export default function ViewBookingDialog({ open, onOpenChange, event }: ViewBoo
     enabled: !!event?.id && canViewFinancials,
   });
 
+  const { data: linkedInvoices = [] } = useQuery({
+    queryKey: ["invoices", "event", event?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, status, event_id")
+        .eq("event_id", event!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!event?.id && canViewFinancials,
+  });
+
   if (!event) return null;
+
+  const displayPaymentStatus = getEventPaymentStatus(event, linkedInvoices);
+  const balanceDisplay =
+    displayPaymentStatus === "paid"
+      ? 0
+      : Math.max((Number(event.total_price) || 0) - (Number(event.deposit) || 0), 0);
 
   const statusColor = (s: string) => {
     switch (s) {
@@ -135,11 +155,11 @@ export default function ViewBookingDialog({ open, onOpenChange, event }: ViewBoo
                 <Detail label={b.totalPrice} value={`$${event.total_price ?? 0}`} />
                 {(event.travel_fee ?? 0) > 0 && <Detail label="Travel Fee" value={`$${event.travel_fee}`} />}
                 <Detail label={b.deposit} value={`$${event.deposit ?? 0}`} />
-                <Detail label={b.balanceDue} value={`$${event.balance_due ?? 0}`} />
+                <Detail label={b.balanceDue} value={`$${balanceDisplay.toLocaleString()}`} />
                 <div className="space-y-0.5">
                   <p className="text-muted-foreground">{b.status}</p>
-                  <Badge variant="outline" className={statusColor(event.payment_status)}>
-                    {(b.paymentStatus as any)[event.payment_status]}
+                  <Badge variant="outline" className={statusColor(displayPaymentStatus)}>
+                    {(b.paymentStatus as any)[displayPaymentStatus]}
                   </Badge>
                 </div>
                 {event.due_date && <Detail label={b.dueDate} value={format(new Date(event.due_date), "MMM d, yyyy")} />}

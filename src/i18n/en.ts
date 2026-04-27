@@ -62,6 +62,12 @@ export const en = {
     },
     languageBanner: "Currently in English",
     languageBannerHint: "You can switch to Hebrew (עברית) in Settings",
+    theme: {
+      light: "Light",
+      dark: "Dark",
+      switchToLight: "Switch to light mode",
+      switchToDark: "Switch to dark mode",
+    },
     dashboard: {
       title: "Dashboard",
       upcoming: "Upcoming Events",
@@ -77,7 +83,7 @@ export const en = {
       title: "Bookings",
       newEvent: "New Event",
       client: "Client",
-      date: "Date",
+      date: "Sort by Date",
       hebrewDate: "Hebrew Date",
       venue: "Venue",
       location: "Location",
@@ -136,6 +142,9 @@ export const en = {
         noExpenses: "No manual expenses.",
         avgProfit: "Avg Profit / Booking",
       },
+      confirmDeleteTitle: "Delete this booking?",
+      confirmDeleteDescription:
+        "This booking will be permanently removed. Related records may be affected. This cannot be undone.",
     },
     clients: {
       title: "Clients",
@@ -144,6 +153,8 @@ export const en = {
       email: "Email",
       phone: "Phone",
       notes: "Notes",
+      confirmDeleteTitle: "Delete this client?",
+      confirmDeleteDescription: "This client will be permanently removed. This cannot be undone.",
     },
     invoices: {
       title: "Invoices",
@@ -161,6 +172,8 @@ export const en = {
       send: "Send",
       recordPayment: "Record Payment",
       printPdf: "Print / Save PDF",
+      confirmDeleteTitle: "Delete this invoice?",
+      confirmDeleteDescription: "This invoice will be permanently removed. This cannot be undone.",
     },
     team: {
       title: "Team",
@@ -218,18 +231,30 @@ export const en = {
     newPassword: "New Password",
     updatePassword: "Update Password",
     trialNote: "Your free 30-day trial includes full access to all features.",
+    confirmPassword: "Confirm password",
+    passwordsDoNotMatch: "Passwords do not match.",
   },
 
   common: {
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
+    deleting: "Deleting…",
     edit: "Edit",
     create: "Create",
     search: "Search...",
     loading: "Loading...",
     noData: "No data yet",
     back: "Back",
+  },
+
+  pageNotFound: {
+    code: "404",
+    title: "This page is off the set list",
+    description:
+      "The URL may be mistyped, or the page was removed. Let’s get you back to the music.",
+    goHome: "Back to home",
+    goToApp: "Open dashboard",
   },
 
   publicBooking: {

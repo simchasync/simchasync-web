@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSearchParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,20 +7,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/lib/supabase";
-import { Music, ArrowLeft, Loader2 } from "lucide-react";
+import { Music, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Auth() {
+  const location = useLocation();
+  const isLoginPath = location.pathname === "/auth/login";
+  const isRegisterPath = location.pathname === "/auth/register";
   const [searchParams] = useSearchParams();
-  const isSignup = searchParams.get("mode") === "signup";
-  const [mode, setMode] = useState<"login" | "signup" | "reset">(isSignup ? "signup" : "login");
+  const searchSignup = searchParams.get("mode") === "signup";
+  const [mode, setMode] = useState<"login" | "signup" | "reset">(() => {
+    if (isRegisterPath) return "signup";
+    if (isLoginPath) return "login";
+    return searchSignup ? "signup" : "login";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isLoginPath) setMode("login");
+    else if (isRegisterPath) setMode("signup");
+  }, [isLoginPath, isRegisterPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +47,10 @@ export default function Auth() {
         if (error) throw error;
         navigate("/app");
       } else if (mode === "signup") {
+        if (password !== confirmPassword) {
+          toast({ title: "Error", description: t.auth.passwordsDoNotMatch, variant: "destructive" });
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -56,7 +76,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-navy p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-navy p-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle variant="icon" className="hover:bg-secondary/30" />
+      </div>
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
           <Music className="h-8 w-8 text-primary" />
@@ -87,7 +110,53 @@ export default function Auth() {
               {mode !== "reset" && (
                 <div className="space-y-2">
                   <Label className="text-secondary-foreground/70">{t.auth.password}</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="border-secondary/30 bg-secondary/60 text-secondary-foreground" />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      className="border-secondary/30 bg-secondary/60 pr-10 text-secondary-foreground"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-1/2 h-9 w-9 -translate-y-1/2 text-secondary-foreground/60 hover:text-secondary-foreground"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label className="text-secondary-foreground/70">{t.auth.confirmPassword}</Label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="border-secondary/30 bg-secondary/60 pr-10 text-secondary-foreground"
+                      autoComplete="new-password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-1/2 h-9 w-9 -translate-y-1/2 text-secondary-foreground/60 hover:text-secondary-foreground"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showConfirmPassword}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               )}
               <Button type="submit" className="w-full bg-gradient-gold text-primary-foreground font-semibold shadow-gold hover:opacity-90" disabled={loading}>
@@ -102,18 +171,18 @@ export default function Auth() {
                   <button onClick={() => setMode("reset")} className="text-primary hover:underline block mx-auto">{t.auth.forgotPassword}</button>
                   <p className="text-secondary-foreground/50">
                     {t.auth.noAccount}{" "}
-                    <button onClick={() => setMode("signup")} className="text-primary hover:underline">{t.auth.signup}</button>
+                    <button type="button" onClick={() => navigate("/auth/register")} className="text-primary hover:underline">{t.auth.signup}</button>
                   </p>
                 </>
               )}
               {mode === "signup" && (
                 <p className="text-secondary-foreground/50">
                   {t.auth.hasAccount}{" "}
-                  <button onClick={() => setMode("login")} className="text-primary hover:underline">{t.auth.login}</button>
+                  <button type="button" onClick={() => navigate("/auth/login")} className="text-primary hover:underline">{t.auth.login}</button>
                 </p>
               )}
               {mode === "reset" && (
-                <button onClick={() => setMode("login")} className="flex items-center justify-center gap-1 text-primary hover:underline mx-auto">
+                <button type="button" onClick={() => { setMode("login"); navigate("/auth/login"); }} className="flex items-center justify-center gap-1 text-primary hover:underline mx-auto">
                   <ArrowLeft className="h-4 w-4" /> {t.auth.login}
                 </button>
               )}

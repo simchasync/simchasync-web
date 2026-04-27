@@ -5,6 +5,7 @@ import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toHebrewDate } from "@/lib/hebrewDate";
+import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +41,7 @@ import EventTimingSection, { type TimingFields } from "@/components/bookings/Eve
 import ColleaguesSection from "@/components/bookings/ColleaguesSection";
 import ExpensesProfitSection from "@/components/bookings/ExpensesProfitSection";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog";
 
 import BookingCalendar from "@/components/bookings/BookingCalendar";
 
@@ -71,6 +73,7 @@ export default function Bookings() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [eventDateFilter, setEventDateFilter] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -80,6 +83,7 @@ export default function Bookings() {
   const [expenseDialogEvent, setExpenseDialogEvent] = useState<any>(null);
   const [historyClientId, setHistoryClientId] = useState<string | null>(null);
   const [historyClientName, setHistoryClientName] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events", tenantId, role],
@@ -125,6 +129,21 @@ export default function Bookings() {
       const { data, error } = await supabase.from("clients").select("id, name").eq("tenant_id", tenantId!).order("name");
       if (error) throw error;
       return data as Pick<Client, "id" | "name">[];
+    },
+    enabled: !!tenantId && role !== "member",
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["invoices", tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id, event_id, status, created_at")
+        .eq("tenant_id", tenantId!)
+        .not("event_id", "is", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
     },
     enabled: !!tenantId && role !== "member",
   });
@@ -344,6 +363,22 @@ export default function Bookings() {
     }
   };
 
+  const invoicesByEventId = invoices.reduce((acc: Record<string, any[]>, invoice: any) => {
+    if (!invoice.event_id) return acc;
+    if (!acc[invoice.event_id]) acc[invoice.event_id] = [];
+    acc[invoice.event_id].push(invoice);
+    return acc;
+  }, {});
+
+  const openOrCreateInvoice = (ev: any) => {
+    const linkedInvoices = invoicesByEventId[ev.id] ?? [];
+    if (linkedInvoices.length > 0) {
+      navigate(`/app/invoices?invoice=${linkedInvoices[0].id}&event=${ev.id}`);
+      return;
+    }
+    generateInvoiceMutation.mutate(ev);
+  };
+
   const updateFinancials = (field: "total_price" | "deposit" | "travel_fee", value: string) => {
     const updated = { ...form, [field]: value };
     const total = Number(updated.total_price) || 0;
@@ -356,6 +391,8 @@ export default function Bookings() {
   const showExpenses = canAccess("expenses_profit") && role !== "member";
   const showFinancialFields = role !== "member";
   const pendingRequestCount = useBookingRequestCount(role !== "member" ? tenantId : null);
+  const todayIso = format(new Date(), "yyyy-MM-dd");
+  const eventDateMin = editing && form.event_date && form.event_date < todayIso ? form.event_date : todayIso;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -385,25 +422,48 @@ export default function Bookings() {
         </TabsList>
 
         <TabsContent value="events" className="space-y-4">
-          {/* Payment Status Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {["all", "unpaid", "partial", "paid"].map((status) => (
-              <Button
-                key={status}
-                variant={paymentFilter === status ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPaymentFilter(status)}
-                className={paymentFilter === status ? "" : ""}
-              >
-                {status === "all" ? "All" : (b.paymentStatus as any)[status] ?? status}
-              </Button>
-            ))}
+          {/* Filters */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="flex gap-2 flex-wrap">
+              {["all", "unpaid", "partial", "paid"].map((status) => (
+                <Button
+                  key={status}
+                  variant={paymentFilter === status ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPaymentFilter(status)}
+                  className={paymentFilter === status ? "" : ""}
+                >
+                  {status === "all" ? "All" : (b.paymentStatus as any)[status] ?? status}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="bookings-date-filter" className="text-xs text-muted-foreground whitespace-nowrap">
+                {b.date}
+              </Label>
+              <div>
+                <Input
+                  id="bookings-date-filter"
+                  type="date"
+                  value={eventDateFilter}
+                  onChange={(e) => setEventDateFilter(e.target.value)}
+                  className="w-full md:w-[180px]"
+                />
+              </div>
+              {eventDateFilter && (
+                <Button variant="outline" size="sm" onClick={() => setEventDateFilter("")}>
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
 
           {(() => {
-            const filteredEvents = paymentFilter === "all"
-              ? events
-              : events.filter((ev: any) => ev.payment_status === paymentFilter);
+            const filteredEvents = events.filter((ev: any) => {
+              const matchesPayment = paymentFilter === "all" || getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) === paymentFilter;
+              const matchesDate = !eventDateFilter || ev.event_date === eventDateFilter;
+              return matchesPayment && matchesDate;
+            });
 
             if (isLoading) return <><CardListSkeleton count={3} /><TableSkeleton columns={7} rows={4} /></>;
             if (filteredEvents.length === 0) return (
@@ -419,7 +479,9 @@ export default function Bookings() {
             <>
               {/* Mobile Cards */}
               <div className="space-y-3 md:hidden">
-                {filteredEvents.map((ev: any) => (
+                {filteredEvents.map((ev: any) => {
+                  const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
+                  return (
                   <Card key={ev.id} className="overflow-hidden animate-card-in card-interactive">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
@@ -428,8 +490,8 @@ export default function Bookings() {
                           <p className="text-sm text-muted-foreground">{ev.clients?.name ?? ev.client_name ?? "No client"}</p>
                         </div>
                         {showFinancialFields ? (
-                          <Badge variant="outline" className={statusColor(ev.payment_status)}>
-                            {(b.paymentStatus as any)[ev.payment_status]}
+                          <Badge variant="outline" className={statusColor(eventPaymentStatus)}>
+                            {(b.paymentStatus as any)[eventPaymentStatus]}
                           </Badge>
                         ) : null}
                       </div>
@@ -444,7 +506,7 @@ export default function Bookings() {
                             <>
                               <p className="text-muted-foreground text-xs">{b.totalPrice}</p>
                               <p className="font-semibold">${ev.total_price ?? 0}</p>
-                              {ev.payment_status !== "paid" && (Number(ev.total_price) || 0) > 0 && (
+                              {eventPaymentStatus !== "paid" && (Number(ev.total_price) || 0) > 0 && (
                                 <p className="text-xs text-amber-600">
                                   Due: ${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}
                                 </p>
@@ -468,7 +530,7 @@ export default function Bookings() {
                             <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => openEdit(ev)}>
                               <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(ev.id)}>
+                            <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(ev.id)}>
                               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                             </Button>
                           </>
@@ -476,7 +538,7 @@ export default function Bookings() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )})}
               </div>
 
               {/* Desktop Table */}
@@ -497,7 +559,9 @@ export default function Bookings() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEvents.map((ev: any) => (
+                      {filteredEvents.map((ev: any) => {
+                        const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
+                        return (
                         <TableRow key={ev.id} className="animate-row-in row-interactive">
                           <TableCell className="whitespace-nowrap">{format(new Date(ev.event_date), "MMM d, yyyy")}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{ev.hebrew_date ?? "—"}</TableCell>
@@ -507,13 +571,13 @@ export default function Bookings() {
                           {showFinancialFields && <TableCell className="text-right font-medium">${ev.total_price ?? 0}</TableCell>}
                           {showFinancialFields && (
                             <TableCell className="text-right font-medium">
-                              {ev.payment_status === "paid" ? "$0" : `$${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}`}
+                              {eventPaymentStatus === "paid" ? "$0" : `$${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}`}
                             </TableCell>
                           )}
                           {showFinancialFields && (
                             <TableCell>
-                              <Badge variant="outline" className={statusColor(ev.payment_status)}>
-                                {(b.paymentStatus as any)[ev.payment_status]}
+                              <Badge variant="outline" className={statusColor(eventPaymentStatus)}>
+                                {(b.paymentStatus as any)[eventPaymentStatus]}
                               </Badge>
                             </TableCell>
                           )}
@@ -527,7 +591,7 @@ export default function Bookings() {
                                   <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => openEdit(ev)}>
                                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => generateInvoiceMutation.mutate(ev)}>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => openOrCreateInvoice(ev)}>
                                     <FileText className="mr-1.5 h-3.5 w-3.5 text-primary" /> Invoice
                                   </Button>
                                   {showExpenses && (
@@ -535,7 +599,7 @@ export default function Bookings() {
                                       <DollarSign className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Expenses
                                     </Button>
                                   )}
-                                  <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(ev.id)}>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(ev.id)}>
                                     <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                                   </Button>
                                 </>
@@ -543,7 +607,7 @@ export default function Bookings() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )})}
                     </TableBody>
                   </Table>
                 </div>
@@ -575,6 +639,10 @@ export default function Bookings() {
               e.preventDefault();
               if (!form.event_date) {
                 toast({ title: "Date is required", variant: "destructive" });
+                return;
+              }
+              if (form.event_date < todayIso) {
+                toast({ title: "Past dates are not allowed", variant: "destructive" });
                 return;
               }
               if (!form.event_type) {
@@ -624,7 +692,13 @@ export default function Bookings() {
               </div>
               <div className="space-y-2">
                 <Label>{b.date} *</Label>
-                <Input type="date" required value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
+                <Input
+                  type="date"
+                  required
+                  min={eventDateMin}
+                  value={form.event_date}
+                  onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>{b.hebrewDate}</Label>
@@ -785,6 +859,18 @@ export default function Bookings() {
           clientName={historyClientName}
         />
       )}
+
+      <ConfirmDestructiveDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+        title={b.confirmDeleteTitle}
+        description={b.confirmDeleteDescription}
+        confirmLabel={t.common.delete}
+        cancelLabel={t.common.cancel}
+        pendingLabel={t.common.deleting}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => { if (deleteTargetId) deleteMutation.mutate(deleteTargetId); }}
+      />
     </div>
   );
 }

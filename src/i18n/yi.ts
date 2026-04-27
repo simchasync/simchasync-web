@@ -47,6 +47,12 @@ export const yi = {
     nav: { dashboard: "דעשבאָרד", bookings: "באָקינגס", clients: "קליענטן", invoices: "חשבונות", team: "צוות", settings: "אײַנשטעלונגען", social: "סאָציאַלע מעדיאַ", support: "שטיצע", bookingPage: "באָקינג בלאַט", agents: "אגענטן", finance: "פֿינאַנצן" },
     languageBanner: "איצט אויף ייִדיש",
     languageBannerHint: "איר קענט ביטן שפּראַך אין אײַנשטעלונגען",
+    theme: {
+      light: "הײל",
+      dark: "טונקל",
+      switchToLight: "צו העל־מאָד",
+      switchToDark: "צו טונקל־מאָד",
+    },
     dashboard: { title: "דעשבאָרד", upcoming: "קומענדיקע אירועים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "אויסשטייענדיק", paid: "באַצאָלט", recentActivity: "לעצטע אַקטיוויטעט", noEvents: "קיין קומענדיקע אירועים" },
     bookings: {
       title: "באָקינגס", newEvent: "נײַער אירוע", client: "קליענט", date: "דאַטום", hebrewDate: "ייִדישער דאַטום", venue: "מקום", location: "אַדרעס", eventType: "טיפּ אירוע", notes: "באַמערקונגען", totalPrice: "גאַנצער פּרײַז", deposit: "מקדמה", balanceDue: "באַלאַנס צו צאָלן", dueDate: "צאָלונגס דאַטום", status: "סטאַטוס",
@@ -98,8 +104,15 @@ export const yi = {
         noExpenses: "קיין מאַנועלע הוצאות.",
         avgProfit: "דורכשניטלעכער רווח / באָקינג",
       },
+      confirmDeleteTitle: "אויסמעקן דעם באָקינג?",
+      confirmDeleteDescription:
+        "דער באָקינג וועט בלייבן אויסגעמעקט. פֿאַרבונדענע רעקאָרדס קענען ליידן. אומקער ניט מעגלעך.",
     },
-    clients: { title: "קליענטן", newClient: "נײַער קליענט", name: "נאָמען", email: "אימעיל", phone: "טעלעפֿאָן", notes: "באַמערקונגען" },
+    clients: {
+      title: "קליענטן", newClient: "נײַער קליענט", name: "נאָמען", email: "אימעיל", phone: "טעלעפֿאָן", notes: "באַמערקונגען",
+      confirmDeleteTitle: "אויסמעקן דעם קליענט?",
+      confirmDeleteDescription: "דער קליענט וועט בלייבן אויסגעמעקט. אומקער ניט מעגלעך.",
+    },
     invoices: {
       title: "חשבונות", newInvoice: "נײַער חשבון", amount: "סכום", status: "סטאַטוס", sentAt: "געשיקט",
       statuses: { draft: "טיוטה", sent: "געשיקט", paid: "באַצאָלט", overdue: "פֿאַרשפּעטיקט" },
@@ -112,6 +125,8 @@ export const yi = {
       send: "שיקן",
       recordPayment: "פֿאַרשרײַבן באַצאָלונג",
       printPdf: "דרוקן / אויפֿהיטן PDF",
+      confirmDeleteTitle: "אויסמעקן דעם חשבון?",
+      confirmDeleteDescription: "דער חשבון וועט בלייבן אויסגעמעקט. אומקער ניט מעגלעך.",
     },
     team: { title: "צוות", invite: "פֿאַרבעטן מיטגליד", role: "ראָלע", roles: { owner: "אַדמין", booking_manager: "באָקינג מאַנאַגער", social_media_manager: "סאָציאַלע מעדיאַ מאַנאַגער", member: "קאָלעגע" } },
     settings: {
@@ -144,8 +159,16 @@ export const yi = {
       ticketCreated: "שטיצע טיקעט באַשאַפֿן מיט הצלחה",
     },
   },
-  auth: { login: "אַרײַנלאָגן", signup: "רעגיסטרירן", email: "אימעיל", password: "פּאַסוואָרט", name: "פֿולער נאָמען", forgotPassword: "פֿאַרגעסן פּאַסוואָרט?", noAccount: "האָט ניט קיין חשבון?", hasAccount: "האָט שוין אַ חשבון?", resetPassword: "איבערשטעלן פּאַסוואָרט", sendReset: "שיקן איבערשטעל לינק", newPassword: "נײַ פּאַסוואָרט", updatePassword: "דערהײַנטיקן פּאַסוואָרט", trialNote: "אײַער פֿרײַע 30-טאָג פּרוּוו כולל פֿולן צוטריט צו אַלע פֿעיִקייטן." },
-  common: { save: "אויפֿהיטן", cancel: "אָפּזאָגן", delete: "אויסמעקן", edit: "רעדאַקטירן", create: "שאַפֿן", search: "זוכן...", loading: "לאָדט...", noData: "נאָך קיין דאַטע", back: "צוריק" },
+  auth: { login: "אַרײַנלאָגן", signup: "רעגיסטרירן", email: "אימעיל", password: "פּאַסוואָרט", name: "פֿולער נאָמען", forgotPassword: "פֿאַרגעסן פּאַסוואָרט?", noAccount: "האָט ניט קיין חשבון?", hasAccount: "האָט שוין אַ חשבון?", resetPassword: "איבערשטעלן פּאַסוואָרט", sendReset: "שיקן איבערשטעל לינק", newPassword: "נײַ פּאַסוואָרט", updatePassword: "דערהײַנטיקן פּאַסוואָרט", trialNote: "אײַער פֿרײַע 30-טאָג פּרוּוו כולל פֿולן צוטריט צו אַלע פֿעיִקייטן.", confirmPassword: "באַשטעטיקן פּאַסוואָרט", passwordsDoNotMatch: "פּאַסווערטער שטימען ניט." },
+  common: { save: "אויפֿהיטן", cancel: "אָפּזאָגן", delete: "אויסמעקן", deleting: "מעק אויט…", edit: "רעדאַקטירן", create: "שאַפֿן", search: "זוכן...", loading: "לאָדט...", noData: "נאָך קיין דאַטע", back: "צוריק" },
+  pageNotFound: {
+    code: "404",
+    title: "דער בלאַט איז נישט אױף דער ליסטע",
+    description: "מעגלעך איז דער URL פֿלעכטיק, אדער איז דער בלאַט אַראָפֿגענומען. קומט צוריק.",
+    goHome: "צו דער הױם",
+    goToApp: "דאַשבאָרד",
+  },
+
   publicBooking: {
     title: "באַשטעלן אַן אירוע",
     subtitle: "פֿילט אויס דעם פֿאָרם אונטן צו אָנפֿרעגן אַ באָקינג.",
