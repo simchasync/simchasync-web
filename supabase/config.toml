@@ -11,3 +11,7 @@ verify_jwt = false
 
 [functions.invite-team-member]
 verify_jwt = false
+
+# Auth "Send email" hook: Supabase calls this without a user JWT (Standard Webhooks only)
+[functions.send-auth-email]
+verify_jwt = false
