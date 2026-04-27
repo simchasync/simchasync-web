@@ -159,7 +159,7 @@ export const he = {
       ticketCreated: "כרטיס תמיכה נוצר בהצלחה",
     },
   },
-  auth: { login: "התחברות", signup: "הרשמה", email: "אימייל", password: "סיסמה", name: "שם מלא", forgotPassword: "שכחת סיסמה?", noAccount: "אין לך חשבון?", hasAccount: "יש לך כבר חשבון?", resetPassword: "איפוס סיסמה", sendReset: "שלח קישור איפוס", newPassword: "סיסמה חדשה", updatePassword: "עדכן סיסמה", trialNote: "הניסיון החינמי שלך ל-30 יום כולל גישה מלאה לכל התכונות.", confirmPassword: "אימות סיסמה", passwordsDoNotMatch: "הסיסמאות אינן תואמות." },
+    auth: { login: "התחברות", signup: "הרשמה", email: "אימייל", password: "סיסמה", name: "שם מלא", forgotPassword: "שכחת סיסמה?", noAccount: "אין לך חשבון?", hasAccount: "יש לך כבר חשבון?", resetPassword: "איפוס סיסמה", sendReset: "שלח קישור איפוס", newPassword: "סיסמה חדשה", updatePassword: "עדכן סיסמה", trialNote: "הניסיון החינמי שלך ל-30 יום כולל גישה מלאה לכל התכונות.", confirmPassword: "אימות סיסמה", passwordsDoNotMatch: "הסיסמאות אינן תואמות.", confirmEmailTitle: "בדקו את האימייל", confirmEmailDescription: "שלחנו קישור אימות. בדקו גם ספאם. אם לא מגיע, השתמשו ב״שלח שוב״ או בקשו מהמנהל לתקן אימייל ב-Supabase.", resendConfirmation: "שלח שוב אימייל אימות", resendConfirmationSuccess: "שלחנו שוב קישור אימות.", signedInWelcome: "ברוכים הבאים — הותחלת.", resendEmailMissing: "הזינו קודם את כתובת האימייל שאיתה נרשמתם." },
   common: { save: "שמור", cancel: "ביטול", delete: "מחק", deleting: "מוחק…", edit: "ערוך", create: "צור", search: "חיפוש...", loading: "טוען...", noData: "אין נתונים עדיין", back: "חזור" },
   pageNotFound: {
     code: "404",

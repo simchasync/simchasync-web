@@ -233,6 +233,13 @@ export const en = {
     trialNote: "Your free 30-day trial includes full access to all features.",
     confirmPassword: "Confirm password",
     passwordsDoNotMatch: "Passwords do not match.",
+    confirmEmailTitle: "Check your email",
+    confirmEmailDescription:
+      "We sent a confirmation link. Check spam and promotions. You can resend the email below if needed.",
+    resendConfirmation: "Resend confirmation email",
+    resendConfirmationSuccess: "We sent another confirmation link.",
+    signedInWelcome: "Welcome — you're signed in.",
+    resendEmailMissing: "Enter the email you signed up with first.",
   },
 
   common: {

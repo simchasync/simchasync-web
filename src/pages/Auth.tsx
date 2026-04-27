@@ -29,6 +29,8 @@ export default function Auth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false);
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,6 +39,32 @@ export default function Auth() {
     if (isLoginPath) setMode("login");
     else if (isRegisterPath) setMode("signup");
   }, [isLoginPath, isRegisterPath]);
+
+  useEffect(() => {
+    if (mode !== "signup") setAwaitingEmailConfirmation(false);
+  }, [mode]);
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      toast({ title: "Error", description: t.auth.resendEmailMissing, variant: "destructive" });
+      return;
+    }
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      toast({ title: t.auth.confirmEmailTitle, description: t.auth.resendConfirmationSuccess });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not resend";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +79,7 @@ export default function Auth() {
           toast({ title: "Error", description: t.auth.passwordsDoNotMatch, variant: "destructive" });
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -60,7 +88,14 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        toast({ title: "Check your email", description: "We sent you a confirmation link." });
+        if (data.session) {
+          setAwaitingEmailConfirmation(false);
+          toast({ title: t.auth.signup, description: t.auth.signedInWelcome });
+          navigate("/app");
+          return;
+        }
+        setAwaitingEmailConfirmation(true);
+        toast({ title: t.auth.confirmEmailTitle, description: t.auth.confirmEmailDescription });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -159,11 +194,27 @@ export default function Auth() {
                   </div>
                 </div>
               )}
-              <Button type="submit" className="w-full bg-gradient-gold text-primary-foreground font-semibold shadow-gold hover:opacity-90" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-gold text-primary-foreground font-semibold shadow-gold hover:opacity-90" disabled={loading || resendLoading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === "login" ? t.auth.login : mode === "signup" ? t.auth.signup : t.auth.sendReset}
               </Button>
             </form>
+
+            {mode === "signup" && awaitingEmailConfirmation && (
+              <div className="mt-4 space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+                <p className="text-sm text-secondary-foreground/90">{t.auth.confirmEmailDescription}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-primary/30"
+                  disabled={resendLoading || loading}
+                  onClick={handleResendConfirmation}
+                >
+                  {resendLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t.auth.resendConfirmation}
+                </Button>
+              </div>
+            )}
 
             <div className="mt-6 space-y-2 text-center text-sm">
               {mode === "login" && (
