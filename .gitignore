@@ -2,6 +2,7 @@
 logs
 *.log
 worklog.md
+DATABASE_ACCESS.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
