@@ -1,8 +1,13 @@
 /// <reference types="node" />
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qxcatdirkfbqitvkuvbu.supabase.co';
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4Y2F0ZGlya2ZicWl0dmt1dmJ1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY0ODg0NywiZXhwIjoyMDk2MjI0ODQ3fQ.3BT4oOueYN-i8yvRDy89oQzThi2r6_qNDmlMajzZga4';
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseServiceKey) {
+  throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
