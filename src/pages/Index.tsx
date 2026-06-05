@@ -131,110 +131,136 @@ export default function Index() {
       </header>
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border/60 py-24 md:py-36">
-        {/* Subtle radial accent */}
+      <section className="relative overflow-hidden py-32 md:py-48">
+        {/* Premium gradient backdrop */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,hsl(var(--primary)/0.12),transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-20%,rgba(var(--primary-rgb),0.15),transparent_50%)] md:bg-[radial-gradient(ellipse_at_50%_-30%,rgba(var(--primary-rgb),0.12),transparent_60%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 right-0 h-96 w-96 bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.08),transparent_70%)] blur-3xl"
         />
 
         <div className="container relative">
           <motion.div
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: EASE }}
-            className="mx-auto max-w-2xl text-center"
+            transition={{ duration: 0.8, ease: EASE }}
+            className="mx-auto max-w-3xl text-center"
           >
-            {/* Badge */}
+            {/* Premium Badge */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: EASE }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-accent/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+              transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+              className="mb-10 inline-flex items-center gap-2.5 rounded-full border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/0 px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-primary/5 backdrop-blur-md"
             >
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              30-day free trial · No credit card required
+              <Sparkles className="h-4 w-4" />
+              <span>Try free for 30 days — No credit card</span>
             </motion.div>
 
-            {/* Headline */}
-            <h1 className="mb-5 font-display text-4xl font-bold leading-[1.15] tracking-tight text-foreground md:text-6xl">
+            {/* Premium Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
+              className="mb-8 font-display text-5xl font-black leading-[1.1] tracking-tight text-foreground md:text-7xl"
+            >
               {l.hero.title.split("Simchas")[0]}
-              <span className="text-primary">Simchas</span>
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Simchas</span>
               {l.hero.title.split("Simchas")[1]}
-            </h1>
+            </motion.h1>
 
-            {/* Subheadline */}
-            <p className="mb-10 text-base leading-relaxed text-muted-foreground md:text-lg">
+            {/* Premium Subheadline */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
+              className="mb-12 text-lg leading-relaxed text-muted-foreground/90 md:text-xl max-w-2xl mx-auto"
+            >
               {l.hero.subtitle}
-            </p>
+            </motion.p>
 
-            {/* CTAs */}
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            {/* Premium CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
+              className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:items-center"
+            >
               <Link to="/auth/register">
                 <Button
                   size="lg"
-                  className="h-11 gap-2 px-8 font-semibold shadow-md transition-all hover:shadow-lg hover:translate-y-[-1px]"
+                  className="gap-2 px-8 py-6 text-base font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:translate-y-[-2px]"
                 >
                   {l.hero.cta}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
               <a href="#features">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-11 px-8 font-medium"
+                  className="px-8 py-6 text-base font-semibold border-border/50 hover:border-primary/30 hover:bg-accent/50"
                 >
                   {l.hero.ctaSecondary}
                 </Button>
               </a>
-            </div>
+            </motion.div>
 
-            {/* Social proof */}
-            <p className="mt-8 text-xs text-muted-foreground/60">
-              Trusted by 2,000+ families across North America & Israel
-            </p>
+            {/* Premium Social proof */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
+              className="mt-12 text-sm font-medium text-muted-foreground/70"
+            >
+              ✓ Trusted by 2,000+ families across North America & Israel
+            </motion.p>
           </motion.div>
         </div>
       </section>
 
       {/* ── Features ───────────────────────────────────────────────────────── */}
-      <section id="features" className="py-24 md:py-32">
-        <div className="container">
-          <AnimatedSection className="mb-14 max-w-xl">
-            <SectionLabel>Features</SectionLabel>
+      <section id="features" className="relative py-28 md:py-40">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+        <div className="container relative">
+          <AnimatedSection className="mb-16 max-w-2xl">
+            <SectionLabel>Everything You Need</SectionLabel>
             <motion.h2
               variants={fadeUp}
               custom={1}
-              className="mb-3 font-display text-3xl font-bold tracking-tight md:text-4xl"
+              className="mb-4 font-display text-4xl font-bold tracking-tight md:text-5xl"
             >
               {l.features.title}
             </motion.h2>
             <motion.p
               variants={fadeUp}
               custom={2}
-              className="text-muted-foreground"
+              className="text-lg text-muted-foreground/90"
             >
               {l.features.subtitle}
             </motion.p>
           </AnimatedSection>
 
-          <AnimatedSection className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {l.features.items.map((item, i) => {
               const Icon = featureIcons[i];
               return (
                 <motion.div key={i} variants={fadeUp} custom={i}>
-                  <Card className="group h-full border-border/60 bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-sm">
-                    <CardContent className="flex flex-col gap-3 p-6">
+                  <Card className="group relative h-full overflow-hidden border-border/40 bg-gradient-to-br from-card to-card/50 transition-all duration-500 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <CardContent className="relative flex flex-col gap-4 p-7">
                       {/* Icon */}
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-accent transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
-                        <Icon className="h-5 w-5 text-primary" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 group-hover:from-primary/30 group-hover:to-primary/10 transition-colors duration-300">
+                        <Icon className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="mb-1 font-display text-[15px] font-semibold leading-snug">
+                        <h3 className="mb-2 font-display text-lg font-semibold leading-snug">
                           {item.title}
                         </h3>
-                        <p className="text-sm leading-relaxed text-muted-foreground">
+                        <p className="text-sm leading-relaxed text-muted-foreground/80">
                           {item.desc}
                         </p>
                       </div>
@@ -248,70 +274,74 @@ export default function Index() {
       </section>
 
       {/* ── Pricing ────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="border-t border-border/60 bg-accent/30 py-24 md:py-32">
-        <div className="container">
-          <AnimatedSection className="mb-14 max-w-xl">
-            <SectionLabel>Pricing</SectionLabel>
+      <section id="pricing" className="relative py-28 md:py-40 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none" />
+        <div className="container relative">
+          <AnimatedSection className="mb-16 max-w-2xl mx-auto text-center">
+            <SectionLabel>Transparent Pricing</SectionLabel>
             <motion.h2
               variants={fadeUp}
               custom={1}
-              className="mb-3 font-display text-3xl font-bold tracking-tight md:text-4xl"
+              className="mb-4 font-display text-4xl font-bold tracking-tight md:text-5xl"
             >
               {l.pricing.title}
             </motion.h2>
             <motion.p
               variants={fadeUp}
               custom={2}
-              className="text-muted-foreground"
+              className="text-lg text-muted-foreground/90"
             >
               {l.pricing.subtitle}
             </motion.p>
           </AnimatedSection>
 
-          <AnimatedSection className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
+          <AnimatedSection className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-2">
             {l.pricing.plans.map((plan, i) => (
-              <motion.div key={i} variants={fadeUp} custom={i} className="relative">
-                {/* Popular badge */}
+              <motion.div key={i} variants={fadeUp} custom={i} className="relative group">
+                {/* Premium badge for popular */}
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
-                      <Star className="h-3 w-3" />
-                      Most popular
+                  <div className="absolute -top-4 left-1/2 z-20 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/40">
+                      <Star className="h-4 w-4 fill-current" />
+                      MOST POPULAR
                     </span>
                   </div>
                 )}
 
                 <Card
                   className={[
-                    "h-full border-border/60 bg-card transition-all duration-300",
+                    "h-full relative overflow-hidden transition-all duration-500",
                     plan.popular
-                      ? "border-primary/50 shadow-md ring-1 ring-primary/20"
-                      : "hover:border-border",
+                      ? "border-primary/60 shadow-2xl shadow-primary/20 lg:scale-105 bg-gradient-to-br from-card to-primary/5"
+                      : "border-border/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 bg-gradient-to-br from-card/80 to-card",
                   ].join(" ")}
                 >
-                  <CardContent className="flex flex-col p-7">
+                  {plan.popular && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />}
+
+                  <CardContent className="relative flex flex-col h-full p-8">
                     {/* Plan header */}
-                    <div className="mb-6 border-b border-border/60 pb-6">
-                      <h3 className="mb-0.5 font-display text-lg font-bold">
+                    <div className="mb-8 pb-8 border-b border-border/40">
+                      <h3 className="mb-2 font-display text-2xl font-bold">
                         {plan.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">{plan.desc}</p>
+                      <p className="text-sm text-muted-foreground/80">{plan.desc}</p>
                     </div>
 
                     {/* Price */}
-                    <div className="mb-6">
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-display text-4xl font-bold text-foreground">
+                    <div className="mb-8">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="font-display text-5xl font-black text-foreground">
                           {plan.price}
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-base text-muted-foreground/70">
                           {plan.period}
                         </span>
                       </div>
+                      <p className="mt-2 text-xs font-medium text-muted-foreground/60">30-day free trial included</p>
                     </div>
 
                     {/* Features */}
-                    <ul className="mb-8 flex flex-col gap-2.5">
+                    <ul className="mb-10 flex flex-col gap-3.5 flex-1">
                       {plan.features.map((f, j) => {
                         const isComingSoon =
                           f.includes("Coming Soon") || f.includes("בקרוב");
@@ -322,26 +352,26 @@ export default function Index() {
                           <li
                             key={j}
                             className={[
-                              "flex items-start gap-2.5 text-sm",
+                              "flex items-start gap-3 text-sm font-medium",
                               isComingSoon
-                                ? "text-muted-foreground/50"
+                                ? "text-muted-foreground/40"
                                 : "text-foreground/80",
                             ].join(" ")}
                           >
                             <Check
                               className={[
-                                "mt-0.5 h-4 w-4 shrink-0",
+                                "mt-0.5 h-5 w-5 shrink-0 rounded-full p-0.5",
                                 isComingSoon
-                                  ? "text-muted-foreground/30"
-                                  : "text-primary",
+                                  ? "bg-muted/20 text-muted-foreground/30"
+                                  : "bg-primary/20 text-primary",
                               ].join(" ")}
                             />
-                            <span className="flex flex-wrap items-center gap-1.5">
+                            <span className="flex flex-wrap items-center gap-2">
                               {label}
                               {isComingSoon && (
                                 <Badge
                                   variant="outline"
-                                  className="h-4 border-border/40 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                                  className="h-5 border-border/40 px-2 py-0 text-[10px] font-bold uppercase text-muted-foreground/60"
                                 >
                                   Soon
                                 </Badge>
@@ -353,37 +383,38 @@ export default function Index() {
                     </ul>
 
                     {/* CTA — pushed to bottom */}
-                    <div className="mt-auto">
-                      <Link to="/auth/register">
-                        <Button
-                          variant={plan.popular ? "default" : "outline"}
-                          className={[
-                            "w-full font-semibold",
-                            plan.popular
-                              ? "shadow-sm hover:shadow-md hover:translate-y-[-1px] transition-all"
-                              : "",
-                          ].join(" ")}
-                        >
-                          {plan.cta}
-                        </Button>
-                      </Link>
-                    </div>
+                    <Link to="/auth/register" className="block">
+                      <Button
+                        variant={plan.popular ? "default" : "outline"}
+                        className={[
+                          "w-full font-bold text-base py-6",
+                          plan.popular
+                            ? "shadow-lg shadow-primary/40 hover:shadow-xl hover:shadow-primary/50 hover:-translate-y-0.5 transition-all duration-300"
+                            : "border-border/40 hover:border-primary/50 hover:bg-accent/50",
+                        ].join(" ")}
+                      >
+                        {plan.cta}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </AnimatedSection>
 
-          {/* Reassurance line */}
-          <motion.p
+          {/* Premium reassurance line */}
+          <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="mt-10 text-center text-sm text-muted-foreground"
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mt-14 text-center"
           >
-            All plans include a 30-day free trial. Cancel any time, no questions asked.
-          </motion.p>
+            <p className="text-sm font-medium text-muted-foreground/80">
+              ✓ No credit card required · ✓ Cancel anytime · ✓ 30-day money-back guarantee
+            </p>
+          </motion.div>
         </div>
       </section>
 

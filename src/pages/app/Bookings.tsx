@@ -355,12 +355,15 @@ export default function Bookings() {
   };
   const closeDialog = () => { setDialogOpen(false); setEditing(null); setForm(emptyForm); setTiming(emptyTiming); };
 
+  const paymentBadgeConfig: Record<string, { label: string; className: string }> = {
+    paid: { label: "Paid", className: "bg-emerald/10 text-emerald border-emerald/20" },
+    partial: { label: "Partial", className: "bg-amber/10 text-amber border-amber/20" },
+    unpaid: { label: "Unpaid", className: "bg-destructive/10 text-destructive border-destructive/20" },
+  };
+
   const statusColor = (s: string) => {
-    switch (s) {
-      case "paid": return "bg-emerald-500/15 text-emerald-700 border-emerald-200";
-      case "partial": return "bg-amber-500/15 text-amber-700 border-amber-200";
-      default: return "bg-destructive/10 text-destructive border-destructive/20";
-    }
+    const cfg = paymentBadgeConfig[s];
+    return cfg ? cfg.className : "bg-muted text-muted-foreground border-border";
   };
 
   const invoicesByEventId = invoices.reduce((acc: Record<string, any[]>, invoice: any) => {
@@ -469,8 +472,17 @@ export default function Bookings() {
             if (filteredEvents.length === 0) return (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Calendar className="mb-3 h-12 w-12 text-muted-foreground/30" />
-                  <p className="text-muted-foreground">{t.common.noData}</p>
+                  <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-violet/10 mb-4">
+                    <Calendar className="h-8 w-8 text-primary/40" />
+                  </div>
+                  <p className="font-medium text-foreground">{t.common.noData}</p>
+                  <p className="text-sm text-muted-foreground mt-1">No events match your filters</p>
+                  {canWrite && (
+                    <Button className="mt-5 gap-1.5" size="sm" onClick={openNew}>
+                      <Calendar className="h-4 w-4" />
+                      {b.newEvent}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -481,62 +493,67 @@ export default function Bookings() {
               <div className="space-y-3 md:hidden">
                 {filteredEvents.map((ev: any) => {
                   const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
+                  const badgeCfg = paymentBadgeConfig[eventPaymentStatus] || paymentBadgeConfig.unpaid;
                   return (
                   <Card key={ev.id} className="overflow-hidden animate-card-in card-interactive">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold">{(b.types as any)[ev.event_type] ?? ev.event_type}</p>
-                          <p className="text-sm text-muted-foreground">{ev.clients?.name ?? ev.client_name ?? "No client"}</p>
-                        </div>
-                        {showFinancialFields ? (
-                          <Badge variant="outline" className={statusColor(eventPaymentStatus)}>
-                            {(b.paymentStatus as any)[eventPaymentStatus]}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground text-xs">{b.date}</p>
-                          <p className="font-medium">{format(new Date(ev.event_date), "MMM d, yyyy")}</p>
-                          {ev.hebrew_date && <p className="text-xs text-muted-foreground">{ev.hebrew_date}</p>}
-                        </div>
-                        <div>
-                          {showFinancialFields ? (
-                            <>
-                              <p className="text-muted-foreground text-xs">{b.totalPrice}</p>
-                              <p className="font-semibold">${ev.total_price ?? 0}</p>
-                              {eventPaymentStatus !== "paid" && (Number(ev.total_price) || 0) > 0 && (
-                                <p className="text-xs text-amber-600">
-                                  Due: ${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}
-                                </p>
+                    <div className="divide-y divide-border/50">
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-sm truncate">{(b.types as any)[ev.event_type] ?? ev.event_type}</p>
+                              {showFinancialFields && (
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 font-medium ${badgeCfg.className}`}>
+                                  {badgeCfg.label}
+                                </Badge>
                               )}
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-muted-foreground text-xs">{b.status}</p>
-                              <p className="font-semibold">Assigned booking</p>
-                            </>
-                          )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{ev.clients?.name ?? ev.client_name ?? "No client"}</p>
+                          </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-muted-foreground text-xs">{b.date}</p>
+                            <p className="font-medium">{format(new Date(ev.event_date), "MMM d, yyyy")}</p>
+                            {ev.hebrew_date && <p className="text-xs text-muted-foreground mt-0.5">{ev.hebrew_date}</p>}
+                          </div>
+                          <div>
+                            {showFinancialFields ? (
+                              <>
+                                <p className="text-muted-foreground text-xs">{b.totalPrice}</p>
+                                <p className="font-semibold">${ev.total_price ?? 0}</p>
+                                {eventPaymentStatus !== "paid" && (Number(ev.total_price) || 0) > 0 && (
+                                  <p className="text-xs text-amber/70 mt-0.5">
+                                    Due: ${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-muted-foreground text-xs">{b.status}</p>
+                                <p className="font-semibold">Assigned booking</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {ev.venue && <p className="text-xs text-muted-foreground truncate">{ev.venue}</p>}
                       </div>
-                      {ev.venue && <p className="text-sm text-muted-foreground truncate">📍 {ev.venue}</p>}
-                      <div className="flex gap-2 pt-1">
-                        <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => setViewing(ev)}>
-                          <Eye className="mr-1.5 h-3.5 w-3.5" /> View
+                      <div className="flex gap-2 px-4 py-2.5">
+                        <Button variant="outline" size="sm" className="flex-1 h-9 text-xs gap-1" onClick={() => setViewing(ev)}>
+                          <Eye className="h-3.5 w-3.5" /> View
                         </Button>
                         {canWrite && (
-                          <>
-                            <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => openEdit(ev)}>
-                              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(ev.id)}>
-                              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                            </Button>
-                          </>
+                          <Button variant="outline" size="sm" className="flex-1 h-9 text-xs gap-1" onClick={() => openEdit(ev)}>
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </Button>
+                        )}
+                        {canWrite && (
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTargetId(ev.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 )})}
               </div>
@@ -562,7 +579,7 @@ export default function Bookings() {
                       {filteredEvents.map((ev: any) => {
                         const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
                         return (
-                        <TableRow key={ev.id} className="animate-row-in row-interactive">
+                        <TableRow key={ev.id} className="animate-row-in row-interactive group">
                           <TableCell className="whitespace-nowrap">{format(new Date(ev.event_date), "MMM d, yyyy")}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{ev.hebrew_date ?? "—"}</TableCell>
                           <TableCell>{(b.types as any)[ev.event_type] ?? ev.event_type}</TableCell>
@@ -582,7 +599,7 @@ export default function Bookings() {
                             </TableCell>
                           )}
                           <TableCell>
-                            <div className="flex gap-1 justify-end">
+                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setViewing(ev)}>
                                 <Eye className="mr-1.5 h-3.5 w-3.5" /> View
                               </Button>
@@ -592,11 +609,11 @@ export default function Bookings() {
                                     <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
                                   </Button>
                                   <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => openOrCreateInvoice(ev)}>
-                                    <FileText className="mr-1.5 h-3.5 w-3.5 text-primary" /> Invoice
+                                    <FileText className="mr-1.5 h-3.5 w-3.5" /> Invoice
                                   </Button>
                                   {showExpenses && (
                                     <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setExpenseDialogEvent(ev)}>
-                                      <DollarSign className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Expenses
+                                      <DollarSign className="mr-1.5 h-3.5 w-3.5" /> Expenses
                                     </Button>
                                   )}
                                   <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(ev.id)}>
