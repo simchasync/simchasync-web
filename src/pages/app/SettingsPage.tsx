@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
@@ -113,11 +113,37 @@ export default function SettingsPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const checkStripeStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("create-connect-account", {
+        body: { tenant_id: tenantId, action: "check_status" },
+      });
+      if (!error && data?.onboarded) {
+        refetchTenant();
+        toast({ title: s.stripeConnected + " ✓" });
+      }
+    } catch (error) {
+      console.error("Stripe status check failed:", error);
+    }
+  }, [tenantId, refetchTenant, s]);
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", {
+        body: { tenant_id: tenantId },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
   // Check Stripe Connect status on return from onboarding
   useEffect(() => {
     if (searchParams.get("stripe_return") === "true" && tenantId) {
       checkStripeStatus();
-      setSearchParams({}, { replace: true }); // Clear params to prevent re-trigger
+      setSearchParams({}, { replace: true });
     }
     if (searchParams.get("stripe_refresh") === "true" && tenantId) {
       toast({ title: "Please try connecting Stripe again", description: "The onboarding session expired or needs to be refreshed." });
@@ -138,31 +164,7 @@ export default function SettingsPage() {
         }
       });
     }
-  }, [searchParams, tenantId]);
-
-  const checkStripeStatus = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("create-connect-account", {
-        body: { tenant_id: tenantId, action: "check_status" },
-      });
-      if (!error && data?.onboarded) {
-        refetchTenant();
-        toast({ title: s.stripeConnected + " ✓" });
-      }
-    } catch {}
-  };
-
-  const handleManageSubscription = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: { tenant_id: tenantId },
-      });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
+  }, [searchParams, setSearchParams, tenantId, checkStripeStatus, pollUntilSubscribed, queryClient, refreshSubscription]);
 
   useEffect(() => {
     if (profile) {

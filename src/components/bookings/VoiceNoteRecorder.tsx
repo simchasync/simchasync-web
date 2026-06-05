@@ -35,7 +35,7 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
     } catch {
       toast({ title: "Microphone access denied", variant: "destructive" });
     }
-  }, [eventId]);
+  }, [upload]);
 
   const stop = useCallback(() => {
     mediaRecorder.current?.stop();
@@ -43,7 +43,7 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
-  const upload = async (blob: Blob) => {
+  const upload = useCallback(async (blob: Blob) => {
     const path = `${eventId}/${crypto.randomUUID()}.webm`;
     const { error: upErr } = await supabase.storage.from("event-files").upload(path, blob, { contentType: "audio/webm" });
     if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); return; }
@@ -56,7 +56,7 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
     if (dbErr) { toast({ title: "Save failed", description: dbErr.message, variant: "destructive" }); return; }
     toast({ title: "Voice note saved" });
     onUploaded();
-  };
+  }, [eventId, onUploaded]);
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 

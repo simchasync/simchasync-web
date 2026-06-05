@@ -13,9 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAdminRole } from "@/hooks/useAdminRole";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", { body: { action, ...body } });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 export default function AdminUsers() {
   const qc = useQueryClient();

@@ -8,11 +8,7 @@ import {
 import { Loader2, Shield } from "lucide-react";
 import { format } from "date-fns";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", {
-    body: { action, ...body },
-  });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 const ACTION_COLORS: Record<string, string> = {
   extend_trial: "bg-amber-500/10 text-amber-700 border-amber-200",

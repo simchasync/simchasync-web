@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function getAppUrl(): string {
+  return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
+}
+
+function getResendFrom(): string {
+  return Deno.env.get("RESEND_FROM") ?? "SimchaSync <onboarding@resend.dev>";
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -22,7 +30,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- Auth check: require a valid JWT ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -34,7 +41,6 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
-    // Create a client scoped to the calling user for auth verification
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -49,12 +55,10 @@ Deno.serve(async (req: Request) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    // Service-role client for data lookups
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { type, tenant_id, event_id, invoice_id } = await req.json();
 
-    // --- tenant_id is required ---
     if (!tenant_id) {
       return new Response(JSON.stringify({ error: "tenant_id is required" }), {
         status: 400,
@@ -62,7 +66,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- Verify calling user is an internal member (owner/booking_manager/social_media_manager) of this tenant ---
     const { data: memberCheck } = await supabase
       .from("tenant_members")
       .select("role")
@@ -79,7 +82,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- Determine recipient: always from tenant data, never from client input ---
     let toEmail: string | null = null;
     const { data: ownerMember } = await supabase
       .from("tenant_members")
@@ -104,10 +106,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- Build email from server-side templates only (no client-supplied subject/body) ---
     let emailSubject = "SimchaSync Notification";
     let emailHtml = "";
-    const appUrl = "https://simchasync-web.vercel.app";
+    const appUrl = getAppUrl();
 
     switch (type) {
       case "booking_created": {
@@ -185,7 +186,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "SimchaSync <onboarding@resend.dev>",
+        from: getResendFrom(),
         to: toEmail,
         subject: emailSubject,
         html: emailHtml,

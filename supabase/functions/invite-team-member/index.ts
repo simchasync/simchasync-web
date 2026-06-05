@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +8,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FALLBACK_APP_ORIGIN = "https://id-preview--d0c4f6a4-4f55-4082-83e5-75fea084594c.lovable.app";
+function getFallbackAppOrigin(): string {
+  return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
+}
 
 type InviteRole = "owner" | "booking_manager" | "social_media_manager" | "member";
 
@@ -27,11 +30,11 @@ function resolveAppOrigin(req: Request) {
     try {
       return new URL(referer).origin;
     } catch {
-      return FALLBACK_APP_ORIGIN;
+      return getFallbackAppOrigin();
     }
   }
 
-  return FALLBACK_APP_ORIGIN;
+  return getFallbackAppOrigin();
 }
 
 async function sendExistingUserLoginEmail({

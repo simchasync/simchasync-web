@@ -1,5 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

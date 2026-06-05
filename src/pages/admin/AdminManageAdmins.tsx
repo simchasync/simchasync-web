@@ -16,11 +16,7 @@ import { UserCog, Plus, Trash2, Loader2, Search, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", {
-    body: { action, ...body },
-  });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 const ROLE_INFO: Record<string, { label: string; description: string }> = {
   admin: { label: "Admin (Owner)", description: "Full system access" },

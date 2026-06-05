@@ -1,20 +1,15 @@
-// @ts-nocheck
+/// <reference path="../_shared/deno-runtime.d.ts" />
 /**
  * Supabase "Send email" auth hook (Standard Webhooks + Resend).
- * Replace any Lovable-specific hook URL in the dashboard with this function's URL.
  *
- * Secrets: RESEND_API_KEY, SEND_EMAIL_HOOK_SECRET (from Auth > Hooks when you generate the secret),
- *         SUPABASE_URL (usually injected automatically on deploy).
- * Optional: RESEND_FROM (default SimchaSync <onboarding@resend.dev> — use a verified domain in production)
- *
- * Deploy: supabase functions deploy send-auth-email --no-verify-jwt
+ * Secrets: RESEND_API_KEY, SEND_EMAIL_HOOK_SECRET, SUPABASE_URL
+ * Optional: RESEND_FROM, APP_URL (default simchasync-web.vercel.app), SITE_NAME (default SimchaSync)
  */
-/// <reference lib="deno.window" />
-// @ts-ignore - Deno runtime types
+// @ts-expect-error - Deno runtime module resolution
 import * as React from "npm:react@18.3.1";
-// @ts-ignore - External module
+// @ts-expect-error - External module
 import { renderAsync } from "npm:@react-email/components@0.0.22";
-// @ts-ignore - External module
+// @ts-expect-error - External module
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 import { SignupEmail } from "../_shared/email-templates/signup.tsx";
@@ -24,7 +19,13 @@ import { RecoveryEmail } from "../_shared/email-templates/recovery.tsx";
 import { EmailChangeEmail } from "../_shared/email-templates/email-change.tsx";
 import { ReauthenticationEmail } from "../_shared/email-templates/reauthentication.tsx";
 
-const SITE = "SimchaSync";
+function getSiteName(): string {
+  return Deno.env.get("SITE_NAME") ?? "SimchaSync";
+}
+
+function getAppUrl(): string {
+  return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -65,8 +66,7 @@ function buildVerifyUrl(supabaseUrl: string, data: EmailData): string {
   const u = new URL(`${base}/auth/v1/verify`);
   u.searchParams.set("token", data.token_hash);
   u.searchParams.set("type", data.email_action_type);
-  // Always redirect to Vercel app after email confirmation
-  u.searchParams.set("redirect_to", "https://simchasync-web.vercel.app");
+  u.searchParams.set("redirect_to", getAppUrl());
   return u.toString();
 }
 
@@ -89,12 +89,13 @@ async function sendResend(
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) throw new Error("RESEND_API_KEY is not set");
 
-  const from = Deno.env.get("RESEND_FROM") ?? `SimchaSync <onboarding@resend.dev>`;
+  const siteName = getSiteName();
+  const fromDomain = Deno.env.get("RESEND_FROM") ?? `${siteName} <onboarding@resend.dev>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: fromDomain, to: [to], subject, html, text }),
   });
   if (!res.ok) {
     const errBody = await res.text();
@@ -102,7 +103,6 @@ async function sendResend(
   }
 }
 
-// @ts-ignore - Deno runtime
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: cors });
@@ -152,6 +152,7 @@ Deno.serve(async (req: Request) => {
   const siteUrl = emailData.site_url || emailData.redirect_to || supabaseUrl;
   const recipientName = (user.user_metadata?.full_name as string) || email.split("@")[0] || "there";
   const confirmation = buildVerifyUrl(supabaseUrl, emailData);
+  const siteName = getSiteName();
 
   try {
     if (action === "signup") {
@@ -163,7 +164,7 @@ Deno.serve(async (req: Request) => {
       }
       const html = await renderAsync(
         React.createElement(SignupEmail, {
-          siteName: SITE,
+          siteName,
           siteUrl: siteUrlDisplay,
           recipient: email,
           confirmationUrl: confirmation,
@@ -171,7 +172,7 @@ Deno.serve(async (req: Request) => {
       );
       const text = await renderAsync(
         React.createElement(SignupEmail, {
-          siteName: SITE,
+          siteName,
           siteUrl: siteUrlDisplay,
           recipient: email,
           confirmationUrl: confirmation,
@@ -181,33 +182,33 @@ Deno.serve(async (req: Request) => {
       await sendResend(email, subject, html, text);
     } else if (action === "recovery") {
       const html = await renderAsync(
-        React.createElement(RecoveryEmail, { siteName: SITE, confirmationUrl: confirmation }),
+        React.createElement(RecoveryEmail, { siteName, confirmationUrl: confirmation }),
       );
       const text = await renderAsync(
-        React.createElement(RecoveryEmail, { siteName: SITE, confirmationUrl: confirmation }),
+        React.createElement(RecoveryEmail, { siteName, confirmationUrl: confirmation }),
         { plainText: true },
       );
       await sendResend(email, subject, html, text);
     } else if (action === "magiclink" || action === "email") {
       const html = await renderAsync(
-        React.createElement(MagicLinkEmail, { siteName: SITE, confirmationUrl: confirmation }),
+        React.createElement(MagicLinkEmail, { siteName, confirmationUrl: confirmation }),
       );
       const text = await renderAsync(
-        React.createElement(MagicLinkEmail, { siteName: SITE, confirmationUrl: confirmation }),
+        React.createElement(MagicLinkEmail, { siteName, confirmationUrl: confirmation }),
         { plainText: true },
       );
       await sendResend(email, subject, html, text);
     } else if (action === "invite") {
       const html = await renderAsync(
         React.createElement(InviteEmail, {
-          siteName: SITE,
+          siteName,
           siteUrl,
           confirmationUrl: confirmation,
         }),
       );
       const text = await renderAsync(
         React.createElement(InviteEmail, {
-          siteName: SITE,
+          siteName,
           siteUrl,
           confirmationUrl: confirmation,
         }),
@@ -229,7 +230,7 @@ Deno.serve(async (req: Request) => {
       const displayNew = user.new_email || email;
       const html = await renderAsync(
         React.createElement(EmailChangeEmail, {
-          siteName: SITE,
+          siteName,
           email: displayOld,
           newEmail: displayNew,
           confirmationUrl: conf,
@@ -237,7 +238,7 @@ Deno.serve(async (req: Request) => {
       );
       const text = await renderAsync(
         React.createElement(EmailChangeEmail, {
-          siteName: SITE,
+          siteName,
           email: displayOld,
           newEmail: displayNew,
           confirmationUrl: conf,

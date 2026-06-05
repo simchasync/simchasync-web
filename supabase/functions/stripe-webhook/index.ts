@@ -1,5 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+import { getPlanFromPrice } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -94,6 +96,7 @@ async function syncSubscriptionToTenant(
   const override = await isManualOverride(supabase, tenantId);
   const item = subscription.items.data[0];
   const mrrCents = item ? (item.price.unit_amount || 0) : 0;
+  const plan = subscription.status === "active" ? getPlanFromPrice(item?.price.unit_amount || 0) : null;
 
   await supabase
     .from("workspace_subscriptions")
@@ -102,9 +105,7 @@ async function syncSubscriptionToTenant(
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
-      plan_id: subscription.status === "active"
-        ? ((item?.price.unit_amount || 0) <= 6099 ? "lite" : "full")
-        : null,
+      plan_id: plan,
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       workspace_limits: subscription.status === "active"
         ? null
@@ -138,9 +139,7 @@ async function syncSubscriptionToTenant(
       stripe_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       stripe_mrr_cents: mrrCents,
       last_synced_at: new Date().toISOString(),
-      plan: subscription.status === "active"
-        ? ((item?.price.unit_amount || 0) <= 6099 ? "lite" : "full")
-        : "none",
+      plan: plan ?? "none",
     })
     .eq("id", tenantId);
 

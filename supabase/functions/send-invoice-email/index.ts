@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,6 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function getResendFrom(): string {
+  return Deno.env.get("RESEND_FROM") ?? "SimchaSync <no-reply@simchasync.com>";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -185,7 +190,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${workspaceName} via SimchaSync <no-reply@simchasync.com>`,
+        from: getResendFrom(),
         to: [to_email],
         subject: `Invoice from ${workspaceName} — $${amount}`,
         html,

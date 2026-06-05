@@ -320,7 +320,7 @@ export default function Bookings() {
         setSearchParams({}, { replace: true });
       }
     }
-  }, [searchParams, events]);
+  }, [searchParams, setSearchParams, events]);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setTiming(emptyTiming); setDialogOpen(true); };
   const openEdit = (ev: any) => {

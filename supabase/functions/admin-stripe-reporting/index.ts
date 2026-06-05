@@ -1,5 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+import { getPlanFromPrice } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,9 +81,8 @@ Deno.serve(async (req) => {
     const revenueByPlan: Record<string, number> = { lite: 0, full: 0, other: 0 };
     for (const sub of subscriptions) {
       const amount = sub.items.data[0]?.price.unit_amount || 0;
-      if (amount <= 6099) revenueByPlan.lite += amount;
-      else if (amount <= 9099) revenueByPlan.full += amount;
-      else revenueByPlan.other += amount;
+      const plan = getPlanFromPrice(amount);
+      revenueByPlan[plan] = (revenueByPlan[plan] || 0) + amount;
     }
 
     const newSubs: Stripe.Subscription[] = [];

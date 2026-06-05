@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -30,11 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", {
-    body: { action, ...body },
-  });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 const PLAN_PRICES: Record<string, string> = {
   trial: "Trial",
@@ -112,11 +108,11 @@ export default function AdminTenants() {
   const [filterStripeStatus, setFilterStripeStatus] = useState("all");
 
   // Debounced search
-  const debounceTimer = useState<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = useCallback((val: string) => {
     setSearch(val);
-    if (debounceTimer[0]) clearTimeout(debounceTimer[0]);
-    debounceTimer[0] = setTimeout(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(val);
       setPage(1);
     }, 400);

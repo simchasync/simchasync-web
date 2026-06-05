@@ -24,11 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { format, addDays, isBefore } from "date-fns";
 import { useState } from "react";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", {
-    body: { action, ...body },
-  });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 export default function AdminBilling() {
   const queryClient = useQueryClient();

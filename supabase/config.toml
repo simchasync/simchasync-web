@@ -12,6 +12,35 @@ verify_jwt = false
 [functions.invite-team-member]
 verify_jwt = false
 
+# Stripe webhook: called by Stripe with webhook signature, no Supabase JWT
+[functions.stripe-webhook]
+verify_jwt = false
+
 # Auth "Send email" hook: Supabase calls this without a user JWT (Standard Webhooks only)
 [functions.send-auth-email]
+verify_jwt = false
+
+[functions.calendar-export]
+verify_jwt = false
+
+[functions.google-places-autocomplete]
+verify_jwt = false
+
+# Admin split functions — each verifies auth internally via Bearer token
+[functions.admin-tenants]
+verify_jwt = false
+
+[functions.admin-billing]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.admin-roles]
+verify_jwt = false
+
+[functions.admin-support]
+verify_jwt = false
+
+[functions.admin-audit]
 verify_jwt = false

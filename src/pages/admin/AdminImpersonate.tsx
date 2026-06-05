@@ -12,11 +12,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", {
-    body: { action, ...body },
-  });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 export default function AdminImpersonate() {
   const { tenantId } = useParams<{ tenantId: string }>();

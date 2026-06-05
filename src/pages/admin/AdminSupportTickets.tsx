@@ -13,9 +13,7 @@ import { Loader2, MessageSquare, Send, ChevronLeft, ChevronRight } from "lucide-
 import { toast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 
-function adminAction(action: string, body: Record<string, any>) {
-  return supabase.functions.invoke("admin-manage-tenant", { body: { action, ...body } });
-}
+import { adminAction } from "@/lib/admin-functions";
 
 const STATUS_COLORS: Record<string, string> = {
   open: "bg-blue-500/15 text-blue-700 border-blue-200",

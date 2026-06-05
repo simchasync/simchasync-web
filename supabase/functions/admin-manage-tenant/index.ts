@@ -1,5 +1,14 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+import { ONE_YEAR_MS, BAN_DURATION_HOURS, getPlanFromPrice } from "../_shared/pricing.ts";
+
+type JsonMap = Record<string, unknown>;
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return typeof err === "string" ? err : "Unknown error";
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +23,7 @@ async function auditLog(
   action: string,
   targetTenantId?: string,
   targetUserId?: string,
-  details?: Record<string, any>
+  details?: JsonMap,
 ) {
   await adminClient.from("admin_audit_logs").insert({
     admin_user_id: adminUserId,
@@ -28,7 +37,7 @@ async function auditLog(
 // Helper: given tenant_members rows, enrich with profile data
 async function enrichMembersWithProfiles(adminClient: any, members: any[]) {
   if (!members || members.length === 0) return [];
-  const userIds = [...new Set(members.map((m: any) => m.user_id))];
+  const userIds = [...new Set(members.map((m) => m.user_id))];
   const { data: profiles } = await adminClient
     .from("profiles")
     .select("user_id, full_name, email, avatar_url")
@@ -37,7 +46,7 @@ async function enrichMembersWithProfiles(adminClient: any, members: any[]) {
   for (const p of (profiles || [])) {
     profileMap[p.user_id] = p;
   }
-  return members.map((m: any) => ({
+  return members.map((m) => ({
     ...m,
     profiles: profileMap[m.user_id] || null,
   }));
@@ -46,7 +55,7 @@ async function enrichMembersWithProfiles(adminClient: any, members: any[]) {
 // Helper: given user_roles rows, enrich with profile data
 async function enrichRolesWithProfiles(adminClient: any, roles: any[]) {
   if (!roles || roles.length === 0) return [];
-  const userIds = [...new Set(roles.map((r: any) => r.user_id))];
+  const userIds = [...new Set(roles.map((r) => r.user_id))];
   const { data: profiles } = await adminClient
     .from("profiles")
     .select("user_id, full_name, email")
@@ -55,7 +64,7 @@ async function enrichRolesWithProfiles(adminClient: any, roles: any[]) {
   for (const p of (profiles || [])) {
     profileMap[p.user_id] = p;
   }
-  return roles.map((r: any) => ({
+  return roles.map((r) => ({
     ...r,
     profiles: profileMap[r.user_id] || null,
   }));
@@ -64,7 +73,7 @@ async function enrichRolesWithProfiles(adminClient: any, roles: any[]) {
 // Helper: given audit_logs rows, enrich with profile data
 async function enrichLogsWithProfiles(adminClient: any, logs: any[]) {
   if (!logs || logs.length === 0) return [];
-  const userIds = [...new Set(logs.map((l: any) => l.admin_user_id))];
+  const userIds = [...new Set(logs.map((l) => l.admin_user_id))];
   const { data: profiles } = await adminClient
     .from("profiles")
     .select("user_id, full_name, email")
@@ -73,13 +82,13 @@ async function enrichLogsWithProfiles(adminClient: any, logs: any[]) {
   for (const p of (profiles || [])) {
     profileMap[p.user_id] = p;
   }
-  return logs.map((l: any) => ({
+  return logs.map((l) => ({
     ...l,
     profiles: profileMap[l.admin_user_id] || null,
   }));
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -115,7 +124,7 @@ Deno.serve(async (req) => {
       .select("role")
       .eq("user_id", userId);
 
-    const userRoles = (roles || []).map((r: any) => r.role);
+    const userRoles = (roles || []).map((r: { role: string }) => r.role);
     const isAdmin = userRoles.includes("admin");
     const isBillingAdmin = userRoles.includes("billing_admin");
     const isSupportAgent = userRoles.includes("support_agent");
@@ -305,7 +314,7 @@ Deno.serve(async (req) => {
 
         if (plan !== "trial") {
           updatePayload.stripe_subscription_status = "active";
-          updatePayload.stripe_current_period_end = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+          updatePayload.stripe_current_period_end = new Date(Date.now() + ONE_YEAR_MS).toISOString();
         } else {
           updatePayload.stripe_subscription_status = null;
           updatePayload.stripe_current_period_end = null;
@@ -389,7 +398,7 @@ Deno.serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        const { error } = await adminClient.auth.admin.updateUser(target_user_id, {
+        const { error } = await adminClient.auth.admin.updateUserById(target_user_id, {
           password: new_password,
         });
         if (error) throw error;
@@ -792,7 +801,7 @@ Deno.serve(async (req) => {
             .in("user_id", userIds);
 
           const tenantIds = [...new Set((memberships || []).map((m: any) => m.tenant_id))];
-          let tenantMap: Record<string, any> = {};
+          const tenantMap: Record<string, any> = {};
           if (tenantIds.length > 0) {
             const { data: tenants } = await adminClient
               .from("tenants")
@@ -836,12 +845,12 @@ Deno.serve(async (req) => {
           });
         }
         if (ban) {
-          const { error } = await adminClient.auth.admin.updateUser(target_user_id, {
-            ban_duration: "876000h", // ~100 years
+          const { error } = await adminClient.auth.admin.updateUserById(target_user_id, {
+            ban_duration: BAN_DURATION_HOURS,
           });
           if (error) throw error;
         } else {
-          const { error } = await adminClient.auth.admin.updateUser(target_user_id, {
+          const { error } = await adminClient.auth.admin.updateUserById(target_user_id, {
             ban_duration: "none",
           });
           if (error) throw error;
@@ -896,7 +905,7 @@ Deno.serve(async (req) => {
 
         // Enrich with profile data manually (no FK from support_tickets.user_id to profiles)
         const ticketUserIds = [...new Set((data || []).map((t: any) => t.user_id))];
-        let profileMap: Record<string, any> = {};
+        const profileMap: Record<string, any> = {};
         if (ticketUserIds.length > 0) {
           const { data: profiles } = await adminClient
             .from("profiles")
@@ -937,7 +946,7 @@ Deno.serve(async (req) => {
 
         // Enrich replies with profile data manually
         const replyUserIds = [...new Set((data || []).map((r: any) => r.user_id))];
-        let replyProfileMap: Record<string, any> = {};
+        const replyProfileMap: Record<string, any> = {};
         if (replyUserIds.length > 0) {
           const { data: profiles } = await adminClient
             .from("profiles")
@@ -1043,9 +1052,10 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
-  } catch (err: any) {
-    console.error("[ADMIN] Error:", err.message);
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
+    console.error("[ADMIN] Error:", message);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

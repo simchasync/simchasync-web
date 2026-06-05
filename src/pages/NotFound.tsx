@@ -14,7 +14,7 @@ export default function NotFound() {
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
+       
       console.warn("404:", location.pathname);
     }
   }, [location.pathname]);

@@ -1,4 +1,8 @@
-/** @deprecated for Supabase: use `send-auth-email` (Standard Webhooks + Resend). Lovable-only. */
+/// <reference path="../_shared/deno-runtime.d.ts" />
+/**
+ * @deprecated for Supabase: use `send-auth-email` (Standard Webhooks + Resend). Lovable-only.
+ * Preview endpoint is only enabled when AUTH_EMAIL_HOOK_PREVIEW_KEY is set.
+ */
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { sendLovableEmail, parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
@@ -14,6 +18,26 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, x-lovable-signature, x-lovable-timestamp, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+}
+
+function getSiteName(): string {
+  return Deno.env.get("SITE_NAME") ?? "simcha-sync-hub"
+}
+
+function getSenderDomain(): string {
+  return Deno.env.get("SENDER_DOMAIN") ?? "notify.simchasync.com"
+}
+
+function getRootDomain(): string {
+  return Deno.env.get("ROOT_DOMAIN") ?? "simchasync.com"
+}
+
+function getFromDomain(): string {
+  return Deno.env.get("FROM_DOMAIN") ?? "simchasync.com"
+}
+
+function getAppUrl(): string {
+  return Deno.env.get("APP_URL") ?? "https://simcha-sync-hub.lovable.app"
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
@@ -34,35 +58,30 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   reauthentication: ReauthenticationEmail,
 }
 
-const SITE_NAME = "simcha-sync-hub"
-const SENDER_DOMAIN = "notify.simchasync.com"
-const ROOT_DOMAIN = "simchasync.com"
-const FROM_DOMAIN = "simchasync.com"
-
 const SAMPLE_PROJECT_URL = "https://simcha-sync-hub.lovable.app"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
-    siteName: SITE_NAME,
+    siteName: getSiteName(),
     siteUrl: SAMPLE_PROJECT_URL,
     recipient: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
   },
   magiclink: {
-    siteName: SITE_NAME,
+    siteName: getSiteName(),
     confirmationUrl: SAMPLE_PROJECT_URL,
   },
   recovery: {
-    siteName: SITE_NAME,
+    siteName: getSiteName(),
     confirmationUrl: SAMPLE_PROJECT_URL,
   },
   invite: {
-    siteName: SITE_NAME,
+    siteName: getSiteName(),
     siteUrl: SAMPLE_PROJECT_URL,
     confirmationUrl: SAMPLE_PROJECT_URL,
   },
   email_change: {
-    siteName: SITE_NAME,
+    siteName: getSiteName(),
     email: SAMPLE_EMAIL,
     newEmail: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
@@ -82,10 +101,17 @@ async function handlePreview(req: Request): Promise<Response> {
     return new Response(null, { headers: previewCorsHeaders })
   }
 
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  const previewKey = Deno.env.get('AUTH_EMAIL_HOOK_PREVIEW_KEY')
+  if (!previewKey) {
+    return new Response(JSON.stringify({ error: 'Preview endpoint is disabled' }), {
+      status: 404,
+      headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   const authHeader = req.headers.get('Authorization')
 
-  if (!apiKey || authHeader !== `Bearer ${apiKey}`) {
+  if (authHeader !== `Bearer ${previewKey}`) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
@@ -205,9 +231,12 @@ async function handleWebhook(req: Request): Promise<Response> {
     )
   }
 
+  const siteName = getSiteName()
+  const rootDomain = getRootDomain()
+
   const templateProps = {
-    siteName: SITE_NAME,
-    siteUrl: `https://${ROOT_DOMAIN}`,
+    siteName,
+    siteUrl: `https://${rootDomain}`,
     recipient: payload.data.email,
     confirmationUrl: payload.data.url,
     token: payload.data.token,
@@ -229,14 +258,16 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
+  const fromDomain = getFromDomain()
+
   let result: { message_id?: string }
   try {
     result = await sendLovableEmail(
       {
         run_id,
         to: payload.data.email,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
+        from: `${siteName} <noreply@${fromDomain}>`,
+        sender_domain: getSenderDomain(),
         subject: EMAIL_SUBJECTS[emailType] || 'Notification',
         html,
         text,

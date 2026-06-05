@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,18 @@ const slugify = (input: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
+
+function getWorkspaceLimits() {
+  const raw = Deno.env.get("WORKSPACE_LIMITS_CONFIG");
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      console.warn("[ensure-user-onboarding] Invalid WORKSPACE_LIMITS_CONFIG, using defaults");
+    }
+  }
+  return { maxWorkspaces: 1, features: ["stripe_connect", "social_media", "expenses_profit"] };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -123,6 +136,8 @@ Deno.serve(async (req) => {
         if (ownerInsertError) throw ownerInsertError;
       }
 
+      const workspaceLimits = getWorkspaceLimits();
+
       await admin.from("workspace_subscriptions").upsert(
         {
           workspace_id: createdTenant.id,
@@ -130,7 +145,7 @@ Deno.serve(async (req) => {
           plan_id: "trial",
           subscription_status: "trial",
           features_locked: false,
-          workspace_limits: { maxWorkspaces: 1, features: ["stripe_connect", "social_media", "expenses_profit"] },
+          workspace_limits: workspaceLimits,
         },
         { onConflict: "workspace_id" }
       );

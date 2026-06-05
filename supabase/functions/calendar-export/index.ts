@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +18,11 @@ function escapeICS(str: string): string {
   });
 }
 
-Deno.serve(async (req) => {
+function getSiteName(): string {
+  return Deno.env.get("SITE_NAME") ?? "SimchaSync";
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -52,10 +57,12 @@ Deno.serve(async (req) => {
       .eq("tenant_id", tenantId)
       .order("event_date", { ascending: true });
 
+    const siteName = getSiteName();
+
     const lines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//SimchaSync//Calendar//EN",
+      `PRODID:-//${siteName}//Calendar//EN`,
       `X-WR-CALNAME:${escapeICS(tenant.name)}`,
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
@@ -70,7 +77,7 @@ Deno.serve(async (req) => {
       const summary = `${ev.event_type}${ev.clients?.name ? ` — ${ev.clients.name}` : ""}`;
 
       lines.push("BEGIN:VEVENT");
-      lines.push(`UID:${ev.id}@simchasync`);
+      lines.push(`UID:${ev.id}@${siteName.toLowerCase()}`);
       lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
       lines.push(`DTEND;VALUE=DATE:${dtEnd}`);
       lines.push(`SUMMARY:${escapeICS(summary)}`);

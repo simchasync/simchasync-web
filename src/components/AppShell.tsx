@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
@@ -40,14 +40,25 @@ export default function AppShell() {
   const { role } = useUserRole();
   const { trialExpired, subscribed, loading: subLoading, workspaceActive, plan } = useSubscription();
 
-  const filteredNavItems = allNavItems.filter(
-    (item) => !role || (item.roles as readonly string[]).includes(role)
+  const filteredNavItems = useMemo(
+    () => allNavItems.filter(
+      (item) => !role || (item.roles as readonly string[]).includes(role)
+    ),
+    [role]
   );
-  const navItems = workspaceActive ? filteredNavItems : [];
+  const navItems = useMemo(
+    () => workspaceActive ? filteredNavItems : [],
+    [workspaceActive, filteredNavItems]
+  );
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const isActive = useCallback((path: string) => {
+    if (path === "/app") return location.pathname === "/app";
+    return location.pathname.startsWith(path);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth/login");
@@ -60,7 +71,7 @@ export default function AppShell() {
     if (!currentAllowed && navItems[0]) {
       navigate(navItems[0].path, { replace: true });
     }
-  }, [role, location.pathname, navItems, navigate]);
+  }, [role, location.pathname, navItems, navigate, isActive]);
 
   useEffect(() => {
     if (subLoading) return;
@@ -79,11 +90,6 @@ export default function AppShell() {
   }
 
   if (!user) return null;
-
-  const isActive = (path: string) => {
-    if (path === "/app") return location.pathname === "/app";
-    return location.pathname.startsWith(path);
-  };
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">

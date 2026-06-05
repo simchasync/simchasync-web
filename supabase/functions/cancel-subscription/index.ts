@@ -1,5 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+/// <reference path="../_shared/deno-runtime.d.ts" />
+import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,18 @@ const logStep = (step: string, details?: any) => {
   const d = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[cancel-subscription] ${step}${d}`);
 };
+
+function getAdminEmail(): string {
+  return Deno.env.get("ADMIN_EMAIL") ?? "admin@simchasync.com";
+}
+
+function getResendFrom(): string {
+  return Deno.env.get("RESEND_FROM") ?? "SimchaSync <noreply@simchasync.com>";
+}
+
+function getAppUrl(): string {
+  return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -68,6 +81,12 @@ Deno.serve(async (req) => {
         stripe_subscription_status: "canceling",
         last_synced_at: new Date().toISOString(),
       }).eq("id", tenant_id);
+
+      await supabase.from("workspace_subscriptions").upsert({
+        workspace_id: tenant_id,
+        subscription_status: "canceling",
+        features_locked: false,
+      }, { onConflict: "workspace_id" });
 
       await supabase.from("cancellation_feedback").insert({
         tenant_id,
@@ -158,11 +177,11 @@ async function sendAdminEmail(
     return;
   }
 
-  const adminEmail = "admin@simchasync.com";
+  const adminEmail = getAdminEmail();
 
   const outcomeLabel = outcome === "accepted_offer"
-    ? "✅ Accepted Retention Offer (50% off for 2 months)"
-    : "❌ Canceled Subscription";
+    ? "Accepted Retention Offer (50% off for 2 months)"
+    : "Canceled Subscription";
 
   const html = `
     <h2>Cancellation Feedback</h2>
@@ -182,7 +201,7 @@ async function sendAdminEmail(
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: "SimchaSync <noreply@simchasync.com>",
+        from: getResendFrom(),
         to: [adminEmail],
         subject: `[Cancellation] ${tenant.name} — ${outcome === "accepted_offer" ? "Accepted Offer" : "Canceled"}`,
         html,

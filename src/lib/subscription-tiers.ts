@@ -50,6 +50,12 @@ export function getTierFromProductId(productId: string | null, priceId?: string 
   return null;
 }
 
+export const TRIAL_DAYS = 30;
+
+export function getTrialDays(): number {
+  return TRIAL_DAYS;
+}
+
 export function canAccessFeature(
   plan: string,
   tier: SubscriptionTier,
