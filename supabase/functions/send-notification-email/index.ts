@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -7,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
     // --- Build email from server-side templates only (no client-supplied subject/body) ---
     let emailSubject = "SimchaSync Notification";
     let emailHtml = "";
-    const appUrl = "https://id-preview--d0c4f6a4-4f55-4082-83e5-75fea084594c.lovable.app";
+    const appUrl = "https://simchasync-web.vercel.app";
 
     switch (type) {
       case "booking_created": {
