@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase "Send email" auth hook (Standard Webhooks + Resend).
  * Replace any Lovable-specific hook URL in the dashboard with this function's URL.
@@ -8,8 +9,12 @@
  *
  * Deploy: supabase functions deploy send-auth-email --no-verify-jwt
  */
+/// <reference lib="deno.window" />
+// @ts-ignore - Deno runtime types
 import * as React from "npm:react@18.3.1";
+// @ts-ignore - External module
 import { renderAsync } from "npm:@react-email/components@0.0.22";
+// @ts-ignore - External module
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 import { SignupEmail } from "../_shared/email-templates/signup.tsx";
@@ -60,7 +65,8 @@ function buildVerifyUrl(supabaseUrl: string, data: EmailData): string {
   const u = new URL(`${base}/auth/v1/verify`);
   u.searchParams.set("token", data.token_hash);
   u.searchParams.set("type", data.email_action_type);
-  if (data.redirect_to) u.searchParams.set("redirect_to", data.redirect_to);
+  // Always redirect to Vercel app after email confirmation
+  u.searchParams.set("redirect_to", "https://simchasync-web.vercel.app");
   return u.toString();
 }
 
@@ -96,7 +102,8 @@ async function sendResend(
   }
 }
 
-Deno.serve(async (req) => {
+// @ts-ignore - Deno runtime
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: cors });
   }
