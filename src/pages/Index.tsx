@@ -1,224 +1,411 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Link } from "react-router-dom";
-import { Navigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, Navigate } from "react-router-dom";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import {
   Calendar, Users, FileText, CreditCard, Share2, Globe,
-  Check, Star, ArrowRight, Music, Sparkles
+  Check, Star, ArrowRight, Music, Sparkles, ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const featureIcons = [Calendar, Users, FileText, CreditCard, Share2, Globe];
+// ─── Animation helpers ────────────────────────────────────────────────────────
+
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const },
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.6, ease: EASE },
   }),
 };
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+// ─── Feature metadata ─────────────────────────────────────────────────────────
+
+const featureIcons = [Calendar, Users, FileText, CreditCard, Share2, Globe];
+
+// ─── Reusable section wrapper ─────────────────────────────────────────────────
+
+function AnimatedSection({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      variants={staggerContainer}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ─── Section label ────────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.p
+      variants={fadeUp}
+      className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/70"
+    >
+      {children}
+    </motion.p>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Index() {
   const { t } = useLanguage();
   const { user, loading } = useAuth();
   const l = t.landing;
 
-  if (!loading && user) {
-    return <Navigate to="/app" replace />;
-  }
+  if (!loading && user) return <Navigate to="/app" replace />;
 
   return (
-    <div className="min-h-screen bg-gradient-navy text-secondary-foreground">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-secondary/30 bg-navy/80 backdrop-blur-xl">
-        <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Music className="h-7 w-7 text-primary" />
-            <span className="font-display text-xl font-bold text-primary">SimchaSync</span>
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      {/* ── Navigation ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="container flex h-16 items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/15">
+              <Music className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-display text-[17px] font-semibold tracking-tight">
+              SimchaSync
+            </span>
           </Link>
-          <div className="hidden items-center gap-4 md:flex">
-            <ThemeToggle variant="icon" className="hover:bg-secondary/50" />
-            <a href="#features" className="text-sm text-secondary-foreground/70 hover:text-primary transition-colors">{l.nav.features}</a>
-            <a href="#pricing" className="text-sm text-secondary-foreground/70 hover:text-primary transition-colors">{l.nav.pricing}</a>
+
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-1 md:flex">
+            {(["features", "pricing"] as const).map((id) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {l.nav[id as keyof typeof l.nav]}
+              </a>
+            ))}
+          </nav>
+
+          {/* Auth actions */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle variant="icon" className="hover:bg-accent" />
             <Link to="/auth/login">
-              <Button variant="ghost" size="sm" className="text-secondary-foreground/70 hover:text-primary">{l.nav.login}</Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden text-muted-foreground hover:text-foreground md:inline-flex"
+              >
+                {l.nav.login}
+              </Button>
             </Link>
             <Link to="/auth/register">
-              <Button size="sm" className="bg-gradient-gold shadow-gold hover:opacity-90 text-primary-foreground font-semibold">{l.nav.signup}</Button>
-            </Link>
-          </div>
-          <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle variant="icon" className="hover:bg-secondary/50" />
-            <Link to="/auth/login">
-              <Button variant="ghost" size="sm" className="text-secondary-foreground/70">{l.nav.login}</Button>
-            </Link>
-            <Link to="/auth/register">
-              <Button size="sm" className="bg-gradient-gold text-primary-foreground font-semibold">{l.nav.signup}</Button>
+              <Button size="sm" className="gap-1.5 font-medium shadow-sm">
+                {l.nav.signup}
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
             </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden py-20 md:py-32">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(38_80%_55%_/_0.08),_transparent_60%)]" />
+      {/* ── Hero ───────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden border-b border-border/60 py-24 md:py-36">
+        {/* Subtle radial accent */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,hsl(var(--primary)/0.12),transparent)]"
+        />
+
         <div className="container relative">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="mx-auto max-w-3xl text-center"
+            transition={{ duration: 0.7, ease: EASE }}
+            className="mx-auto max-w-2xl text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm text-primary shadow-mint-soft">
-              <Sparkles className="h-4 w-4 text-mint" />
-              30-Day Free Trial — No Credit Card Required
-            </div>
-            <h1 className="mb-6 font-display text-4xl font-bold leading-tight tracking-tight text-secondary-foreground md:text-6xl lg:text-7xl">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-accent/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              30-day free trial · No credit card required
+            </motion.div>
+
+            {/* Headline */}
+            <h1 className="mb-5 font-display text-4xl font-bold leading-[1.15] tracking-tight text-foreground md:text-6xl">
               {l.hero.title.split("Simchas")[0]}
-              <span className="text-gradient-gold">Simchas</span>
+              <span className="text-primary">Simchas</span>
               {l.hero.title.split("Simchas")[1]}
             </h1>
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-secondary-foreground/60 md:text-xl">
+
+            {/* Subheadline */}
+            <p className="mb-10 text-base leading-relaxed text-muted-foreground md:text-lg">
               {l.hero.subtitle}
             </p>
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+
+            {/* CTAs */}
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link to="/auth/register">
-                <Button size="lg" className="bg-gradient-gold shadow-gold text-primary-foreground font-semibold text-lg px-8 py-6 hover:opacity-90">
+                <Button
+                  size="lg"
+                  className="h-11 gap-2 px-8 font-semibold shadow-md transition-all hover:shadow-lg hover:translate-y-[-1px]"
+                >
                   {l.hero.cta}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <a href="#features">
-                <Button size="lg" variant="outline" className="border-foreground/30 text-foreground hover:border-primary hover:text-primary text-lg px-8 py-6">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-11 px-8 font-medium"
+                >
                   {l.hero.ctaSecondary}
                 </Button>
               </a>
             </div>
+
+            {/* Social proof */}
+            <p className="mt-8 text-xs text-muted-foreground/60">
+              Trusted by 2,000+ families across North America & Israel
+            </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-20 md:py-28">
+      {/* ── Features ───────────────────────────────────────────────────────── */}
+      <section id="features" className="py-24 md:py-32">
         <div className="container">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="mb-16 text-center"
-          >
-            <motion.h2 variants={fadeUp} custom={0} className="mb-4 font-display text-3xl font-bold text-secondary-foreground md:text-5xl">
+          <AnimatedSection className="mb-14 max-w-xl">
+            <SectionLabel>Features</SectionLabel>
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="mb-3 font-display text-3xl font-bold tracking-tight md:text-4xl"
+            >
               {l.features.title}
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-lg text-secondary-foreground/50">
+            <motion.p
+              variants={fadeUp}
+              custom={2}
+              className="text-muted-foreground"
+            >
               {l.features.subtitle}
             </motion.p>
-          </motion.div>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
+          </AnimatedSection>
+
+          <AnimatedSection className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {l.features.items.map((item, i) => {
               const Icon = featureIcons[i];
               return (
-                <motion.div key={i} variants={fadeUp} custom={i + 2}>
-                  <Card className="group border-secondary/20 bg-secondary/40 backdrop-blur-sm transition-all hover:border-primary/30 hover:shadow-gold/10 hover:shadow-lg h-full">
-                    <CardContent className="p-6">
-                      <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-3">
-                        <Icon className="h-6 w-6 text-primary" />
+                <motion.div key={i} variants={fadeUp} custom={i}>
+                  <Card className="group h-full border-border/60 bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-sm">
+                    <CardContent className="flex flex-col gap-3 p-6">
+                      {/* Icon */}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-accent transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
+                        <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <h3 className="mb-2 font-display text-xl font-semibold text-secondary-foreground">{item.title}</h3>
-                      <p className="text-secondary-foreground/50">{item.desc}</p>
+                      <div>
+                        <h3 className="mb-1 font-display text-[15px] font-semibold leading-snug">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {item.desc}
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
               );
             })}
-          </motion.div>
+          </AnimatedSection>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 md:py-28">
+      {/* ── Pricing ────────────────────────────────────────────────────────── */}
+      <section id="pricing" className="border-t border-border/60 bg-accent/30 py-24 md:py-32">
         <div className="container">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 font-display text-3xl font-bold text-secondary-foreground md:text-5xl">{l.pricing.title}</h2>
-            <p className="text-lg text-secondary-foreground/50">{l.pricing.subtitle}</p>
-          </div>
-          <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
+          <AnimatedSection className="mb-14 max-w-xl">
+            <SectionLabel>Pricing</SectionLabel>
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="mb-3 font-display text-3xl font-bold tracking-tight md:text-4xl"
+            >
+              {l.pricing.title}
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              custom={2}
+              className="text-muted-foreground"
+            >
+              {l.pricing.subtitle}
+            </motion.p>
+          </AnimatedSection>
+
+          <AnimatedSection className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
             {l.pricing.plans.map((plan, i) => (
-              <Card
-                key={i}
-                className={`relative border-secondary/20 bg-secondary/40 backdrop-blur-sm transition-all ${
-                  plan.popular ? "border-primary/50 shadow-gold" : ""
-                }`}
-              >
+              <motion.div key={i} variants={fadeUp} custom={i} className="relative">
+                {/* Popular badge */}
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-gold px-4 py-1 text-xs font-bold text-primary-foreground">
-                    <Star className="mr-1 inline h-3 w-3" /> MOST POPULAR
+                  <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
+                      <Star className="h-3 w-3" />
+                      Most popular
+                    </span>
                   </div>
                 )}
-                <CardContent className="p-8">
-                  <h3 className="mb-1 font-display text-2xl font-bold text-secondary-foreground">{plan.name}</h3>
-                  <p className="mb-6 text-sm text-secondary-foreground/50">{plan.desc}</p>
-                  <div className="mb-6">
-                    <span className="font-display text-5xl font-bold text-primary">{plan.price}</span>
-                    <span className="text-secondary-foreground/50">{plan.period}</span>
-                  </div>
-                  <ul className="mb-8 space-y-3">
-                    {plan.features.map((f, j) => {
-                      const isComingSoon = f.includes("Coming Soon") || f.includes("בקרוב");
-                      const label = isComingSoon ? f.replace(/ — Coming Soon| — בקרוב/, "") : f;
-                      return (
-                        <li key={j} className={`flex items-start gap-2 text-sm ${isComingSoon ? "text-secondary-foreground/40" : "text-secondary-foreground/70"}`}>
-                          <Check className={`mt-0.5 h-4 w-4 shrink-0 ${isComingSoon ? "text-secondary-foreground/30" : "text-primary"}`} />
-                          <span className="flex items-center gap-1.5 flex-wrap">
-                            {label}
-                            {isComingSoon && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal bg-secondary/60 text-secondary-foreground/50 border-0">
-                                Coming Soon
-                              </Badge>
-                            )}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <Link to="/auth/register">
-                    <Button
-                      className={`w-full font-semibold ${
-                        plan.popular
-                          ? "bg-gradient-gold shadow-gold text-primary-foreground hover:opacity-90"
-                          : "border-primary/30 text-primary hover:bg-primary/10"
-                      }`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+
+                <Card
+                  className={[
+                    "h-full border-border/60 bg-card transition-all duration-300",
+                    plan.popular
+                      ? "border-primary/50 shadow-md ring-1 ring-primary/20"
+                      : "hover:border-border",
+                  ].join(" ")}
+                >
+                  <CardContent className="flex flex-col p-7">
+                    {/* Plan header */}
+                    <div className="mb-6 border-b border-border/60 pb-6">
+                      <h3 className="mb-0.5 font-display text-lg font-bold">
+                        {plan.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{plan.desc}</p>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-6">
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-display text-4xl font-bold text-foreground">
+                          {plan.price}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {plan.period}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="mb-8 flex flex-col gap-2.5">
+                      {plan.features.map((f, j) => {
+                        const isComingSoon =
+                          f.includes("Coming Soon") || f.includes("בקרוב");
+                        const label = isComingSoon
+                          ? f.replace(/ — Coming Soon| — בקרוב/, "")
+                          : f;
+                        return (
+                          <li
+                            key={j}
+                            className={[
+                              "flex items-start gap-2.5 text-sm",
+                              isComingSoon
+                                ? "text-muted-foreground/50"
+                                : "text-foreground/80",
+                            ].join(" ")}
+                          >
+                            <Check
+                              className={[
+                                "mt-0.5 h-4 w-4 shrink-0",
+                                isComingSoon
+                                  ? "text-muted-foreground/30"
+                                  : "text-primary",
+                              ].join(" ")}
+                            />
+                            <span className="flex flex-wrap items-center gap-1.5">
+                              {label}
+                              {isComingSoon && (
+                                <Badge
+                                  variant="outline"
+                                  className="h-4 border-border/40 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                                >
+                                  Soon
+                                </Badge>
+                              )}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    {/* CTA — pushed to bottom */}
+                    <div className="mt-auto">
+                      <Link to="/auth/register">
+                        <Button
+                          variant={plan.popular ? "default" : "outline"}
+                          className={[
+                            "w-full font-semibold",
+                            plan.popular
+                              ? "shadow-sm hover:shadow-md hover:translate-y-[-1px] transition-all"
+                              : "",
+                          ].join(" ")}
+                        >
+                          {plan.cta}
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </AnimatedSection>
+
+          {/* Reassurance line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-10 text-center text-sm text-muted-foreground"
+          >
+            All plans include a 30-day free trial. Cancel any time, no questions asked.
+          </motion.p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-secondary/20 py-12">
-        <div className="container flex flex-col items-center gap-4 text-center">
-          <div className="flex items-center gap-2">
-            <Music className="h-5 w-5 text-primary" />
-            <span className="font-display text-lg font-bold text-primary">SimchaSync</span>
-          </div>
-          <p className="text-sm text-secondary-foreground/40">
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer className="border-t border-border/60 bg-background py-10">
+        <div className="container flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+              <Music className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="font-display text-sm font-semibold">SimchaSync</span>
+          </Link>
+
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} SimchaSync. All rights reserved.
           </p>
+
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <a href="#" className="transition-colors hover:text-foreground">Privacy</a>
+            <a href="#" className="transition-colors hover:text-foreground">Terms</a>
+            <a href="#" className="transition-colors hover:text-foreground">Contact</a>
+          </div>
         </div>
       </footer>
     </div>

@@ -1,6 +1,7 @@
 # Logs
 logs
 *.log
+*.md
 worklog.md
 DATABASE_ACCESS.md
 npm-debug.log*
