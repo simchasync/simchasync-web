@@ -244,12 +244,13 @@ export const en = {
   },
 
   // Auth
-  auth: {
-    login: "Log In",
-    signup: "Sign Up",
-    email: "Email",
-    password: "Password",
-    name: "Full Name",
+    auth: {
+      login: "Log In",
+      signup: "Sign Up",
+      email: "Email",
+      password: "Password",
+      name: "Full Name",
+      phone: "Phone",
     forgotPassword: "Forgot password?",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",

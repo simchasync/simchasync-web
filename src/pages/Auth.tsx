@@ -19,6 +19,7 @@ interface FieldState {
   password: string;
   confirmPassword: string;
   name: string;
+  phone: string;
 }
 
 const INITIAL_FIELDS: FieldState = {
@@ -26,6 +27,7 @@ const INITIAL_FIELDS: FieldState = {
   password: "",
   confirmPassword: "",
   name: "",
+  phone: "",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -204,7 +206,7 @@ export default function Auth() {
           email: fields.email,
           password: fields.password,
           options: {
-            data: { full_name: fields.name },
+            data: { full_name: fields.name, phone: fields.phone },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -296,15 +298,26 @@ export default function Auth() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             {mode === "signup" && (
-              <FormField label={t.auth.name} htmlFor="name">
-                <Input
-                  id="name"
-                  value={fields.name}
-                  onChange={(e) => setField("name")(e.target.value)}
-                  autoComplete="name"
-                  required
-                />
-              </FormField>
+              <>
+                <FormField label={t.auth.name} htmlFor="name">
+                  <Input
+                    id="name"
+                    value={fields.name}
+                    onChange={(e) => setField("name")(e.target.value)}
+                    autoComplete="name"
+                    required
+                  />
+                </FormField>
+                <FormField label={t.auth.phone} htmlFor="phone">
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={fields.phone}
+                    onChange={(e) => setField("phone")(e.target.value)}
+                    autoComplete="tel"
+                  />
+                </FormField>
+              </>
             )}
 
             <FormField label={t.auth.email} htmlFor="email">
