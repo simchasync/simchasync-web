@@ -130,20 +130,21 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
               : "Allow location access when prompted to auto-pin your current address, or tap the map to choose a place manually."}
           </p>
           <div className="relative rounded-lg overflow-hidden border" style={{ height: 250 }}>
-          <MapContainer center={center} zoom={8} className="h-full w-full" scrollWheelZoom={true}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <RecenterMap center={center} />
-            <ClickHandler onPin={handlePin} />
-            {marker && <Marker position={[marker.lat, marker.lng]} icon={icon} />}
-          </MapContainer>
-          {geocoding && (
-            <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-[1000]">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            </div>
-          )}
+            <MapContainer center={center} zoom={8} className="h-full w-full" scrollWheelZoom={true}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <RecenterMap center={center} />
+              <ClickHandler onPin={handlePin} />
+              {marker && <Marker position={[marker.lat, marker.lng]} icon={icon} />}
+            </MapContainer>
+            {geocoding && (
+              <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-[1000]">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
