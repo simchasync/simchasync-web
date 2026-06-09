@@ -209,6 +209,7 @@ function PlanCard({
   loadingTier,
   loadingPortal,
   onManage,
+  index,
 }: {
   tier: TierCard;
   isCurrentPlan: boolean;
@@ -216,12 +217,13 @@ function PlanCard({
   loadingTier: boolean;
   loadingPortal: boolean;
   onManage: () => void;
+  index: number;
 }) {
   const { t } = useLanguage();
   const Icon = tier.icon;
 
   return (
-    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={tier.key === "full" ? 3 : 2}>
+    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={index + 2}>
       <Card
         className={`relative h-full flex flex-col transition-all duration-300 ${
           isCurrentPlan
@@ -309,10 +311,25 @@ export default function UpgradePage() {
   const { loadingTier, handleCheckout } = useCheckout();
   const { loadingPortal, handleManageOnStripe } = useCustomerPortal();
 
-  const tiers: TierCard[] = [
-    { key: "lite", icon: Zap, popular: false, ...SUBSCRIPTION_TIERS.lite },
-    { key: "full", icon: Crown, popular: true, ...SUBSCRIPTION_TIERS.full },
-  ];
+  const tierIcons: Record<keyof typeof SUBSCRIPTION_TIERS, typeof Crown> = {
+    lite: Zap,
+    full: Crown,
+  };
+
+  const tierKeys = Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>;
+
+  const tiers: TierCard[] = tierKeys.map((key) => {
+    const data = SUBSCRIPTION_TIERS[key];
+    return {
+      key,
+      icon: tierIcons[key],
+      popular: ("popular" in data ? data.popular : false) as boolean,
+      name: data.name,
+      price: data.price,
+      price_id: data.price_id,
+      features: data.features,
+    };
+  });
 
   const currentTierData = (tier === "lite" || tier === "full") ? SUBSCRIPTION_TIERS[tier] : null;
   const trialDays = getTrialDays();
@@ -409,7 +426,7 @@ export default function UpgradePage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        {tiers.map((tierCard) => (
+        {tiers.map((tierCard, index) => (
           <PlanCard
             key={tierCard.key}
             tier={tierCard}
@@ -418,6 +435,7 @@ export default function UpgradePage() {
             loadingTier={loadingTier === tierCard.key}
             loadingPortal={loadingPortal}
             onManage={subscribed ? handleManageOnStripe : () => handleCheckout(tierCard.price_id, tierCard.key)}
+            index={index}
           />
         ))}
       </div>
