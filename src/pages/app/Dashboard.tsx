@@ -222,34 +222,40 @@ export default function Dashboard() {
     enabled: !!tenantId && hasBillAccess,
   });
 
+  const eventIds = events.map((e: any) => e.id);
+
   const { data: allExpenses = [] } = useQuery({
-    queryKey: ["all-event-expenses", tenantId],
+    queryKey: ["all-event-expenses", tenantId, eventIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("event_expenses").select("amount, event_id");
+      const { data, error } = await supabase.from("event_expenses").select("amount, event_id").in("event_id", eventIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!tenantId && showProfitAnalytics,
+    enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
   const { data: allColleagueCosts = [] } = useQuery({
-    queryKey: ["all-colleague-costs", tenantId],
+    queryKey: ["all-colleague-costs", tenantId, eventIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("event_colleagues").select("price, event_id, payment_responsibility").eq("payment_responsibility", "paid_by_me");
+      const { data, error } = await supabase.from("event_colleagues").select("price, event_id, payment_responsibility").eq("payment_responsibility", "paid_by_me").in("event_id", eventIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!tenantId && showProfitAnalytics,
+    enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
   const { data: allCommissions = [] } = useQuery({
-    queryKey: ["all-commissions", tenantId],
+    queryKey: ["all-commissions", tenantId, eventIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("booking_agents").select("commission_amount, agents!inner(tenant_id)").eq("agents.tenant_id", tenantId!);
+      const { data, error } = await supabase
+        .from("booking_agents")
+        .select("commission_amount, agents!inner(tenant_id), event_id")
+        .eq("agents.tenant_id", tenantId!)
+        .in("event_id", eventIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!tenantId && showProfitAnalytics,
+    enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
   const now = new Date();
@@ -264,17 +270,19 @@ export default function Dashboard() {
     return d >= monthStart && d <= monthEnd;
   });
 
-  const totalRevenue = events.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0);
-  const revenueReceived = paidEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0);
+  const totalTravelFees = events.filter((e: any) => e.travel_fee_type !== "charge_customer").reduce((s: number, e: any) => s + (Number(e.travel_fee) || 0), 0);
+  const totalTravelRevenue = events.filter((e: any) => e.travel_fee_type === "charge_customer").reduce((s: number, e: any) => s + (Number(e.travel_fee) || 0), 0);
+
+  const totalRevenue = events.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + totalTravelRevenue;
+  const revenueReceived = paidEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + paidEvents.reduce((s: number, e: any) => s + (e.travel_fee_type === "charge_customer" ? (Number(e.travel_fee) || 0) : 0), 0);
   const outstanding = unpaidEvents.reduce((s: number, e: any) => s + Math.max((Number(e.total_price) || 0) - (Number(e.deposit) || 0), 0), 0);
-  const thisMonthRevenue = thisMonthEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0);
+  const thisMonthRevenue = thisMonthEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + thisMonthEvents.reduce((s: number, e: any) => s + (e.travel_fee_type === "charge_customer" ? (Number(e.travel_fee) || 0) : 0), 0);
   const invoicePaid = invoices.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + i.amount, 0);
   const recentInvoices = invoices.slice(0, 10);
 
   const totalManualExpenses = allExpenses.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
   const totalColleagueCosts = allColleagueCosts.reduce((s: number, c: any) => s + (Number(c.price) || 0), 0);
   const totalCommissions = allCommissions.reduce((s: number, c: any) => s + (Number(c.commission_amount) || 0), 0);
-  const totalTravelFees = events.filter((e: any) => e.travel_fee_type !== "charge_customer").reduce((s: number, e: any) => s + (Number(e.travel_fee) || 0), 0);
   const totalExpenses = totalManualExpenses + totalColleagueCosts + totalCommissions + totalTravelFees;
   const netProfit = totalRevenue - totalExpenses;
   const avgProfitPerBooking = events.length > 0 ? Math.round(netProfit / events.length) : 0;
