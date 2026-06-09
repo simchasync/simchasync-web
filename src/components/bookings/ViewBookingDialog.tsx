@@ -237,6 +237,22 @@ export default function ViewBookingDialog({
         }
       }
 
+      // Sync agent commission amounts with the new total price
+      const newTotal = Number(data.total_price) || 0;
+      const { data: agentRows } = await supabase
+        .from("booking_agents").select("id, commission_rate").eq("event_id", data.id);
+      if (agentRows && agentRows.length > 0) {
+        await Promise.all(
+          agentRows.map((ba: any) =>
+            supabase.from("booking_agents")
+              .update({ commission_amount: Math.round(newTotal * Number(ba.commission_rate) / 100 * 100) / 100 })
+              .eq("id", ba.id)
+          )
+        );
+        qc.invalidateQueries({ queryKey: ["booking-agents", data.id] });
+        qc.invalidateQueries({ queryKey: ["event-agent-commissions", data.id] });
+      }
+
       // Refresh local state with saved data
       setForm(buildForm(data));
       setTiming(buildTiming(data));

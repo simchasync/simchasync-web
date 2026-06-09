@@ -71,13 +71,13 @@ function buildVerifyUrl(supabaseUrl: string, data: EmailData): string {
 }
 
 const SUBJECTS: Record<string, string> = {
-  signup: "Confirm your email",
-  invite: "You've been invited",
-  magiclink: "Your login link",
-  email: "Your login link",
-  recovery: "Reset your password",
-  email_change: "Confirm your email change",
-  reauthentication: "Your verification code",
+  signup: "Confirm your SimchaSync account",
+  invite: "You've been invited to SimchaSync",
+  magiclink: "Your SimchaSync sign-in link",
+  email: "Your SimchaSync sign-in link",
+  recovery: "Reset your SimchaSync password",
+  email_change: "Confirm your SimchaSync email change",
+  reauthentication: "Your SimchaSync verification code",
 };
 
 async function sendResend(
@@ -162,89 +162,37 @@ Deno.serve(async (req: Request) => {
       } catch {
         /* keep siteUrl */
       }
-      const html = await renderAsync(
-        React.createElement(SignupEmail, {
-          siteName,
-          siteUrl: siteUrlDisplay,
-          recipient: email,
-          confirmationUrl: confirmation,
-        }),
-      );
-      const text = await renderAsync(
-        React.createElement(SignupEmail, {
-          siteName,
-          siteUrl: siteUrlDisplay,
-          recipient: email,
-          confirmationUrl: confirmation,
-        }),
-        { plainText: true },
-      );
+      const props = { siteName, siteUrl: siteUrlDisplay, recipient: email, confirmationUrl: confirmation, recipientName };
+      const html = await renderAsync(React.createElement(SignupEmail, props));
+      const text = await renderAsync(React.createElement(SignupEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else if (action === "recovery") {
-      const html = await renderAsync(
-        React.createElement(RecoveryEmail, { siteName, confirmationUrl: confirmation }),
-      );
-      const text = await renderAsync(
-        React.createElement(RecoveryEmail, { siteName, confirmationUrl: confirmation }),
-        { plainText: true },
-      );
+      const props = { siteName, confirmationUrl: confirmation, recipientName };
+      const html = await renderAsync(React.createElement(RecoveryEmail, props));
+      const text = await renderAsync(React.createElement(RecoveryEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else if (action === "magiclink" || action === "email") {
-      const html = await renderAsync(
-        React.createElement(MagicLinkEmail, { siteName, confirmationUrl: confirmation }),
-      );
-      const text = await renderAsync(
-        React.createElement(MagicLinkEmail, { siteName, confirmationUrl: confirmation }),
-        { plainText: true },
-      );
+      const props = { siteName, confirmationUrl: confirmation, recipientName };
+      const html = await renderAsync(React.createElement(MagicLinkEmail, props));
+      const text = await renderAsync(React.createElement(MagicLinkEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else if (action === "invite") {
-      const html = await renderAsync(
-        React.createElement(InviteEmail, {
-          siteName,
-          siteUrl,
-          confirmationUrl: confirmation,
-        }),
-      );
-      const text = await renderAsync(
-        React.createElement(InviteEmail, {
-          siteName,
-          siteUrl,
-          confirmationUrl: confirmation,
-        }),
-        { plainText: true },
-      );
+      const props = { siteName, siteUrl, confirmationUrl: confirmation, recipientName };
+      const html = await renderAsync(React.createElement(InviteEmail, props));
+      const text = await renderAsync(React.createElement(InviteEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else if (action === "reauthentication") {
-      const html = await renderAsync(
-        React.createElement(ReauthenticationEmail, { token: emailData.token }),
-      );
-      const text = await renderAsync(
-        React.createElement(ReauthenticationEmail, { token: emailData.token }),
-        { plainText: true },
-      );
+      const props = { token: emailData.token, recipientName };
+      const html = await renderAsync(React.createElement(ReauthenticationEmail, props));
+      const text = await renderAsync(React.createElement(ReauthenticationEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else if (action === "email_change") {
       const conf = buildVerifyUrl(supabaseUrl, emailData);
       const displayOld = oldEmail || email;
       const displayNew = user.new_email || email;
-      const html = await renderAsync(
-        React.createElement(EmailChangeEmail, {
-          siteName,
-          email: displayOld,
-          newEmail: displayNew,
-          confirmationUrl: conf,
-        }),
-      );
-      const text = await renderAsync(
-        React.createElement(EmailChangeEmail, {
-          siteName,
-          email: displayOld,
-          newEmail: displayNew,
-          confirmationUrl: conf,
-        }),
-        { plainText: true },
-      );
+      const props = { siteName, email: displayOld, newEmail: displayNew, confirmationUrl: conf, recipientName };
+      const html = await renderAsync(React.createElement(EmailChangeEmail, props));
+      const text = await renderAsync(React.createElement(EmailChangeEmail, props), { plainText: true });
       await sendResend(email, subject, html, text);
     } else {
       const html = `<p>Hi ${recipientName},</p><p><a href="${confirmation}">Continue</a></p><p>Your code: <strong>${

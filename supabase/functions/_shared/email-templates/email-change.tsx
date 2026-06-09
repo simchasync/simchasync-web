@@ -1,93 +1,83 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
-
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Link,
-  Preview,
-  Text,
-} from 'npm:@react-email/components@0.0.22'
+import { Button, Heading, Link, Text } from 'npm:@react-email/components@0.0.22'
+import { BRAND, EmailShell, styles } from './_base.tsx'
 
 interface EmailChangeEmailProps {
   siteName: string
   email: string
   newEmail: string
   confirmationUrl: string
+  recipientName?: string
+}
+
+const changeRowStyle: React.CSSProperties = {
+  backgroundColor: BRAND.goldBg,
+  border: `1px solid ${BRAND.border}`,
+  borderRadius: '10px',
+  padding: '14px 18px',
+  margin: '0 0 24px',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  color: BRAND.muted,
+  textTransform: 'uppercase',
+  letterSpacing: '0.6px',
+  margin: '0 0 2px',
+}
+
+const valueStyle: React.CSSProperties = {
+  fontSize: '14px',
+  color: BRAND.dark,
+  margin: '0',
+  wordBreak: 'break-all',
 }
 
 export const EmailChangeEmail = ({
-  siteName,
+  siteName: _siteName,
   email,
   newEmail,
   confirmationUrl,
+  recipientName,
 }: EmailChangeEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Confirm your email change for SimchaSync</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Text style={brand}>🎵 SimchaSync</Text>
-        <Heading style={h1}>Confirm your email change</Heading>
-        <Text style={text}>
-          You requested to change your email from{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
-        <Text style={footer}>
-          If you didn't request this, please secure your account immediately.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+  <EmailShell preview="Confirm your SimchaSync email address change.">
+    <Heading style={styles.h1}>
+      {recipientName ? `Hi ${recipientName}, confirm your email change` : 'Confirm your email change'}
+    </Heading>
+
+    <Text style={styles.text}>
+      You requested to update your SimchaSync email address. Review the change
+      below and click the button to confirm.
+    </Text>
+
+    <div style={changeRowStyle}>
+      <Text style={labelStyle}>Current email</Text>
+      <Text style={valueStyle}>
+        <Link href={`mailto:${email}`} style={styles.link}>{email}</Link>
+      </Text>
+    </div>
+
+    <div style={changeRowStyle}>
+      <Text style={labelStyle}>New email</Text>
+      <Text style={valueStyle}>
+        <Link href={`mailto:${newEmail}`} style={styles.link}>{newEmail}</Link>
+      </Text>
+    </div>
+
+    <div style={styles.buttonSection}>
+      <Button style={styles.button} href={confirmationUrl}>
+        Confirm Email Change
+      </Button>
+    </div>
+
+    <Text style={styles.mutedNote}>
+      This link expires in 24 hours. If you didn't request this change,
+      please secure your account immediately by changing your password.
+    </Text>
+  </EmailShell>
 )
 
 export default EmailChangeEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'DM Sans', Arial, sans-serif" }
-const container = { padding: '32px 28px' }
-const brand = {
-  fontSize: '20px',
-  fontFamily: "'Playfair Display', Georgia, serif",
-  fontWeight: 'bold' as const,
-  color: 'hsl(38, 80%, 55%)',
-  margin: '0 0 24px',
-}
-const h1 = {
-  fontSize: '24px',
-  fontWeight: 'bold' as const,
-  fontFamily: "'Playfair Display', Georgia, serif",
-  color: 'hsl(224, 30%, 12%)',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '15px',
-  color: 'hsl(220, 10%, 45%)',
-  lineHeight: '1.6',
-  margin: '0 0 24px',
-}
-const link = { color: 'hsl(38, 80%, 55%)', textDecoration: 'underline' }
-const button = {
-  backgroundColor: 'hsl(38, 80%, 55%)',
-  color: 'hsl(224, 30%, 8%)',
-  fontSize: '15px',
-  fontWeight: '600' as const,
-  borderRadius: '12px',
-  padding: '14px 24px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '32px 0 0' }
