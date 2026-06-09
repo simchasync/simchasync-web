@@ -123,7 +123,7 @@ export default function ViewBookingDialog({
       setTiming(buildTiming(event));
       setMode(defaultMode);
     }
-  }, [open, event?.id, defaultMode]);
+  }, [open, event, defaultMode]);
 
   // ── Data ──────────────────────────────────────────────────────────────────
 
