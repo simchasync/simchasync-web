@@ -67,6 +67,8 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
         body: { action: "geocode", lat: coords.lat, lng: coords.lng },
       });
       
+      console.log("API Response:", { data, error, hasData: !!data, hasPredictions: !!data?.predictions, predLength: data?.predictions?.length });
+      
       if (error) {
         console.error("Geocoding error:", error);
         toast({ title: "Could not resolve address", variant: "destructive" });
