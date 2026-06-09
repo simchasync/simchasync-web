@@ -41,8 +41,11 @@ Deno.serve(async (req) => {
       const city = addr.city || addr.town || addr.village || addr.municipality || '';
       const state = addr.state || '';
       const country = addr.country || '';
-      const fullAddress = [street, city, state, country].filter(Boolean).join(', ');
+      const fallbackAddress = [street, city, state, country].filter(Boolean).join(', ');
 
+      // Nominatim display_name is always the full human-readable address
+      const displayName = nomData.display_name || fallbackAddress || `${lat}, ${lng}`;
+      
       // nomData.name is the POI name for named places (hotels, halls, restaurants).
       // For plain street addresses it is empty — category tags like addr.amenity ("restaurant")
       // are type labels, not names, so we do not use them here.
@@ -51,8 +54,8 @@ Deno.serve(async (req) => {
       const predictions: Prediction[] = [{
         place_id: nomData.place_id || `geocode-${lat}-${lng}`,
         name: venueName,
-        address: fullAddress,
-        full_description: nomData.display_name || fullAddress,
+        address: displayName,
+        full_description: displayName,
       }];
 
       return new Response(JSON.stringify({ predictions }), {

@@ -53,27 +53,46 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
   const [permissionRequested, setPermissionRequested] = useState(false);
   const [permissionLoading, setPermissionLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter ?? FALLBACK_CENTER);
+  const [zoom, setZoom] = useState(11);
 
   const center = mapCenter;
 
   const handlePin = useCallback(async (coords: Coords) => {
     setMarker(coords);
+    setMapCenter([coords.lat, coords.lng]);
+    setZoom(15);
     setGeocoding(true);
     try {
       const { data, error } = await supabase.functions.invoke("google-places-autocomplete", {
         body: { action: "geocode", lat: coords.lat, lng: coords.lng },
       });
-      if (!error && data?.predictions?.length > 0) {
+      
+      if (error) {
+        console.error("Geocoding error:", error);
+        toast({ title: "Could not resolve address", variant: "destructive" });
+        onLocationSelect("", `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+        setPinned(true);
+      } else if (data?.predictions?.length > 0) {
         const p = data.predictions[0];
-        onLocationSelect(p.name, p.address);
+        const locationAddress = p.address || p.full_description || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+        console.log("Geocoding result:", { name: p.name, address: locationAddress });
+        onLocationSelect(p.name, locationAddress);
         setPinned(true);
         toast({
           title: p.name ? `📍 ${p.name}` : "📍 Location pinned",
-          description: p.address,
+          description: locationAddress || "Address resolved",
         });
+      } else {
+        console.warn("No predictions returned", data);
+        toast({ title: "Location pinned", description: "No address found, using coordinates", variant: "default" });
+        onLocationSelect("", `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+        setPinned(true);
       }
-    } catch {
+    } catch (err) {
+      console.error("Exception during geocoding:", err);
       toast({ title: "Could not resolve address", variant: "destructive" });
+      onLocationSelect("", `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+      setPinned(true);
     } finally {
       setGeocoding(false);
     }
@@ -90,6 +109,7 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
       (position) => {
         const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
         setMapCenter([coords.lat, coords.lng]);
+        setZoom(15);
         handlePin(coords).finally(() => setPermissionLoading(false));
       },
       (error) => {
@@ -130,7 +150,7 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
               : "Allow location access when prompted to auto-pin your current address, or tap the map to choose a place manually."}
           </p>
           <div className="relative rounded-lg overflow-hidden border" style={{ height: 250 }}>
-            <MapContainer center={center} zoom={8} className="h-full w-full" scrollWheelZoom={true}>
+            <MapContainer center={center} zoom={zoom} className="h-full w-full" scrollWheelZoom={true}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
