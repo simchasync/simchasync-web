@@ -1,265 +1,763 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
+import { toHebrewDate } from "@/lib/hebrewDate";
+import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import NavigateButton from "./NavigateButton";
 import PaymentsSection from "./PaymentsSection";
 import SongsSection from "./SongsSection";
 import AttachmentsSection from "./AttachmentsSection";
 import ColleaguesSection from "./ColleaguesSection";
 import ExpensesProfitSection from "./ExpensesProfitSection";
-import { Clock, History, UserCheck, DollarSign, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import AgentAssignmentSection from "./AgentAssignmentSection";
+import EventTimingSection, { type TimingFields } from "./EventTimingSection";
+import VenueAutocomplete from "./VenueAutocomplete";
+import LocationAutocomplete from "./LocationAutocomplete";
+import BookingMap from "./BookingMap";
+import InlineClientDialog from "./InlineClientDialog";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
-import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
+import {
+  Calendar, DollarSign, Clock, UserCheck, UserPlus, History,
+  Pencil, Eye, CheckCircle2, Car,
+} from "lucide-react";
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const EVENT_TYPES = ["wedding", "bar_mitzvah", "bat_mitzvah", "corporate", "concert", "other"] as const;
+const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
+
+const emptyTiming: TimingFields = {
+  chuppah_time: "", meal_time: "", first_dance_time: "",
+  second_dance_time: "", mitzvah_tanz_time: "", event_start_time: "",
+};
+
+type FormState = {
+  client_id: string; event_date: string; event_type: string;
+  venue: string; location: string; total_price: string; deposit: string;
+  balance_due: string; payment_status: string; deposit_status: string;
+  due_date: string; notes: string; travel_fee: string; travel_fee_type: string;
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function buildForm(ev: any): FormState {
+  const total = Number(ev.total_price) || 0;
+  const dep = Number(ev.deposit) || 0;
+  return {
+    client_id: ev.client_id ?? "",
+    event_date: ev.event_date ?? "",
+    event_type: ev.event_type ?? "wedding",
+    venue: ev.venue ?? "",
+    location: ev.location ?? "",
+    total_price: String(ev.total_price ?? ""),
+    deposit: String(ev.deposit ?? ""),
+    balance_due: String(ev.payment_status === "paid" ? 0 : Math.max(total - dep, 0)),
+    payment_status: ev.payment_status ?? "unpaid",
+    deposit_status: ev.deposit_status ?? "unpaid",
+    due_date: ev.due_date ?? "",
+    notes: ev.notes ?? "",
+    travel_fee: String(ev.travel_fee ?? ""),
+    travel_fee_type: ev.travel_fee_type ?? "expense",
+  };
+}
+
+function buildTiming(ev: any): TimingFields {
+  return {
+    chuppah_time: ev.chuppah_time ?? "",
+    meal_time: ev.meal_time ?? "",
+    first_dance_time: ev.first_dance_time ?? "",
+    second_dance_time: ev.second_dance_time ?? "",
+    mitzvah_tanz_time: ev.mitzvah_tanz_time ?? "",
+    event_start_time: ev.event_start_time ?? "",
+  };
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface ViewBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: any | null;
+  defaultMode?: "view" | "edit";
+  onSaved?: () => void;
 }
 
-export default function ViewBookingDialog({ open, onOpenChange, event }: ViewBookingDialogProps) {
+export default function ViewBookingDialog({
+  open, onOpenChange, event, defaultMode = "view", onSaved,
+}: ViewBookingDialogProps) {
   const { t } = useLanguage();
-  const { canAccess } = useSubscription();
-  const { role } = useUserRole();
   const b = t.app.bookings;
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const canViewFinancials = role !== "member";
-  const canViewClientHistory = role !== "member";
+  const { canAccess } = useSubscription();
+  const { canWrite, role } = useUserRole();
+  const qc = useQueryClient();
 
-  // Fetch assigned agents for this booking
-  const { data: assignedAgents = [] } = useQuery({
-    queryKey: ["booking-agents", event?.id],
+  const [mode, setMode] = useState<"view" | "edit">(defaultMode);
+  const [form, setForm] = useState<FormState>(() => event ? buildForm(event) : buildForm({}));
+  const [timing, setTiming] = useState<TimingFields>(() => event ? buildTiming(event) : emptyTiming);
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const tenantId: string = event?.tenant_id ?? "";
+  const showFinancialFields = role !== "member";
+  const showExpenses = canAccess("expenses_profit") && role !== "member";
+
+  // Reset when a new event is opened or mode preference changes
+  useEffect(() => {
+    if (open && event) {
+      setForm(buildForm(event));
+      setTiming(buildTiming(event));
+      setMode(defaultMode);
+    }
+  }, [open, event?.id, defaultMode]);
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients", tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("booking_agents")
-        .select("*, agents(name)")
-        .eq("event_id", event!.id);
+        .from("clients").select("id, name").eq("tenant_id", tenantId).order("name");
       if (error) throw error;
-      return data;
+      return data as { id: string; name: string }[];
     },
-    enabled: !!event?.id && canViewFinancials,
+    enabled: !!tenantId && mode === "edit" && role !== "member",
   });
 
   const { data: linkedInvoices = [] } = useQuery({
     queryKey: ["invoices", "event", event?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("invoices")
-        .select("id, status, event_id")
-        .eq("event_id", event!.id);
+        .from("invoices").select("id, status, event_id").eq("event_id", event!.id);
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!event?.id && canViewFinancials,
+    enabled: !!event?.id,
+  });
+
+  const { data: assignedAgents = [] } = useQuery({
+    queryKey: ["booking-agents", event?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_agents").select("*, agents(name)").eq("event_id", event!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!event?.id && role !== "member",
+  });
+
+  // ── Mutation ──────────────────────────────────────────────────────────────
+
+  const updateFinancials = (field: string, value: string) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      const total = Number(updated.total_price) || 0;
+      const dep = Number(updated.deposit) || 0;
+      return { ...updated, balance_due: String(updated.payment_status === "paid" ? 0 : Math.max(total - dep, 0)) };
+    });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async (values: FormState) => {
+      const hebrewDate = values.event_date ? toHebrewDate(values.event_date) : null;
+      const travelFee = Number(values.travel_fee) || 0;
+      const totalPrice = Number(values.total_price) || 0;
+      const deposit = Number(values.deposit) || 0;
+
+      const payload: any = {
+        client_id: values.client_id || null,
+        event_date: values.event_date,
+        event_type: values.event_type,
+        venue: values.venue || null,
+        location: values.location || null,
+        total_price: totalPrice,
+        deposit,
+        balance_due: values.payment_status === "paid" ? 0 : Math.max(totalPrice - deposit, 0),
+        payment_status: values.payment_status,
+        deposit_status: values.deposit_status || "unpaid",
+        due_date: values.due_date || null,
+        notes: values.notes || null,
+        hebrew_date: hebrewDate,
+        travel_fee: travelFee,
+        travel_fee_type: travelFee > 0 ? (values.travel_fee_type || "expense") : "expense",
+        chuppah_time: timing.chuppah_time || null,
+        meal_time: timing.meal_time || null,
+        first_dance_time: timing.first_dance_time || null,
+        second_dance_time: timing.second_dance_time || null,
+        mitzvah_tanz_time: timing.mitzvah_tanz_time || null,
+        event_start_time: timing.event_start_time || null,
+      };
+
+      const { data, error } = await supabase
+        .from("events").update(payload).eq("id", event!.id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      qc.invalidateQueries({ queryKey: ["events"] });
+
+      // Sync deposit invoice status
+      const deposit = Number(data.deposit) || 0;
+      const depositStatus = (data as any).deposit_status || "unpaid";
+      if (deposit > 0) {
+        if (depositStatus === "paid") {
+          const { data: inv, error: le } = await supabase
+            .from("invoices").select("id").eq("event_id", data.id)
+            .ilike("description", "Deposit for%").neq("status", "paid").maybeSingle();
+          if (le) throw le;
+          if (inv) {
+            const { error: ue } = await supabase.from("invoices").update({ status: "paid" }).eq("id", inv.id);
+            if (ue) throw ue;
+            qc.invalidateQueries({ queryKey: ["invoices"] });
+          }
+        } else {
+          const { data: inv, error: le } = await supabase
+            .from("invoices").select("id").eq("event_id", data.id)
+            .ilike("description", "Deposit for%").eq("status", "paid").maybeSingle();
+          if (le) throw le;
+          if (inv) {
+            const { error: ue } = await supabase.from("invoices").update({ status: "draft" }).eq("id", inv.id);
+            if (ue) throw ue;
+            qc.invalidateQueries({ queryKey: ["invoices"] });
+          }
+        }
+      }
+
+      // Refresh local state with saved data
+      setForm(buildForm(data));
+      setTiming(buildTiming(data));
+      setMode("view");
+      toast({ title: "Booking updated" });
+      onSaved?.();
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   if (!event) return null;
 
   const displayPaymentStatus = getEventPaymentStatus(event, linkedInvoices);
-  const balanceDisplay =
-    displayPaymentStatus === "paid"
-      ? 0
-      : Math.max((Number(event.total_price) || 0) - (Number(event.deposit) || 0), 0);
-
-  const statusColor = (s: string) => {
-    switch (s) {
-      case "paid": return "bg-emerald-500/15 text-emerald-700 border-emerald-200";
-      case "partial": return "bg-amber-500/15 text-amber-700 border-amber-200";
-      default: return "bg-destructive/10 text-destructive border-destructive/20";
-    }
-  };
-
   const address = event.location || event.venue || "";
-  const isWedding = event.event_type === "wedding";
-
-  const timingFields = isWedding
-    ? [
-        { label: "Chuppah", value: event.chuppah_time },
-        { label: "Meal", value: event.meal_time },
-        { label: "First Dance", value: event.first_dance_time },
-        { label: "Second Dance", value: event.second_dance_time },
-        { label: "Mitzvah Tanz", value: event.mitzvah_tanz_time },
-      ]
-    : [{ label: "Event Start", value: event.event_start_time }];
-
-  const hasTimingData = timingFields.some((f) => f.value);
   const totalCommission = assignedAgents.reduce((s: number, ba: any) => s + (Number(ba.commission_amount) || 0), 0);
 
-  return (
-    <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{(b.types as any)[event.event_type] ?? event.event_type}</DialogTitle>
-          <DialogDescription>Booking details</DialogDescription>
-        </DialogHeader>
+  const statusMap: Record<string, { label: string; className: string }> = {
+    paid: { label: (b.paymentStatus as any).paid ?? "Paid", className: "bg-emerald-500/15 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800" },
+    partial: { label: (b.paymentStatus as any).partial ?? "Partial", className: "bg-amber-500/15 text-amber-700 border-amber-200 dark:text-amber-400 dark:border-amber-800" },
+    unpaid: { label: (b.paymentStatus as any).unpaid ?? "Unpaid", className: "bg-destructive/10 text-destructive border-destructive/20" },
+  };
+  const statusCfg = statusMap[displayPaymentStatus] ?? statusMap.unpaid;
 
-        <div className="space-y-4">
-          {/* Core details */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div className="space-y-0.5">
-              <p className="text-muted-foreground">{b.client}</p>
-              <div className="flex items-center gap-1.5">
-                <p className="font-medium">{event.clients?.name ?? event.client_name ?? "—"}</p>
-                {canViewClientHistory && event.client_id && (
-                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setHistoryOpen(true)}>
-                    <History className="mr-1 h-3.5 w-3.5" /> History
+  // ── Sub-sections shared between both modes ────────────────────────────────
+
+  const subSections = (editable: boolean) => (
+    <>
+      <Separator />
+      <ColleaguesSection eventId={event.id} canWrite={editable} tenantId={tenantId} />
+
+      {showFinancialFields && (
+        <>
+          <Separator />
+          <PaymentsSection eventId={event.id} canWrite={editable} />
+        </>
+      )}
+
+      <Separator />
+      <SongsSection eventId={event.id} canWrite={editable} />
+      <Separator />
+      <AttachmentsSection eventId={event.id} canWrite={editable} />
+
+      {showExpenses && (
+        <>
+          <Separator />
+          <ExpensesProfitSection
+            eventId={event.id}
+            canWrite={editable}
+            totalRevenue={editable ? (Number(form.total_price) || 0) : (event.total_price ?? 0)}
+          />
+        </>
+      )}
+
+      {role === "owner" && (
+        <>
+          <Separator />
+          <AgentAssignmentSection
+            eventId={event.id}
+            canWrite={editable}
+            totalPrice={editable ? (Number(form.total_price) || 0) : (Number(event.total_price) || 0)}
+          />
+        </>
+      )}
+    </>
+  );
+
+  // ── VIEW mode ─────────────────────────────────────────────────────────────
+
+  const viewContent = (
+    <div className="flex-1 overflow-y-auto">
+      {/* Date + status hero strip */}
+      <div className="px-6 py-3 bg-muted/30 border-b flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="flex items-center gap-2 text-sm flex-wrap">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-medium">{format(new Date(event.event_date), "EEEE, MMMM d, yyyy")}</span>
+          {event.hebrew_date && (
+            <span className="text-xs text-muted-foreground">· {event.hebrew_date}</span>
+          )}
+        </div>
+        <Badge variant="outline" className={`self-start sm:self-auto text-xs font-medium ${statusCfg.className}`}>
+          {statusCfg.label}
+        </Badge>
+      </div>
+
+      <div className="px-6 py-5 space-y-5">
+        {/* Event Details */}
+        <ViewSection title="Event Details">
+          <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 sm:gap-x-6">
+            <Field label={b.client}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-sm">{event.clients?.name ?? event.client_name ?? "—"}</span>
+                {role !== "member" && event.client_id && (
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={() => setHistoryOpen(true)}>
+                    <History className="h-3 w-3 mr-1" />History
+                  </Button>
+                )}
+              </div>
+            </Field>
+            <Field label={b.eventType}>
+              <span className="font-medium text-sm">{(b.types as any)[event.event_type] ?? event.event_type}</span>
+            </Field>
+            <Field label={b.venue}>
+              <span className="font-medium text-sm">{event.venue || "—"}</span>
+            </Field>
+            <Field label={b.location}>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">{event.location || "—"}</span>
+                {address && <NavigateButton address={address} size="icon" />}
+              </div>
+            </Field>
+            {event.notes && (
+              <div className="sm:col-span-2 space-y-1 pt-1">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{b.notes}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{event.notes}</p>
+              </div>
+            )}
+          </div>
+        </ViewSection>
+
+        {/* Financials */}
+        {showFinancialFields && (
+          <>
+            <Separator />
+            <ViewSection title="Financials" icon={DollarSign}>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+                <Field label={b.totalPrice}>
+                  <span className="font-semibold text-sm">${Number(event.total_price ?? 0).toLocaleString()}</span>
+                </Field>
+                <Field label={b.deposit}>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-medium text-sm">${Number(event.deposit ?? 0).toLocaleString()}</span>
+                    {event.deposit > 0 && (
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${event.deposit_status === "paid" ? "bg-emerald-500/15 text-emerald-700 border-emerald-200" : "bg-muted text-muted-foreground border-border"}`}>
+                        {event.deposit_status ?? "unpaid"}
+                      </Badge>
+                    )}
+                  </div>
+                </Field>
+                <Field label={b.balanceDue}>
+                  <span className={`font-medium text-sm ${Number(event.balance_due) > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+                    ${Number(event.balance_due ?? 0).toLocaleString()}
+                  </span>
+                </Field>
+                {Number(event.travel_fee) > 0 && (
+                  <Field label="Travel Fee">
+                    <div className="flex items-center gap-1.5">
+                      <Car className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium text-sm">${Number(event.travel_fee).toLocaleString()}</span>
+                      <span className={`text-xs ${event.travel_fee_type === "charge_customer" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                        {event.travel_fee_type === "charge_customer" ? "· billed" : "· expense"}
+                      </span>
+                    </div>
+                  </Field>
+                )}
+                {event.due_date && (
+                  <Field label={b.dueDate}>
+                    <span className="font-medium text-sm">{format(new Date(event.due_date), "MMM d, yyyy")}</span>
+                  </Field>
+                )}
+              </div>
+            </ViewSection>
+          </>
+        )}
+
+        {/* Timing */}
+        {(event.chuppah_time || event.meal_time || event.first_dance_time || event.second_dance_time || event.mitzvah_tanz_time || event.event_start_time) && (
+          <>
+            <Separator />
+            <ViewSection title="Event Timing" icon={Clock}>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                {(event.event_type === "wedding"
+                  ? [
+                      { label: "Chuppah", value: event.chuppah_time },
+                      { label: "Meal", value: event.meal_time },
+                      { label: "First Dance", value: event.first_dance_time },
+                      { label: "Second Dance", value: event.second_dance_time },
+                      { label: "Mitzvah Tanz", value: event.mitzvah_tanz_time },
+                    ]
+                  : [{ label: "Event Start", value: event.event_start_time }]
+                ).filter(f => f.value).map(f => (
+                  <Field key={f.label} label={f.label}>
+                    <span className="font-medium text-sm">{f.value}</span>
+                  </Field>
+                ))}
+              </div>
+            </ViewSection>
+          </>
+        )}
+
+        {/* Assigned Agents */}
+        {role !== "member" && assignedAgents.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <SectionLabel icon={UserCheck} title="Referral Agents" />
+                {totalCommission > 0 && (
+                  <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200 text-xs">
+                    ${totalCommission.toLocaleString()} total
+                  </Badge>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {assignedAgents.map((ba: any) => (
+                  <div key={ba.id} className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-sm">
+                    <div>
+                      <p className="font-medium">{ba.agents?.name ?? "Agent"}</p>
+                      <p className="text-xs text-muted-foreground">{ba.commission_rate}% = ${Number(ba.commission_amount || 0).toLocaleString()}</p>
+                    </div>
+                    {ba.commission_paid
+                      ? <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 border-emerald-200 text-[10px]"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Paid</Badge>
+                      : <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200 text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />Pending</Badge>
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {subSections(false)}
+      </div>
+    </div>
+  );
+
+  // ── EDIT mode ─────────────────────────────────────────────────────────────
+
+  const editContent = (
+    <>
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+        {/* Event Details */}
+        <div className="space-y-3">
+          <SectionLabel title="Event Details" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.eventType} *</Label>
+              <Select value={form.event_type} onValueChange={(v) => setForm(prev => ({ ...prev, event_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map(et => (
+                    <SelectItem key={et} value={et}>{(b.types as any)[et]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.client}</Label>
+              <div className="flex gap-1.5">
+                <Select value={form.client_id} onValueChange={(v) => setForm(prev => ({ ...prev, client_id: v }))}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectContent>
+                    {clients.map(cl => (
+                      <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {canWrite && (
+                  <Button type="button" variant="outline" size="icon" onClick={() => setClientDialogOpen(true)} title="Add client">
+                    <UserPlus className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             </div>
-            <Detail label={b.date} value={format(new Date(event.event_date), "MMM d, yyyy")} />
-            <Detail label={b.hebrewDate} value={event.hebrew_date ?? "—"} />
-            <Detail label={b.eventType} value={(b.types as any)[event.event_type] ?? event.event_type} />
-            <Detail label={b.venue} value={event.venue ?? "—"} />
-            <div className="space-y-0.5">
-              <p className="text-muted-foreground">{b.location}</p>
-              <div className="flex items-center gap-2">
-                <p className="font-medium">{event.location || "—"}</p>
-                {address && <NavigateButton address={address} size="icon" />}
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.date} *</Label>
+              <Input type="date" required value={form.event_date} onChange={(e) => setForm(prev => ({ ...prev, event_date: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.hebrewDate}</Label>
+              <Input disabled value={form.event_date ? toHebrewDate(form.event_date) : ""} className="bg-muted text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Location */}
+        <div className="space-y-3">
+          <SectionLabel title="Location" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.venue}</Label>
+              <VenueAutocomplete
+                value={form.venue}
+                onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
+                placeholder="Search venue name..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.location}</Label>
+              <div className="flex gap-1.5">
+                <LocationAutocomplete
+                  value={form.location}
+                  onChange={(location) => setForm(prev => ({ ...prev, location }))}
+                  placeholder="Search or pin on map below"
+                />
+                {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
               </div>
             </div>
           </div>
+          <BookingMap
+            onLocationSelect={(venue, address) => setForm(prev => ({
+              ...prev,
+              venue: venue || prev.venue,
+              location: address,
+            }))}
+          />
+        </div>
 
-          {/* Event Timing */}
-          {hasTimingData && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h4 className="flex items-center gap-2 font-semibold text-sm">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Event Timing
-                </h4>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-3">
-                  {timingFields.filter((f) => f.value).map((f) => (
-                    <Detail key={f.label} label={f.label} value={f.value} />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {canViewFinancials && (
-            <>
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <Detail label={b.totalPrice} value={`$${event.total_price ?? 0}`} />
-                {(event.travel_fee ?? 0) > 0 && <Detail label="Travel Fee" value={`$${event.travel_fee}`} />}
-                <Detail label={b.deposit} value={`$${event.deposit ?? 0}`} />
-                <Detail label={b.balanceDue} value={`$${balanceDisplay.toLocaleString()}`} />
-                <div className="space-y-0.5">
-                  <p className="text-muted-foreground">{b.status}</p>
-                  <Badge variant="outline" className={statusColor(displayPaymentStatus)}>
-                    {(b.paymentStatus as any)[displayPaymentStatus]}
-                  </Badge>
-                </div>
-                {event.due_date && <Detail label={b.dueDate} value={format(new Date(event.due_date), "MMM d, yyyy")} />}
-              </div>
-            </>
-          )}
-
-          {/* Assigned Agents */}
-          {canViewFinancials && assignedAgents.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="flex items-center gap-2 font-semibold text-sm">
-                    <UserCheck className="h-4 w-4 text-primary" />
-                    Referral Agents
-                  </h4>
-                  {totalCommission > 0 && (
-                    <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200">
-                      <DollarSign className="h-3 w-3 mr-0.5" />${totalCommission.toLocaleString()}
-                    </Badge>
-                  )}
+        {/* Financials */}
+        {showFinancialFields && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <SectionLabel title="Financials" icon={DollarSign} />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.totalPrice}</Label>
+                  <Input type="number" min="0" value={form.total_price} onChange={(e) => updateFinancials("total_price", e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  {assignedAgents.map((ba: any) => (
-                    <div key={ba.id} className="flex items-center justify-between rounded-lg border p-2.5 text-sm">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-medium">{ba.agents?.name || "Agent"}</p>
-                          {ba.commission_paid ? (
-                            <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0">
-                              <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Paid
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200 text-[10px] px-1.5 py-0">
-                              <Clock className="h-2.5 w-2.5 mr-0.5" />Pending
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-muted-foreground text-xs">
-                          {ba.commission_rate}% = ${Number(ba.commission_amount || 0).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  <Label className="text-sm">Travel Fee</Label>
+                  <Input type="number" min="0" value={form.travel_fee} onChange={(e) => updateFinancials("travel_fee", e.target.value)} placeholder="0" />
+                </div>
+                {Number(form.travel_fee) > 0 && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-sm">Travel Fee — How to treat it?</Label>
+                    <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
+                        <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.deposit}</Label>
+                  <Input type="number" min="0" value={form.deposit} onChange={(e) => updateFinancials("deposit", e.target.value)} />
+                </div>
+                {Number(form.deposit) > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Deposit Status</Label>
+                    <Select value={form.deposit_status} onValueChange={(v) => setForm(prev => ({ ...prev, deposit_status: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.balanceDue}</Label>
+                  <Input disabled value={form.balance_due} className="bg-muted" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Booking Status</Label>
+                  <Select value={form.payment_status} onValueChange={(v) => {
+                    const total = Number(form.total_price) || 0;
+                    const dep = Number(form.deposit) || 0;
+                    setForm(prev => ({
+                      ...prev,
+                      payment_status: v,
+                      balance_due: String(v === "paid" ? 0 : Math.max(total - dep, 0)),
+                    }));
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_STATUSES.map(s => (
+                        <SelectItem key={s} value={s}>{(b.paymentStatus as any)[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.dueDate}</Label>
+                  <Input type="date" value={form.due_date} onChange={(e) => setForm(prev => ({ ...prev, due_date: e.target.value }))} />
                 </div>
               </div>
-            </>
-          )}
+            </div>
+          </>
+        )}
 
-          {event.notes && (
-            <>
-              <Separator />
-              <div className="text-sm space-y-0.5">
-                <p className="text-muted-foreground">{b.notes}</p>
-                <p className="whitespace-pre-wrap">{event.notes}</p>
-              </div>
-            </>
-          )}
+        <Separator />
 
-          <Separator />
-          <ColleaguesSection eventId={event.id} canWrite={false} tenantId={event.tenant_id} />
-          {canViewFinancials && (
-            <>
-              <Separator />
-              <PaymentsSection eventId={event.id} canWrite={false} />
-            </>
-          )}
-          <Separator />
-          <SongsSection eventId={event.id} canWrite={false} />
-          <Separator />
-          <AttachmentsSection eventId={event.id} canWrite={false} />
-
-          {canViewFinancials && canAccess("expenses_profit") && (
-            <>
-              <Separator />
-              <ExpensesProfitSection eventId={event.id} canWrite={false} totalRevenue={event.total_price ?? 0} />
-            </>
-          )}
+        {/* Notes */}
+        <div className="space-y-1.5">
+          <Label className="text-sm">{b.notes}</Label>
+          <Textarea rows={3} value={form.notes} onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))} className="resize-none" />
         </div>
-      </DialogContent>
-    </Dialog>
 
-    {event.client_id && (
-      <ClientHistoryDialog
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        clientId={event.client_id}
-        clientName={event.clients?.name ?? "Client"}
+        {/* Timing */}
+        <Separator />
+        <EventTimingSection eventType={form.event_type} timing={timing} onChange={setTiming} canWrite={canWrite} />
+
+        {subSections(canWrite)}
+      </div>
+
+      {/* Sticky save/cancel footer */}
+      <div className="shrink-0 border-t bg-background px-6 py-4">
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => { setForm(buildForm(event)); setTiming(buildTiming(event)); setMode("view"); }}
+          >
+            {t.common.cancel}
+          </Button>
+          <Button
+            type="button"
+            disabled={saveMutation.isPending}
+            className="bg-gradient-gold text-primary-foreground font-semibold"
+            onClick={() => saveMutation.mutate(form)}
+          >
+            {saveMutation.isPending ? t.common.loading : t.common.save}
+          </Button>
+        </DialogFooter>
+      </div>
+    </>
+  );
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="flex flex-col w-full sm:max-w-2xl max-h-[90vh] gap-0 p-0 overflow-hidden">
+
+          {/* Header — title, description, mode toggle */}
+          <DialogHeader className="px-6 pt-5 pb-4 pr-14 shrink-0 border-b">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-base font-semibold leading-snug">
+                  {(b.types as any)[event.event_type] ?? event.event_type}
+                </DialogTitle>
+                <DialogDescription className="mt-0.5 text-xs">
+                  {mode === "edit" ? "Editing booking details" : "Viewing booking details"}
+                </DialogDescription>
+              </div>
+              {canWrite && mode === "view" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 h-8 gap-1.5 text-xs"
+                  onClick={() => setMode("edit")}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              )}
+              {mode === "edit" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 h-8 gap-1.5 text-xs text-muted-foreground"
+                  onClick={() => { setForm(buildForm(event)); setTiming(buildTiming(event)); setMode("view"); }}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  View
+                </Button>
+              )}
+            </div>
+          </DialogHeader>
+
+          {mode === "view" ? viewContent : editContent}
+        </DialogContent>
+      </Dialog>
+
+      {/* Client history dialog */}
+      {event.client_id && (
+        <ClientHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          clientId={event.client_id}
+          clientName={event.clients?.name ?? "Client"}
+        />
+      )}
+
+      {/* Quick-add client */}
+      <InlineClientDialog
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        tenantId={tenantId}
+        onClientCreated={(clientId) => {
+          setForm(prev => ({ ...prev, client_id: clientId }));
+          qc.invalidateQueries({ queryKey: ["clients", tenantId] });
+        }}
       />
-    )}
     </>
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+// ── Shared presentational helpers ─────────────────────────────────────────────
+
+function SectionLabel({ icon: Icon, title }: { icon?: React.ElementType; title: string }) {
+  return (
+    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+      {Icon && <Icon className="h-3.5 w-3.5" />}
+      {title}
+    </p>
+  );
+}
+
+function ViewSection({ title, icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <SectionLabel icon={icon} title={title} />
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-muted-foreground">{label}</p>
-      <p className="font-medium">{value}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      {children}
     </div>
   );
 }

@@ -718,158 +718,180 @@ export default function Bookings() {
               }
               saveMutation.mutate(form);
             }} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>{b.eventType} *</Label>
-                <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {EVENT_TYPES.map((et) => (
-                      <SelectItem key={et} value={et}>{(b.types as any)[et]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{b.client}</Label>
-                <div className="flex gap-1.5">
-                  <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select client" /></SelectTrigger>
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+            {/* Event Details */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Event Details</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.eventType} *</Label>
+                  <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {clients.map((cl) => (
-                        <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>
+                      {EVENT_TYPES.map((et) => (
+                        <SelectItem key={et} value={et}>{(b.types as any)[et]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {canWrite && (
-                    <Button type="button" variant="outline" size="icon" onClick={() => setClientDialogOpen(true)} title="Quick add client">
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {form.client_id && editing && (
-                    <Button type="button" variant="outline" size="icon" onClick={() => {
-                      const cl = clients.find((c) => c.id === form.client_id);
-                      setHistoryClientId(form.client_id);
-                      setHistoryClientName(cl?.name ?? "Client");
-                    }} title="View Client History">
-                      <History className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>{b.date} *</Label>
-                <Input
-                  type="date"
-                  required
-                  min={eventDateMin}
-                  value={form.event_date}
-                  onChange={(e) => setForm({ ...form, event_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{b.hebrewDate}</Label>
-                <Input disabled value={form.event_date ? toHebrewDate(form.event_date) : ""} className="bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <Label>{b.venue}</Label>
-                <VenueAutocomplete
-                  value={form.venue}
-                  onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
-                  placeholder="Search venue name..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{b.location}</Label>
-                <div className="flex gap-1.5">
-                  <LocationAutocomplete
-                    value={form.location}
-                    onChange={(location) => setForm(prev => ({ ...prev, location }))}
-                    placeholder="Search or pin on map below"
-                  />
-                  {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
-                </div>
-              </div>
-              <div className="md:col-span-2">
-                <BookingMap
-                  onLocationSelect={(venue, address) => setForm(prev => ({
-                    ...prev,
-                    venue: venue || prev.venue,
-                    location: address,
-                  }))}
-                />
-              </div>
-              {showFinancialFields && (
-                <>
-                  <div className="space-y-2">
-                    <Label>{b.totalPrice}</Label>
-                    <Input type="number" min="0" value={form.total_price} onChange={(e) => updateFinancials("total_price", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Travel Fee</Label>
-                    <Input type="number" min="0" value={form.travel_fee} onChange={(e) => updateFinancials("travel_fee", e.target.value)} placeholder="0" />
-                  </div>
-                  {Number(form.travel_fee) > 0 && (
-                    <div className="space-y-2">
-                      <Label>Travel Fee — How to treat it?</Label>
-                      <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
-                          <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>{b.deposit}</Label>
-                    <Input type="number" min="0" value={form.deposit} onChange={(e) => updateFinancials("deposit", e.target.value)} />
-                  </div>
-                  {Number(form.deposit) > 0 && (
-                    <div className="space-y-2">
-                      <Label>Deposit Status</Label>
-                      <Select value={form.deposit_status} onValueChange={(v) => setForm({ ...form, deposit_status: v })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unpaid">Unpaid</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>{b.balanceDue}</Label>
-                    <Input disabled value={form.balance_due} className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Booking Status</Label>
-                    <Select value={form.payment_status} onValueChange={(v) => {
-                      const total = Number(form.total_price) || 0;
-                      const dep = Number(form.deposit) || 0;
-                      const balanceDue = v === "paid" ? 0 : Math.max(total - dep, 0);
-                      setForm({ ...form, payment_status: v, balance_due: String(balanceDue) });
-                    }}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.client}</Label>
+                  <div className="flex gap-1.5">
+                    <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Select client" /></SelectTrigger>
                       <SelectContent>
-                        {PAYMENT_STATUSES.map((s) => (
-                          <SelectItem key={s} value={s}>{(b.paymentStatus as any)[s]}</SelectItem>
+                        {clients.map((cl) => (
+                          <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {canWrite && (
+                      <Button type="button" variant="outline" size="icon" onClick={() => setClientDialogOpen(true)} title="Quick add client">
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {form.client_id && editing && (
+                      <Button type="button" variant="outline" size="icon" onClick={() => {
+                        const cl = clients.find((c) => c.id === form.client_id);
+                        setHistoryClientId(form.client_id);
+                        setHistoryClientName(cl?.name ?? "Client");
+                      }} title="View Client History">
+                        <History className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <Label>{b.dueDate}</Label>
-                    <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-                  </div>
-                </>
-              )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.date} *</Label>
+                  <Input
+                    type="date"
+                    required
+                    min={eventDateMin}
+                    value={form.event_date}
+                    onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.hebrewDate}</Label>
+                  <Input disabled value={form.event_date ? toHebrewDate(form.event_date) : ""} className="bg-muted text-sm" />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>{b.notes}</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+
+            <Separator />
+
+            {/* Location */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Location</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.venue}</Label>
+                  <VenueAutocomplete
+                    value={form.venue}
+                    onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
+                    placeholder="Search venue name..."
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{b.location}</Label>
+                  <div className="flex gap-1.5">
+                    <LocationAutocomplete
+                      value={form.location}
+                      onChange={(location) => setForm(prev => ({ ...prev, location }))}
+                      placeholder="Search or pin on map below"
+                    />
+                    {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
+                  </div>
+                </div>
+              </div>
+              <BookingMap
+                onLocationSelect={(venue, address) => setForm(prev => ({
+                  ...prev,
+                  venue: venue || prev.venue,
+                  location: address,
+                }))}
+              />
+            </div>
+
+            {showFinancialFields && (
+              <>
+                <Separator />
+                {/* Financials */}
+                <div className="space-y-3">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Financials</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">{b.totalPrice}</Label>
+                      <Input type="number" min="0" value={form.total_price} onChange={(e) => updateFinancials("total_price", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Travel Fee</Label>
+                      <Input type="number" min="0" value={form.travel_fee} onChange={(e) => updateFinancials("travel_fee", e.target.value)} placeholder="0" />
+                    </div>
+                    {Number(form.travel_fee) > 0 && (
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="text-sm">Travel Fee — How to treat it?</Label>
+                        <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
+                            <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">{b.deposit}</Label>
+                      <Input type="number" min="0" value={form.deposit} onChange={(e) => updateFinancials("deposit", e.target.value)} />
+                    </div>
+                    {Number(form.deposit) > 0 && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Deposit Status</Label>
+                        <Select value={form.deposit_status} onValueChange={(v) => setForm({ ...form, deposit_status: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unpaid">Unpaid</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">{b.balanceDue}</Label>
+                      <Input disabled value={form.balance_due} className="bg-muted" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Booking Status</Label>
+                      <Select value={form.payment_status} onValueChange={(v) => {
+                        const total = Number(form.total_price) || 0;
+                        const dep = Number(form.deposit) || 0;
+                        const balanceDue = v === "paid" ? 0 : Math.max(total - dep, 0);
+                        setForm({ ...form, payment_status: v, balance_due: String(balanceDue) });
+                      }}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PAYMENT_STATUSES.map((s) => (
+                            <SelectItem key={s} value={s}>{(b.paymentStatus as any)[s]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">{b.dueDate}</Label>
+                      <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.notes}</Label>
+              <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="resize-none" />
             </div>
 
             {/* Event Timing */}

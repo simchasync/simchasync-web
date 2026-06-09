@@ -187,6 +187,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [viewing, setViewing] = useState<any>(null);
+  const [viewingMode, setViewingMode] = useState<"view" | "edit">("view");
 
   useEffect(() => {
     if (!tenantId) return;
@@ -333,8 +334,8 @@ export default function Dashboard() {
                 <CardContent className="p-4 md:p-5">
                   <UpcomingEvents
                     events={upcoming}
-                    onView={setViewing}
-                    onEdit={(ev) => navigate(`/app/bookings?edit=${ev.id}`)}
+                    onView={(ev) => { setViewing(ev); setViewingMode("view"); }}
+                    onEdit={(ev) => { setViewing(ev); setViewingMode("edit"); }}
                   />
                   {upcoming.length > 5 && (
                     <>
@@ -383,7 +384,13 @@ export default function Dashboard() {
         </>
       )}
 
-      <ViewBookingDialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)} event={viewing} />
+      <ViewBookingDialog
+        open={!!viewing}
+        onOpenChange={(o) => { if (!o) setViewing(null); }}
+        event={viewing}
+        defaultMode={viewingMode}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["events", tenantId] })}
+      />
     </div>
   );
 }

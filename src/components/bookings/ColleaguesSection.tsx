@@ -667,7 +667,7 @@ function ColleagueCard({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-3">
         <div>
           <Label className="text-xs text-muted-foreground">Name</Label>
           {canWrite ? (
@@ -722,7 +722,7 @@ function ColleagueCard({
             <p className="font-medium">{ec.payment_responsibility === "paid_by_me" ? "Paid by Me" : "Paid by Organizer"}</p>
           )}
         </div>
-        <div className="md:col-span-3">
+        <div className="sm:col-span-2 md:col-span-3">
           <Label className="text-xs text-muted-foreground">Notes</Label>
           {canWrite ? (
             <Input className="h-7 text-xs" defaultValue={ec.notes || ""} onBlur={(e) => onUpdate(ec.id, "notes", e.target.value)} />

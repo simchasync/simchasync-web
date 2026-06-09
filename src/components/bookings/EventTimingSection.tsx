@@ -36,7 +36,7 @@ export default function EventTimingSection({ eventType, timing, onChange, canWri
         <Clock className="h-4 w-4 text-primary" />
         Event Timing
       </h4>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {fields.map((f) => (
           <div key={f.key} className="space-y-1.5">
             <Label className="text-xs">{f.label}</Label>

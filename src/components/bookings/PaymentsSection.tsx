@@ -162,6 +162,7 @@ export default function PaymentsSection({ eventId, canWrite, invoiceId }: Props)
       )}
 
       {payments.length > 0 && (
+        <div className="overflow-x-auto -mx-1 px-1">
         <Table>
           <TableHeader>
             <TableRow>
@@ -190,6 +191,7 @@ export default function PaymentsSection({ eventId, canWrite, invoiceId }: Props)
             ))}
           </TableBody>
         </Table>
+        </div>
       )}
     </div>
   );
