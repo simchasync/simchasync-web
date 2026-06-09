@@ -26,6 +26,10 @@ interface TierCard {
   features: readonly string[];
 }
 
+function isTierKey(t: string | null | undefined): t is keyof typeof SUBSCRIPTION_TIERS {
+  return !!t && t in SUBSCRIPTION_TIERS;
+}
+
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
@@ -100,6 +104,9 @@ const fadeUp = {
   }),
 };
 
+const TIER_COUNT = Object.keys(SUBSCRIPTION_TIERS).length;
+const planGridCols = TIER_COUNT <= 2 ? "md:grid-cols-2" : TIER_COUNT === 3 ? "md:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4";
+
 function PlansSkeleton() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
@@ -108,8 +115,8 @@ function PlansSkeleton() {
         <Skeleton className="h-8 w-64 mx-auto" />
         <Skeleton className="h-4 w-96 mx-auto" />
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        {[0, 1].map((i) => (
+      <div className={`grid gap-6 ${planGridCols}`}>
+        {Array.from({ length: TIER_COUNT }).map((_, i) => (
           <Card key={i} className="overflow-hidden">
             <CardHeader className="text-center pb-2">
               <Skeleton className="h-12 w-12 rounded-full mx-auto mb-2" />
@@ -331,9 +338,7 @@ export default function UpgradePage() {
     };
   });
 
-  const currentTierData = tier && (tier in SUBSCRIPTION_TIERS)
-    ? SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS]
-    : null;
+  const currentTierData = isTierKey(tier) ? SUBSCRIPTION_TIERS[tier] : null;
   const trialDays = getTrialDays();
 
   if (loading) {
@@ -427,7 +432,7 @@ export default function UpgradePage() {
         </>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${planGridCols}`}>
         {tiers.map((tierCard, index) => (
           <PlanCard
             key={tierCard.key}
