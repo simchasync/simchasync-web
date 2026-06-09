@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
         user_id: user.id,
         full_name: displayName,
         email: safeEmail,
+        phone: user.user_metadata?.phone || null,
         has_used_trial: false,
       });
     }
