@@ -44,3 +44,7 @@ verify_jwt = false
 
 [functions.admin-audit]
 verify_jwt = false
+
+# Work report — called by GitHub Actions cron with Bearer token auth
+[functions.send-work-report]
+verify_jwt = false

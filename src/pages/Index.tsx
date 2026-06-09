@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link, Navigate } from "react-router-dom";
-import { motion, useInView } from "framer-motion";
+import { useInView } from "framer-motion";
+import { motion } from "motion/react";
 import { useRef } from "react";
+import BlurText from "@/components/landing/BlurText";
 import {
   Calendar, Users, FileText, CreditCard, Share2, Globe,
   Check, Star, ArrowRight, Music, Sparkles, ChevronRight,
@@ -11,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
+import BackgroundVideo from "@/components/landing/BackgroundVideo";
 
 // ─── Animation helpers ────────────────────────────────────────────────────────
 
@@ -82,143 +85,153 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
-      {/* ── Navigation ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="container flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/15">
-              <Music className="h-4 w-4 text-primary" />
-            </div>
-            <span className="font-display text-[17px] font-semibold tracking-tight">
-              SimchaSync
-            </span>
-          </Link>
+      {/* ── Dark Hero Section with Video ─────────────────────────────────────── */}
+      <section className="relative bg-black min-h-screen flex flex-col overflow-hidden selection:bg-white selection:text-black">
+        <BackgroundVideo />
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {(["features", "pricing"] as const).map((id) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {l.nav[id as keyof typeof l.nav]}
-              </a>
-            ))}
-          </nav>
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 pointer-events-none z-[1]" />
 
-          {/* Auth actions */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle variant="icon" className="hover:bg-accent" />
-            <Link to="/auth/login">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden text-muted-foreground hover:text-foreground md:inline-flex"
-              >
-                {l.nav.login}
-              </Button>
+        {/* ── Navigation ─────────────────────────────────────────────────────── */}
+        <header className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
+          <div className="container flex h-16 items-center justify-between gap-4">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 transition-colors group-hover:bg-primary/30 shadow-lg shadow-primary/10">
+                <Music className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-display text-[17px] font-semibold tracking-tight text-white/90">
+                SimchaSync
+              </span>
             </Link>
-            <Link to="/auth/register">
-              <Button size="sm" className="gap-1.5 font-medium shadow-sm">
-                {l.nav.signup}
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden py-32 md:py-48">
-        {/* Premium gradient backdrop */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-20%,rgba(var(--primary-rgb),0.15),transparent_50%)] md:bg-[radial-gradient(ellipse_at_50%_-30%,rgba(var(--primary-rgb),0.12),transparent_60%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-0 right-0 h-96 w-96 bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.08),transparent_70%)] blur-3xl"
-        />
-
-        <div className="container relative">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE }}
-            className="mx-auto max-w-3xl text-center"
-          >
-            {/* Premium Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-              className="mb-10 inline-flex items-center gap-2.5 rounded-full border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/0 px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-primary/5 backdrop-blur-md"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Try free for 30 days — No credit card</span>
-            </motion.div>
-
-            {/* Premium Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
-              className="mb-8 font-display text-5xl font-black leading-[1.1] tracking-tight text-foreground md:text-7xl"
-            >
-              {l.hero.title.split("Simchas")[0]}
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Simchas</span>
-              {l.hero.title.split("Simchas")[1]}
-            </motion.h1>
-
-            {/* Premium Subheadline */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
-              className="mb-12 text-lg leading-relaxed text-muted-foreground/90 md:text-xl max-w-2xl mx-auto"
-            >
-              {l.hero.subtitle}
-            </motion.p>
-
-            {/* Premium CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
-              className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:items-center"
-            >
-              <Link to="/auth/register">
-                <Button
-                  size="lg"
-                  className="gap-2 px-8 py-6 text-base font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:translate-y-[-2px]"
+            {/* Desktop nav */}
+            <nav className="hidden items-center gap-1 md:flex">
+              {(["features", "pricing"] as const).map((id) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  className="rounded-md px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                 >
-                  {l.hero.cta}
-                  <ArrowRight className="h-5 w-5" />
+                  {l.nav[id as keyof typeof l.nav]}
+                </a>
+              ))}
+            </nav>
+
+            {/* Auth actions */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
+              <Link to="/auth/login">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden text-white/70 hover:text-primary hover:bg-primary/10 md:inline-flex"
+                >
+                  {l.nav.login}
                 </Button>
               </Link>
-              <a href="#features">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="px-8 py-6 text-base font-semibold border-border/50 hover:border-primary/30 hover:bg-accent/50"
-                >
-                  {l.hero.ctaSecondary}
+              <Link to="/auth/register">
+                <Button size="sm" className="gap-1.5 font-medium shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20">
+                  {l.nav.signup}
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
-              </a>
-            </motion.div>
+              </Link>
+            </div>
+          </div>
+        </header>
 
-            {/* Premium Social proof */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
-              className="mt-12 text-sm font-medium text-muted-foreground/70"
+        {/* ── Hero Content ──────────────────────────────────────────────────── */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-20 md:py-24">
+          {/* Premium gradient backdrop */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-20%,rgba(255,255,255,0.06),transparent_50%)]"
+          />
+
+          <div className="container relative">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: EASE }}
+              className="mx-auto max-w-3xl text-center"
             >
-              ✓ Trusted by 2,000+ families across North America & Israel
-            </motion.p>
-          </motion.div>
+              {/* Premium Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+                className="mb-10 inline-flex items-center gap-2.5 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-primary/5 backdrop-blur-md"
+              >
+                <Sparkles className="h-4 w-4 text-primary/80" />
+                <span>Try free for 30 days — No credit card</span>
+              </motion.div>
+
+              {/* Premium Headline */}
+              <h1 className="mb-8 font-display text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-white/90 md:text-7xl">
+                {l.hero.title.split(" ").map((word, i, arr) => {
+                  const delay = i * 0.12;
+                  const isSimchas = word === "Simchas";
+                  return (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, filter: "blur(10px)", y: -16 }}
+                      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                      transition={{ delay, duration: 0.5, ease: EASE }}
+                      className={`inline-block ${isSimchas ? "bg-gradient-to-r from-primary via-[#f5b342] to-[#d4932a] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(242,184,75,0.3)]" : ""}`}
+                    >
+                      {word}{i < arr.length - 1 ? "\u00A0" : ""}
+                    </motion.span>
+                  );
+                })}
+              </h1>
+
+              {/* Premium Subheadline */}
+              <BlurText
+                text={l.hero.subtitle}
+                delay={100}
+                animateBy="words"
+                direction="top"
+                className="mb-12 text-base md:text-lg leading-relaxed text-white/60 font-light tracking-wide max-w-xl mx-auto"
+              />
+
+              {/* Premium CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
+                className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:items-center"
+              >
+                <Link to="/auth/register">
+                  <Button
+                    size="lg"
+                    className="gap-2 px-8 py-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:translate-y-[-2px]"
+                  >
+                    {l.hero.cta}
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <a href="#features">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="px-8 py-6 text-base font-semibold bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 hover:bg-white/20 hover:border-white/40 hover:text-white shadow-none"
+                  >
+                    {l.hero.ctaSecondary}
+                  </Button>
+                </a>
+              </motion.div>
+
+              {/* Premium Social proof */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
+                className="mt-12 text-sm font-medium text-white/60"
+              >
+                ✓ Trusted by 2,000+ families across North America & Israel
+              </motion.p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -298,7 +311,6 @@ export default function Index() {
           <AnimatedSection className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-2">
             {l.pricing.plans.map((plan, i) => (
               <motion.div key={i} variants={fadeUp} custom={i} className="relative group">
-                {/* Premium badge for popular */}
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 z-20 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/40">
@@ -319,7 +331,6 @@ export default function Index() {
                   {plan.popular && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />}
 
                   <CardContent className="relative flex flex-col h-full p-8">
-                    {/* Plan header */}
                     <div className="mb-8 pb-8 border-b border-border/40">
                       <h3 className="mb-2 font-display text-2xl font-bold">
                         {plan.name}
@@ -327,7 +338,6 @@ export default function Index() {
                       <p className="text-sm text-muted-foreground/80">{plan.desc}</p>
                     </div>
 
-                    {/* Price */}
                     <div className="mb-8">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-display text-5xl font-black text-foreground">
@@ -340,7 +350,6 @@ export default function Index() {
                       <p className="mt-2 text-xs font-medium text-muted-foreground/60">30-day free trial included</p>
                     </div>
 
-                    {/* Features */}
                     <ul className="mb-10 flex flex-col gap-3.5 flex-1">
                       {plan.features.map((f, j) => {
                         const isComingSoon =
@@ -382,7 +391,6 @@ export default function Index() {
                       })}
                     </ul>
 
-                    {/* CTA — pushed to bottom */}
                     <Link to="/auth/register" className="block">
                       <Button
                         variant={plan.popular ? "default" : "outline"}
@@ -403,7 +411,6 @@ export default function Index() {
             ))}
           </AnimatedSection>
 
-          {/* Premium reassurance line */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}

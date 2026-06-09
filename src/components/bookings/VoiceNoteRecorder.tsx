@@ -16,6 +16,21 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
   const chunks = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const upload = useCallback(async (blob: Blob) => {
+    const path = `${eventId}/${crypto.randomUUID()}.webm`;
+    const { error: upErr } = await supabase.storage.from("event-files").upload(path, blob, { contentType: "audio/webm" });
+    if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); return; }
+    const { data: { publicUrl } } = supabase.storage.from("event-files").getPublicUrl(path);
+    const now = new Date();
+    const name = `Voice Note - ${now.toLocaleString()}`;
+    const { error: dbErr } = await supabase.from("event_attachments").insert({
+      event_id: eventId, file_url: publicUrl, name, file_type: "voice_note",
+    });
+    if (dbErr) { toast({ title: "Save failed", description: dbErr.message, variant: "destructive" }); return; }
+    toast({ title: "Voice note saved" });
+    onUploaded();
+  }, [eventId, onUploaded]);
+
   const start = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -42,21 +57,6 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
     setRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
-
-  const upload = useCallback(async (blob: Blob) => {
-    const path = `${eventId}/${crypto.randomUUID()}.webm`;
-    const { error: upErr } = await supabase.storage.from("event-files").upload(path, blob, { contentType: "audio/webm" });
-    if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); return; }
-    const { data: { publicUrl } } = supabase.storage.from("event-files").getPublicUrl(path);
-    const now = new Date();
-    const name = `Voice Note - ${now.toLocaleString()}`;
-    const { error: dbErr } = await supabase.from("event_attachments").insert({
-      event_id: eventId, file_url: publicUrl, name, file_type: "voice_note",
-    });
-    if (dbErr) { toast({ title: "Save failed", description: dbErr.message, variant: "destructive" }); return; }
-    toast({ title: "Voice note saved" });
-    onUploaded();
-  }, [eventId, onUploaded]);
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 

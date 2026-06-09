@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         display: ["Plus Jakarta Sans", "sans-serif"],
         sans: ["Inter", "sans-serif"],
+        serif: ["Instrument Serif", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",

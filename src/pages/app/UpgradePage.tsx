@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { SUBSCRIPTION_TIERS, type SubscriptionTier, getTrialDays } from "@/lib/subscription-tiers";
+import { SUBSCRIPTION_TIERS, getTrialDays } from "@/lib/subscription-tiers";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,12 +89,14 @@ function useCustomerPortal() {
   return { loadingPortal, handleManageOnStripe };
 }
 
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: i * 0.1, duration: 0.5, ease },
   }),
 };
 
@@ -203,16 +205,16 @@ function CurrentPlanCard({
 function PlanCard({
   tier,
   isCurrentPlan,
+  subscribed,
   loadingTier,
   loadingPortal,
-  onCheckout,
   onManage,
 }: {
   tier: TierCard;
   isCurrentPlan: boolean;
+  subscribed: boolean;
   loadingTier: boolean;
   loadingPortal: boolean;
-  onCheckout: () => void;
   onManage: () => void;
 }) {
   const { t } = useLanguage();
@@ -285,9 +287,9 @@ function PlanCard({
               {loadingTier || loadingPortal ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {tier.key === "full"
-                ? t.app.upgrade.subscribe.replace("{name}", tier.name)
-                : t.app.upgrade.switchTo.replace("{name}", tier.name)}
+              {subscribed
+                ? t.app.upgrade.switchTo.replace("{name}", tier.name)
+                : t.app.upgrade.subscribe.replace("{name}", tier.name)}
             </Button>
           )}
         </CardContent>
@@ -312,7 +314,7 @@ export default function UpgradePage() {
     { key: "full", icon: Crown, popular: true, ...SUBSCRIPTION_TIERS.full },
   ];
 
-  const currentTierData = tier ? SUBSCRIPTION_TIERS[tier] : null;
+  const currentTierData = (tier === "lite" || tier === "full") ? SUBSCRIPTION_TIERS[tier] : null;
   const trialDays = getTrialDays();
 
   if (loading) {
@@ -412,9 +414,9 @@ export default function UpgradePage() {
             key={tierCard.key}
             tier={tierCard}
             isCurrentPlan={subscribed && tier === tierCard.key}
+            subscribed={subscribed}
             loadingTier={loadingTier === tierCard.key}
             loadingPortal={loadingPortal}
-            onCheckout={() => handleCheckout(tierCard.price_id, tierCard.key)}
             onManage={subscribed ? handleManageOnStripe : () => handleCheckout(tierCard.price_id, tierCard.key)}
           />
         ))}
