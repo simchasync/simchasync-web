@@ -26,7 +26,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("travel_fee, payment_status, total_price")
+        .select("travel_fee, travel_fee_type, payment_status, total_price")
         .eq("id", eventId)
         .single();
       if (error) throw error;
@@ -107,15 +107,17 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
   });
 
   const travelFee = Number(eventData?.travel_fee) || 0;
+  const travelFeeType = eventData?.travel_fee_type ?? "expense";
+  const travelFeeCharged = travelFeeType === "charge_customer";
   const isPaid = eventData?.payment_status === "paid";
   const manualTotal = expenses.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
   const colleagueTotal = colleagueCosts.reduce((s: number, c: any) => s + (Number(c.price) || 0), 0);
   const commissionTotal = agentCommissions.reduce((s: number, c: any) => s + (Number(c.commission_amount) || 0), 0);
 
-  // All expenses always counted
-  const totalExpenses = manualTotal + colleagueTotal + commissionTotal + travelFee;
-  // Revenue = total expected regardless of payment status
-  const netProfit = totalRevenue - totalExpenses;
+  // Travel fee is revenue when charged to customer, expense otherwise
+  const effectiveRevenue = totalRevenue + (travelFeeCharged ? travelFee : 0);
+  const totalExpenses = manualTotal + colleagueTotal + commissionTotal + (travelFeeCharged ? 0 : travelFee);
+  const netProfit = effectiveRevenue - totalExpenses;
 
   return (
     <div className="space-y-3">
@@ -135,7 +137,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
           <CardContent className="p-3 text-center">
             <TrendingUp className="h-4 w-4 mx-auto text-emerald mb-1" />
             <p className="text-xs text-muted-foreground">Revenue</p>
-            <p className="font-bold text-sm">${totalRevenue.toLocaleString()}</p>
+            <p className="font-bold text-sm">${effectiveRevenue.toLocaleString()}</p>
             {!isPaid && (
               <p className="text-[10px] text-amber">Outstanding</p>
             )}
@@ -157,6 +159,19 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         </Card>
       </div>
 
+      {/* Travel Fee */}
+      {travelFee > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Travel Fee</p>
+          <div className="flex items-center justify-between text-xs rounded border px-2 py-1.5">
+            <div className="flex items-center gap-1.5">
+              <Car className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{travelFeeCharged ? "Charged to customer" : "Owner expense"}</span>
+            </div>
+            <span className={`font-medium ${travelFeeCharged ? "text-emerald-600" : ""}`}>${travelFee.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
 
       {/* Agent Commissions (auto) */}
       {agentCommissions.length > 0 && (

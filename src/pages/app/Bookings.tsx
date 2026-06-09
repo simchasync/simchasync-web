@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
@@ -35,6 +35,8 @@ import PaymentsSection from "@/components/bookings/PaymentsSection";
 import SongsSection from "@/components/bookings/SongsSection";
 import AttachmentsSection from "@/components/bookings/AttachmentsSection";
 import VenueAutocomplete from "@/components/bookings/VenueAutocomplete";
+import LocationAutocomplete from "@/components/bookings/LocationAutocomplete";
+import BookingMap from "@/components/bookings/BookingMap";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
 import NavigateButton from "@/components/bookings/NavigateButton";
 import EventTimingSection, { type TimingFields } from "@/components/bookings/EventTimingSection";
@@ -59,7 +61,7 @@ const emptyForm = {
   client_id: "", event_date: "", event_type: "wedding" as string, venue: "", location: "",
   total_price: "", deposit: "", balance_due: "", payment_status: "unpaid" as string,
   deposit_status: "unpaid" as string,
-  due_date: "", notes: "", travel_fee: "",
+  due_date: "", notes: "", travel_fee: "", travel_fee_type: "expense",
 };
 
 export default function Bookings() {
@@ -171,6 +173,7 @@ export default function Bookings() {
         notes: values.notes || null,
         hebrew_date: hebrewDate,
         travel_fee: travelFee,
+        travel_fee_type: travelFee > 0 ? (values.travel_fee_type || "expense") : "expense",
         chuppah_time: timing.chuppah_time || null,
         meal_time: timing.meal_time || null,
         first_dance_time: timing.first_dance_time || null,
@@ -190,7 +193,7 @@ export default function Bookings() {
       }
     },
     onSuccess: async (result) => {
-      const { data, isNew, wasStatus } = result;
+      const { data, isNew } = result;
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
 
       const totalPrice = Number(data.total_price) || 0;
@@ -229,6 +232,19 @@ export default function Bookings() {
           });
         }
 
+        // Travel fee invoice: only when charged to the customer
+        const travelFeeAmount = Number((data as any).travel_fee) || 0;
+        if (travelFeeAmount > 0 && (data as any).travel_fee_type === "charge_customer") {
+          invoicesToCreate.push({
+            tenant_id: tenantId!,
+            client_id: data.client_id || null,
+            event_id: data.id,
+            amount: travelFeeAmount,
+            description: `Travel Fee for ${eventLabel} (${clientName})`,
+            status: "draft",
+          });
+        }
+
         if (invoicesToCreate.length > 0) {
           await supabase.from("invoices").insert(invoicesToCreate);
           qc.invalidateQueries({ queryKey: ["invoices"] });
@@ -256,6 +272,7 @@ export default function Bookings() {
           due_date: data.due_date ?? "",
           notes: data.notes ?? "",
           travel_fee: String((data as any).travel_fee ?? ""),
+          travel_fee_type: (data as any).travel_fee_type ?? "expense",
         });
         setTiming({
           chuppah_time: data.chuppah_time ?? "",
@@ -266,6 +283,38 @@ export default function Bookings() {
           event_start_time: data.event_start_time ?? "",
         });
       } else {
+        // Sync deposit invoice status with deposit_status field
+        if (deposit > 0) {
+          if (depositStatus === "paid") {
+            const { data: depositInvoice, error: lookupErr } = await supabase
+              .from("invoices")
+              .select("id")
+              .eq("event_id", data.id)
+              .ilike("description", "Deposit for%")
+              .neq("status", "paid")
+              .maybeSingle();
+            if (lookupErr) throw lookupErr;
+            if (depositInvoice) {
+              const { error: updateErr } = await supabase.from("invoices").update({ status: "paid" }).eq("id", depositInvoice.id);
+              if (updateErr) throw updateErr;
+              qc.invalidateQueries({ queryKey: ["invoices"] });
+            }
+          } else {
+            const { data: depositInvoice, error: lookupErr } = await supabase
+              .from("invoices")
+              .select("id")
+              .eq("event_id", data.id)
+              .ilike("description", "Deposit for%")
+              .eq("status", "paid")
+              .maybeSingle();
+            if (lookupErr) throw lookupErr;
+            if (depositInvoice) {
+              const { error: updateErr } = await supabase.from("invoices").update({ status: "draft" }).eq("id", depositInvoice.id);
+              if (updateErr) throw updateErr;
+              qc.invalidateQueries({ queryKey: ["invoices"] });
+            }
+          }
+        }
         closeDialog();
         toast({ title: "Event updated" });
       }
@@ -342,6 +391,7 @@ export default function Bookings() {
       due_date: ev.due_date ?? "",
       notes: ev.notes ?? "",
       travel_fee: String(ev.travel_fee ?? ""),
+      travel_fee_type: ev.travel_fee_type ?? "expense",
     });
     setTiming({
       chuppah_time: ev.chuppah_time ?? "",
@@ -658,7 +708,7 @@ export default function Bookings() {
                 toast({ title: "Date is required", variant: "destructive" });
                 return;
               }
-              if (form.event_date < todayIso) {
+              if (!editing && form.event_date < todayIso) {
                 toast({ title: "Past dates are not allowed", variant: "destructive" });
                 return;
               }
@@ -725,16 +775,29 @@ export default function Bookings() {
                 <Label>{b.venue}</Label>
                 <VenueAutocomplete
                   value={form.venue}
-                  onChange={(venue, location) => setForm({ ...form, venue, location: location || form.location })}
-                  placeholder="Search venue..."
+                  onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
+                  placeholder="Search venue name..."
                 />
               </div>
               <div className="space-y-2">
-              <Label>{b.location}</Label>
+                <Label>{b.location}</Label>
                 <div className="flex gap-1.5">
-                  <Input className="flex-1" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Full address (auto-filled)" />
+                  <LocationAutocomplete
+                    value={form.location}
+                    onChange={(location) => setForm(prev => ({ ...prev, location }))}
+                    placeholder="Search or pin on map below"
+                  />
                   {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
                 </div>
+              </div>
+              <div className="md:col-span-2">
+                <BookingMap
+                  onLocationSelect={(venue, address) => setForm(prev => ({
+                    ...prev,
+                    venue: venue || prev.venue,
+                    location: address,
+                  }))}
+                />
               </div>
               {showFinancialFields && (
                 <>
@@ -746,6 +809,18 @@ export default function Bookings() {
                     <Label>Travel Fee</Label>
                     <Input type="number" min="0" value={form.travel_fee} onChange={(e) => updateFinancials("travel_fee", e.target.value)} placeholder="0" />
                   </div>
+                  {Number(form.travel_fee) > 0 && (
+                    <div className="space-y-2">
+                      <Label>Travel Fee — How to treat it?</Label>
+                      <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
+                          <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>{b.deposit}</Label>
                     <Input type="number" min="0" value={form.deposit} onChange={(e) => updateFinancials("deposit", e.target.value)} />
@@ -864,7 +939,7 @@ export default function Bookings() {
           open={clientDialogOpen}
           onOpenChange={setClientDialogOpen}
           tenantId={tenantId}
-          onClientCreated={(id) => setForm({ ...form, client_id: id })}
+          onClientCreated={(id) => setForm(prev => ({ ...prev, client_id: id }))}
         />
       )}
 

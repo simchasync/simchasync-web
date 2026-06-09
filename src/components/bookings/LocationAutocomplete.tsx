@@ -10,13 +10,13 @@ interface Prediction {
   full_description: string;
 }
 
-interface VenueAutocompleteProps {
+interface LocationAutocompleteProps {
   value: string;
-  onChange: (venue: string, location: string) => void;
+  onChange: (location: string) => void;
   placeholder?: string;
 }
 
-export default function VenueAutocomplete({ value, onChange, placeholder = "Search venue..." }: VenueAutocompleteProps) {
+export default function LocationAutocomplete({ value, onChange, placeholder = "Enter address..." }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [open, setOpen] = useState(false);
@@ -25,12 +25,10 @@ export default function VenueAutocomplete({ value, onChange, placeholder = "Sear
   const seqRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync external value
   useEffect(() => { setQuery(value); }, [value]);
 
   useEffect(() => () => clearTimeout(debounceRef.current), []);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -43,37 +41,40 @@ export default function VenueAutocomplete({ value, onChange, placeholder = "Sear
 
   const search = useCallback(async (input: string) => {
     if (input.length < 2) { setPredictions([]); setOpen(false); return; }
+    const seq = ++seqRef.current;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("google-places-autocomplete", {
-        body: { query: input },
+        body: { query: input, types: [] },
       });
+      if (seq !== seqRef.current) return;
       if (error) throw error;
       setPredictions(data?.predictions || []);
       setOpen(true);
     } catch {
-      setPredictions([]);
+      if (seq === seqRef.current) setPredictions([]);
     } finally {
-      setLoading(false);
+      if (seq === seqRef.current) setLoading(false);
     }
   }, []);
 
   const handleInput = (val: string) => {
     setQuery(val);
-    onChange(val, "");
+    onChange(val);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(val), 300);
   };
 
   const select = (p: Prediction) => {
-    setQuery(p.name);
-    onChange(p.name, p.address);
+    const full = p.full_description || `${p.name}, ${p.address}`;
+    setQuery(full);
+    onChange(full);
     setOpen(false);
     setPredictions([]);
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative flex-1">
       <Input
         value={query}
         onChange={(e) => handleInput(e.target.value)}

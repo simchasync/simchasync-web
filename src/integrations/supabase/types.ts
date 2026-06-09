@@ -658,6 +658,7 @@ export type Database = {
           tenant_id: string
           total_price: number | null
           travel_fee: number | null
+          travel_fee_type: string
           updated_at: string
           venue: string | null
         }
@@ -684,6 +685,7 @@ export type Database = {
           tenant_id: string
           total_price?: number | null
           travel_fee?: number | null
+          travel_fee_type?: string
           updated_at?: string
           venue?: string | null
         }
@@ -710,6 +712,7 @@ export type Database = {
           tenant_id?: string
           total_price?: number | null
           travel_fee?: number | null
+          travel_fee_type?: string
           updated_at?: string
           venue?: string | null
         }

@@ -67,7 +67,7 @@ export default function Finance() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id, event_date, event_type, total_price, travel_fee, payment_status, clients(name)")
+        .select("id, event_date, event_type, total_price, travel_fee, travel_fee_type, payment_status, clients(name)")
         .eq("tenant_id", tenantId!);
       if (error) throw error;
       return data;
@@ -163,12 +163,16 @@ export default function Finance() {
   })();
 
   // Revenue = total expected money from ALL bookings (regardless of payment status)
-  const totalRevenue = filteredEvents.reduce((s: number, e: any) =>
-    s + (Number(e.total_price) || 0), 0);
+  // Travel fees charged to the customer count as additional revenue
+  const totalRevenue = filteredEvents.reduce((s: number, e: any) => {
+    const base = Number(e.total_price) || 0;
+    const tf = e.travel_fee_type === "charge_customer" ? (Number(e.travel_fee) || 0) : 0;
+    return s + base + tf;
+  }, 0);
 
-  // Expenses: travel fees, manual, colleague costs, commissions — always counted
+  // Only owner-expense travel fees count as a cost
   const totalTravelFees = filteredEvents.reduce((s: number, e: any) =>
-    s + (Number(e.travel_fee) || 0), 0);
+    s + (e.travel_fee_type !== "charge_customer" ? (Number(e.travel_fee) || 0) : 0), 0);
 
   const totalWorkspaceExpenses = filteredWorkspaceExpenses.reduce((s: number, e: any) =>
     s + (Number(e.amount) || 0), 0);
@@ -206,8 +210,9 @@ export default function Finance() {
 
     filteredEvents.forEach((e: any) => {
       const m = addMonth(e.event_date);
-      m.revenue += Number(e.total_price) || 0;
-      m.expenses += Number(e.travel_fee) || 0;
+      const tf = Number(e.travel_fee) || 0;
+      m.revenue += (Number(e.total_price) || 0) + (e.travel_fee_type === "charge_customer" ? tf : 0);
+      if (e.travel_fee_type !== "charge_customer") m.expenses += tf;
     });
     filteredWorkspaceExpenses.forEach((e: any) => { addMonth(e.expense_date).expenses += Number(e.amount) || 0; });
     filteredEventExpenses.forEach((e: any) => { if (e.events?.event_date) addMonth(e.events.event_date).expenses += Number(e.amount) || 0; });
