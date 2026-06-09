@@ -108,10 +108,10 @@ function UpcomingEvents({ events, onView, onEdit }: {
         const ps = ev.payment_status || "unpaid";
         const badge = statusBadge[ps] || statusBadge.unpaid;
         return (
-          <div key={ev.id} className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-muted/30 -mx-1 px-1 rounded-lg">
-            <div className="hidden sm:flex flex-col items-center justify-center w-11 h-12 rounded-lg bg-gradient-to-b from-primary/10 to-primary/5 shrink-0 border border-primary/10">
+          <div key={ev.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-muted/30 -mx-1 px-1 rounded-lg">
+            <div className="flex flex-col items-center justify-center w-10 h-11 rounded-lg bg-gradient-to-b from-primary/10 to-primary/5 shrink-0 border border-primary/10">
               <span className="text-[9px] font-bold text-primary uppercase leading-tight">{format(new Date(ev.event_date), "MMM")}</span>
-              <span className="text-base font-bold text-foreground leading-tight -mt-px">{format(new Date(ev.event_date), "d")}</span>
+              <span className="text-sm font-bold text-foreground leading-tight -mt-px">{format(new Date(ev.event_date), "d")}</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -121,11 +121,11 @@ function UpcomingEvents({ events, onView, onEdit }: {
               <p className="text-xs text-muted-foreground truncate mt-0.5">{ev.clients?.name ?? "No client"}{ev.venue ? ` · ${ev.venue}` : ""}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onView(ev)} title="View">
-                <Eye className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => onView(ev)} title="View">
+                <Eye className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onEdit(ev)} title="Edit">
-                <Pencil className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => onEdit(ev)} title="Edit">
+                <Pencil className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `tenant_id=eq.${tenantId}` }, () => qc.invalidateQueries({ queryKey: ["events", tenantId] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `tenant_id=eq.${tenantId}` }, () => qc.invalidateQueries({ queryKey: ["invoices", tenantId] }))
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => { supabase.removeChannel(channel); };
   }, [tenantId, qc]);
 
   const showProfitAnalytics = canAccess("expenses_profit") && !isSocialOnly;

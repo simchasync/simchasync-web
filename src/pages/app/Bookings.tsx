@@ -697,8 +697,8 @@ export default function Bookings() {
 
       {/* Booking Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="flex flex-col w-full sm:max-w-2xl max-h-[90vh] gap-0 p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b">
             <DialogTitle>{editing ? t.common.edit : t.common.create} {b.title.toLowerCase()}</DialogTitle>
             <DialogDescription>{editing ? "Update event details" : "Create a new booking event"}</DialogDescription>
           </DialogHeader>
@@ -717,7 +717,8 @@ export default function Bookings() {
                 return;
               }
               saveMutation.mutate(form);
-            }} className="space-y-4">
+            }} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>{b.eventType} *</Label>
@@ -905,12 +906,15 @@ export default function Bookings() {
               </>
             )}
 
+          </div>
+          <div className="shrink-0 border-t bg-background px-6 py-4">
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>{t.common.cancel}</Button>
               <Button type="submit" disabled={saveMutation.isPending} className="bg-gradient-gold text-primary-foreground font-semibold">
                 {saveMutation.isPending ? t.common.loading : t.common.save}
               </Button>
             </DialogFooter>
+          </div>
           </form>
         </DialogContent>
       </Dialog>
