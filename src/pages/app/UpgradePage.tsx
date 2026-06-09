@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { SUBSCRIPTION_TIERS, getTrialDays } from "@/lib/subscription-tiers";
+import { SUBSCRIPTION_TIERS, type SubscriptionTier, getTrialDays } from "@/lib/subscription-tiers";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Crown, Zap, ExternalLink, ArrowLeft, Clock, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Check, Crown, Zap, ExternalLink, ArrowLeft,
+  Clock, AlertCircle, Loader2,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTenantId } from "@/hooks/useTenantId";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type TierKey = keyof typeof SUBSCRIPTION_TIERS;
 
@@ -26,15 +30,45 @@ interface TierCard {
   features: readonly string[];
 }
 
-function isTierKey(t: string | null | undefined): t is keyof typeof SUBSCRIPTION_TIERS {
-  return !!t && t in SUBSCRIPTION_TIERS;
-}
+// ─── Animation constants ──────────────────────────────────────────────────────
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.07, duration: 0.5, ease: EASE },
+  }),
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.97 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    scale: 1,
+    transition: { delay: i * 0.07, duration: 0.45, ease: EASE },
+  }),
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
   return "An unexpected error occurred.";
 }
+
+function parseComingSoon(feature: string) {
+  const isComingSoon = feature.includes("Coming Soon") || feature.includes("בקרוב");
+  const label = isComingSoon
+    ? feature.replace(/ — (Coming Soon|בקרוב)$/, "")
+    : feature;
+  return { label, isComingSoon };
+}
+
+// ─── Custom hooks ─────────────────────────────────────────────────────────────
 
 function useCheckout() {
   const { tenantId } = useTenantId();
@@ -54,11 +88,7 @@ function useCheckout() {
         throw new Error("No checkout URL returned.");
       }
     } catch (err) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(err),
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" });
       setLoadingTier(null);
     }
   };
@@ -80,11 +110,7 @@ function useCustomerPortal() {
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
     } catch (err) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(err),
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setLoadingPortal(false);
     }
@@ -93,44 +119,30 @@ function useCustomerPortal() {
   return { loadingPortal, handleManageOnStripe };
 }
 
-const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease },
-  }),
-};
-
-const TIER_COUNT = Object.keys(SUBSCRIPTION_TIERS).length;
-const planGridCols = TIER_COUNT <= 2 ? "md:grid-cols-2" : TIER_COUNT === 3 ? "md:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4";
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function PlansSkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
-      <Skeleton className="h-8 w-24" />
-      <div className="text-center space-y-3">
-        <Skeleton className="h-8 w-64 mx-auto" />
-        <Skeleton className="h-4 w-96 mx-auto" />
+    <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+      <Skeleton className="h-8 w-28" />
+      <div className="space-y-3 text-center">
+        <Skeleton className="mx-auto h-8 w-56" />
+        <Skeleton className="mx-auto h-4 w-80" />
       </div>
-      <div className={`grid gap-6 ${planGridCols}`}>
-        {Array.from({ length: TIER_COUNT }).map((_, i) => (
+      <div className="grid gap-5 md:grid-cols-2">
+        {[0, 1].map((i) => (
           <Card key={i} className="overflow-hidden">
-            <CardHeader className="text-center pb-2">
-              <Skeleton className="h-12 w-12 rounded-full mx-auto mb-2" />
-              <Skeleton className="h-6 w-24 mx-auto" />
-              <Skeleton className="h-8 w-32 mx-auto mt-2" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[0, 1, 2, 3, 4].map((j) => (
+            <CardContent className="space-y-4 p-6">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-9 w-24" />
+              {Array.from({ length: 5 }).map((_, j) => (
                 <div key={j} className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4 rounded-full" />
-                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-3.5 flex-1" />
                 </div>
               ))}
-              <Skeleton className="h-11 w-full rounded-md" />
+              <Skeleton className="h-10 w-full rounded-lg" />
             </CardContent>
           </Card>
         ))}
@@ -139,22 +151,31 @@ function PlansSkeleton() {
   );
 }
 
-function StatusBadge({
-  variant = "default",
+type StatusVariant = "warning" | "danger" | "info";
+
+const statusStyles: Record<StatusVariant, string> = {
+  warning: "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300",
+  danger: "bg-destructive/5 border-destructive/20 text-destructive",
+  info: "bg-primary/5 border-primary/20 text-primary",
+};
+
+function StatusBanner({
+  variant,
+  icon: Icon,
   children,
 }: {
-  variant?: "default" | "warning" | "danger";
+  variant: StatusVariant;
+  icon: typeof Clock;
   children: React.ReactNode;
 }) {
-  const variants = {
-    default: "bg-primary/10 text-primary border-primary/20",
-    warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200",
-    danger: "bg-destructive/10 text-destructive border-destructive/30",
-  };
   return (
-    <div className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm ${variants[variant]}`}>
-      {children}
-    </div>
+    <motion.div
+      variants={fadeUp}
+      className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm ${statusStyles[variant]}`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span>{children}</span>
+    </motion.div>
   );
 }
 
@@ -174,142 +195,233 @@ function CurrentPlanCard({
   onManage: () => void;
 }) {
   const { t } = useLanguage();
+
+  const renewLabel = subscriptionEnd
+    ? `${canceling ? t.app.upgrade.activeUntil : t.app.upgrade.renews} ${new Date(subscriptionEnd).toLocaleDateString()}`
+    : null;
+
   return (
-    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">
+    <motion.div variants={scaleIn}>
+      <Card className="border-border/60 bg-card">
+        <CardContent className="flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
               <Crown className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-display font-semibold text-lg">{name}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-display text-sm font-semibold">{name}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {price}/{t.app.upgrade.month}
-                {subscriptionEnd && (
-                  <> · {canceling ? t.app.upgrade.activeUntil : t.app.upgrade.renews} {new Date(subscriptionEnd).toLocaleDateString()}</>
-                )}
+                {renewLabel && <> · {renewLabel}</>}
               </p>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+
+          <div className="flex flex-wrap items-center gap-2">
             {canceling && (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-200">
+              <Badge
+                variant="outline"
+                className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+              >
                 {t.app.upgrade.cancelNotice}
               </Badge>
             )}
-            <Button variant="outline" size="sm" onClick={onManage} disabled={loadingPortal}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : t.app.upgrade.billingPortal}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onManage}
+              disabled={loadingPortal}
+              className="h-8 gap-1.5 text-xs"
+            >
+              {loadingPortal ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ExternalLink className="h-3.5 w-3.5" />
+              )}
+              {t.app.upgrade.billingPortal}
             </Button>
           </div>
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+function FeatureItem({ feature }: { feature: string }) {
+  const { label, isComingSoon } = parseComingSoon(feature);
+  return (
+    <li className={`flex items-start gap-2.5 text-sm ${isComingSoon ? "text-muted-foreground/60" : "text-foreground/80"}`}>
+      <Check
+        className={`mt-0.5 h-4 w-4 shrink-0 ${isComingSoon ? "text-muted-foreground/30" : "text-primary"}`}
+      />
+      <span className="flex flex-wrap items-center gap-1.5 leading-snug">
+        {label}
+        {isComingSoon && (
+          <Badge
+            variant="outline"
+            className="h-4 border-border/40 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+          >
+            Soon
+          </Badge>
+        )}
+      </span>
+    </li>
   );
 }
 
 function PlanCard({
   tier,
   isCurrentPlan,
-  subscribed,
   loadingTier,
   loadingPortal,
-  onManage,
-  index,
+  onAction,
 }: {
   tier: TierCard;
   isCurrentPlan: boolean;
-  subscribed: boolean;
   loadingTier: boolean;
   loadingPortal: boolean;
-  onManage: () => void;
-  index: number;
+  onAction: () => void;
 }) {
   const { t } = useLanguage();
   const Icon = tier.icon;
+  const busy = loadingTier || loadingPortal;
+
+  const ctaLabel = isCurrentPlan
+    ? t.app.upgrade.currentPlan
+    : tier.key === "full"
+      ? t.app.upgrade.subscribe.replace("{name}", tier.name)
+      : t.app.upgrade.switchTo.replace("{name}", tier.name);
 
   return (
-    <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={index + 2}>
+    <motion.div
+      variants={scaleIn}
+      custom={tier.key === "full" ? 1 : 0}
+      className="flex"
+      whileHover={isCurrentPlan ? {} : { y: -2, transition: { duration: 0.2 } }}
+    >
       <Card
-        className={`relative h-full flex flex-col transition-all duration-300 ${
+        className={[
+          "relative flex h-full w-full flex-col transition-shadow duration-300",
           isCurrentPlan
-            ? "border-primary ring-2 ring-primary/20 shadow-lg scale-[1.02]"
-            : tier.popular && !isCurrentPlan
-              ? "border-primary/50 shadow-md hover:shadow-lg hover:border-primary/70"
-              : "hover:shadow-md hover:border-border/80"
-        }`}
+            ? "border-primary/50 shadow-sm ring-1 ring-primary/15"
+            : tier.popular
+              ? "border-border/60 hover:border-primary/30 hover:shadow-sm"
+              : "border-border/60 hover:shadow-sm",
+        ].join(" ")}
       >
-        {isCurrentPlan && (
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground pointer-events-none">
-            {t.app.upgrade.currentPlan}
-          </Badge>
-        )}
-        {tier.popular && !isCurrentPlan && (
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground pointer-events-none">
-            {t.app.upgrade.mostPopular}
-          </Badge>
-        )}
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10">
-            <Icon className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="font-display text-xl">{tier.name}</CardTitle>
-          <CardDescription>
-            <span className="text-3xl font-bold text-foreground">{tier.price}</span>
-            <span className="text-muted-foreground">{t.app.upgrade.perMonth}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 flex flex-col flex-1">
-          <ul className="space-y-2.5 flex-1">
-            {tier.features.map((feature) => {
-              const isComingSoon = feature.includes("Coming Soon") || feature.includes("בקרוב");
-              const label = isComingSoon
-                ? feature.replace(/ — (Coming Soon|בקרוב)$/, "")
-                : feature;
-              return (
-                <li key={feature} className={`flex items-start gap-2.5 text-sm ${isComingSoon ? "text-muted-foreground" : ""}`}>
-                  <Check className={`h-4 w-4 mt-0.5 shrink-0 ${isComingSoon ? "text-muted-foreground/40" : "text-primary"}`} />
-                  <span className="flex items-center gap-1.5 flex-wrap">
-                    {label}
-                    {isComingSoon && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal leading-normal">
-                        Coming Soon
-                      </Badge>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          {isCurrentPlan ? (
-            <Button className="w-full min-h-[44px]" variant="outline" disabled>
-              <Check className="mr-2 h-4 w-4" />
-              {t.app.upgrade.currentPlan}
-            </Button>
-          ) : (
-            <Button
-              className="w-full min-h-[44px] bg-gradient-gold text-primary-foreground touch-manipulation"
-              onClick={onManage}
-              disabled={loadingTier || loadingPortal}
+        {/* Top badge */}
+        <AnimatePresence>
+          {(isCurrentPlan || (tier.popular && !isCurrentPlan)) && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="absolute -top-3 left-1/2 -translate-x-1/2"
             >
-              {loadingTier || loadingPortal ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              {subscribed
-                ? t.app.upgrade.switchTo.replace("{name}", tier.name)
-                : t.app.upgrade.subscribe.replace("{name}", tier.name)}
-            </Button>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
+                {isCurrentPlan ? (
+                  <><Check className="h-3 w-3" />{t.app.upgrade.currentPlan}</>
+                ) : (
+                  t.app.upgrade.mostPopular
+                )}
+              </span>
+            </motion.div>
           )}
+        </AnimatePresence>
+
+        <CardContent className="flex flex-1 flex-col p-6">
+          {/* Icon + name */}
+          <div className="mb-5">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted/60 transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
+              <Icon className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-display text-base font-semibold">{tier.name}</h3>
+          </div>
+
+          {/* Price */}
+          <div className="mb-5 border-b border-border/50 pb-5">
+            <div className="flex items-baseline gap-1">
+              <span className="font-display text-3xl font-bold tracking-tight text-foreground">
+                {tier.price}
+              </span>
+              <span className="text-sm text-muted-foreground">{t.app.upgrade.perMonth}</span>
+            </div>
+          </div>
+
+          {/* Features */}
+          <ul className="mb-6 flex flex-1 flex-col gap-2.5">
+            {tier.features.map((feature) => (
+              <FeatureItem key={feature} feature={feature} />
+            ))}
+          </ul>
+
+          {/* CTA */}
+          <Button
+            onClick={isCurrentPlan ? undefined : onAction}
+            disabled={isCurrentPlan || busy}
+            variant={isCurrentPlan ? "outline" : "default"}
+            className={[
+              "w-full gap-2 font-semibold",
+              !isCurrentPlan && !busy
+                ? "transition-all hover:translate-y-[-1px] hover:shadow-md"
+                : "",
+            ].join(" ")}
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isCurrentPlan && !busy && <Check className="h-4 w-4" />}
+            {ctaLabel}
+          </Button>
         </CardContent>
       </Card>
     </motion.div>
   );
 }
 
+// ─── Page heading ─────────────────────────────────────────────────────────────
+
+function PageHeading({
+  plan,
+  subscribed,
+  trialExpired,
+}: {
+  plan: string;
+  subscribed: boolean;
+  trialExpired: boolean;
+}) {
+  const { t } = useLanguage();
+
+  const title =
+    plan === "none"
+      ? t.app.upgrade.titleInactive
+      : subscribed
+        ? t.app.upgrade.titleSubscribed
+        : trialExpired
+          ? t.app.upgrade.titleTrialEnded
+          : t.app.upgrade.title;
+
+  const subtitle =
+    plan === "none"
+      ? t.app.upgrade.subtitleInactive
+      : subscribed
+        ? t.app.upgrade.subtitleSubscribed
+        : trialExpired
+          ? t.app.upgrade.subtitleTrialEnded
+          : t.app.upgrade.subtitle;
+
+  return (
+    <motion.div variants={fadeUp} custom={1} className="text-center">
+      <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground text-balance">
+        {subtitle}
+      </p>
+    </motion.div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export default function UpgradePage() {
   const { t } = useLanguage();
-  const { tenantId } = useTenantId();
   const {
     plan, tier, trialExpired, trialDaysLeft, trialActive,
     subscribed, subscriptionEnd, canceling, loading,
@@ -318,104 +430,59 @@ export default function UpgradePage() {
   const { loadingTier, handleCheckout } = useCheckout();
   const { loadingPortal, handleManageOnStripe } = useCustomerPortal();
 
-  const tierIcons: Partial<Record<keyof typeof SUBSCRIPTION_TIERS, typeof Crown>> = {
-    lite: Zap,
-    full: Crown,
-  };
+  const tiers: TierCard[] = [
+    { key: "lite", icon: Zap,   popular: false, ...SUBSCRIPTION_TIERS.lite },
+    { key: "full", icon: Crown, popular: true,  ...SUBSCRIPTION_TIERS.full },
+  ];
 
-  const tierKeys = Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>;
-
-  const tiers: TierCard[] = tierKeys.map((key) => {
-    const data = SUBSCRIPTION_TIERS[key];
-    return {
-      key,
-      icon: tierIcons[key] ?? Crown,
-      popular: ("popular" in data ? data.popular : false) as boolean,
-      name: data.name,
-      price: data.price,
-      price_id: data.price_id,
-      features: data.features,
-    };
-  });
-
-  const currentTierData = isTierKey(tier) ? SUBSCRIPTION_TIERS[tier] : null;
+  const currentTierData = tier ? SUBSCRIPTION_TIERS[tier] : null;
   const trialDays = getTrialDays();
 
-  if (loading) {
-    return <PlansSkeleton />;
-  }
+  if (loading) return <PlansSkeleton />;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+      className="mx-auto max-w-3xl space-y-6 p-4 md:p-8"
+    >
+      {/* Back button */}
+      <motion.div variants={fadeUp} custom={0}>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate("/app/settings")}
-          className="gap-2 text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           {t.app.upgrade.backToSettings}
         </Button>
       </motion.div>
 
-      <motion.div
-        className="text-center space-y-2"
-        variants={fadeUp}
-        initial="hidden"
-        animate="visible"
-        custom={1}
-      >
-        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">
-          {plan === "none"
-            ? t.app.upgrade.titleInactive
-            : subscribed
-              ? t.app.upgrade.titleSubscribed
-              : trialExpired
-                ? t.app.upgrade.titleTrialEnded
-                : t.app.upgrade.title}
-        </h1>
-        <p className="text-muted-foreground max-w-lg mx-auto text-balance">
-          {plan === "none"
-            ? t.app.upgrade.subtitleInactive
-            : subscribed
-              ? t.app.upgrade.subtitleSubscribed
-              : trialExpired
-                ? t.app.upgrade.subtitleTrialEnded
-                : t.app.upgrade.subtitle}
-        </p>
-      </motion.div>
+      {/* Heading */}
+      <PageHeading plan={plan} subscribed={subscribed} trialExpired={trialExpired} />
 
-      {plan === "none" && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-          <StatusBadge variant="danger">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{t.app.upgrade.inactiveBanner}</span>
-          </StatusBadge>
-        </motion.div>
-      )}
+      {/* Status banners */}
+      <AnimatePresence mode="wait">
+        {plan === "none" && (
+          <StatusBanner key="inactive" variant="danger" icon={AlertCircle}>
+            {t.app.upgrade.inactiveBanner}
+          </StatusBanner>
+        )}
+        {trialActive && !subscribed && (
+          <StatusBanner key="trial" variant="warning" icon={Clock}>
+            {t.app.upgrade.trialBanner.replace("{days}", String(trialDaysLeft))}
+          </StatusBanner>
+        )}
+        {trialExpired && !subscribed && (
+          <StatusBanner key="expired" variant="danger" icon={AlertCircle}>
+            {t.app.upgrade.trialExpiredBanner}
+          </StatusBanner>
+        )}
+      </AnimatePresence>
 
-      {trialActive && !subscribed && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-          <StatusBadge variant="warning">
-            <Clock className="h-4 w-4 shrink-0" />
-            <span>
-              {t.app.upgrade.trialBanner
-                .replace("{days}", String(trialDaysLeft))}
-            </span>
-          </StatusBadge>
-        </motion.div>
-      )}
-
-      {trialExpired && !subscribed && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-          <StatusBadge variant="danger">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{t.app.upgrade.trialExpiredBanner}</span>
-          </StatusBadge>
-        </motion.div>
-      )}
-
+      {/* Current plan card */}
       {subscribed && currentTierData && (
         <>
           <CurrentPlanCard
@@ -426,36 +493,38 @@ export default function UpgradePage() {
             loadingPortal={loadingPortal}
             onManage={handleManageOnStripe}
           />
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}>
-            <Separator />
-          </motion.div>
+          <motion.hr
+            variants={fadeUp}
+            className="border-t border-border/50"
+          />
         </>
       )}
 
-      <div className={`grid gap-6 ${planGridCols}`}>
-        {tiers.map((tierCard, index) => (
+      {/* Plan cards */}
+      <div className="grid gap-5 md:grid-cols-2">
+        {tiers.map((tierCard) => (
           <PlanCard
             key={tierCard.key}
             tier={tierCard}
             isCurrentPlan={subscribed && tier === tierCard.key}
-            subscribed={subscribed}
             loadingTier={loadingTier === tierCard.key}
             loadingPortal={loadingPortal}
-            onManage={subscribed ? handleManageOnStripe : () => handleCheckout(tierCard.price_id, tierCard.key)}
-            index={index}
+            onAction={
+              subscribed
+                ? handleManageOnStripe
+                : () => handleCheckout(tierCard.price_id, tierCard.key)
+            }
           />
         ))}
       </div>
 
+      {/* Footer note */}
       <motion.p
-        className="text-center text-xs text-muted-foreground pt-2"
         variants={fadeUp}
-        initial="hidden"
-        animate="visible"
-        custom={5}
+        className="pb-2 text-center text-xs text-muted-foreground"
       >
         {t.app.upgrade.footerNote.replace("{days}", String(trialDays))}
       </motion.p>
-    </div>
+    </motion.div>
   );
 }
