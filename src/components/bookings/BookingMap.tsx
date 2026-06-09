@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useState, useCallback, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -28,18 +28,33 @@ function ClickHandler({ onPin }: { onPin: (c: Coords) => void }) {
   return null;
 }
 
+function RecenterMap({ center }: { center: [number, number] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+
+  return null;
+}
+
 interface BookingMapProps {
   onLocationSelect: (venue: string, address: string) => void;
   defaultCenter?: [number, number];
 }
+
+const FALLBACK_CENTER: [number, number] = [32.0853, 34.7818];
 
 export default function BookingMap({ onLocationSelect, defaultCenter }: BookingMapProps) {
   const [visible, setVisible] = useState(false);
   const [marker, setMarker] = useState<Coords | null>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [permissionRequested, setPermissionRequested] = useState(false);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter ?? FALLBACK_CENTER);
 
-  const center: [number, number] = defaultCenter ?? [32.0853, 34.7818];
+  const center = mapCenter;
 
   const handlePin = useCallback(async (coords: Coords) => {
     setMarker(coords);
@@ -64,25 +79,63 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
     }
   }, [onLocationSelect]);
 
+  const requestGeolocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      toast({ title: "Location not supported", description: "Your browser does not support location lookup.", variant: "destructive" });
+      return;
+    }
+
+    setPermissionLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setMapCenter([coords.lat, coords.lng]);
+        handlePin(coords).finally(() => setPermissionLoading(false));
+      },
+      (error) => {
+        setPermissionLoading(false);
+        const message = error.code === error.PERMISSION_DENIED
+          ? "Location access was denied. You can still pin a location manually."
+          : "Could not determine your location. Pin a location manually on the map.";
+        toast({ title: "Location unavailable", description: message, variant: "destructive" });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, [handlePin]);
+
+  useEffect(() => {
+    if (visible && !permissionRequested) {
+      setPermissionRequested(true);
+      requestGeolocation();
+    }
+  }, [visible, permissionRequested, requestGeolocation]);
+
   return (
     <div className="space-y-2">
       <Button
         type="button"
         variant={pinned ? "default" : "outline"}
         size="sm"
-        onClick={() => { setVisible((v) => !v); if (visible) setPinned(false); }}
+        onClick={() => setVisible((v) => !v)}
         className="gap-1.5 h-8 text-xs"
       >
         <MapPin className="h-3.5 w-3.5" />
         {visible ? "Hide map" : pinned ? "Location pinned ✓" : "Pin on map"}
       </Button>
       {visible && (
-        <div className="relative rounded-lg overflow-hidden border" style={{ height: 250 }}>
+        <div className="space-y-2">
+          <p className="text-[11px] text-muted-foreground/80">
+            {permissionLoading
+              ? "Requesting your location..."
+              : "Allow location access when prompted to auto-pin your current address, or tap the map to choose a place manually."}
+          </p>
+          <div className="relative rounded-lg overflow-hidden border" style={{ height: 250 }}>
           <MapContainer center={center} zoom={8} className="h-full w-full" scrollWheelZoom={true}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <RecenterMap center={center} />
             <ClickHandler onPin={handlePin} />
             {marker && <Marker position={[marker.lat, marker.lng]} icon={icon} />}
           </MapContainer>
