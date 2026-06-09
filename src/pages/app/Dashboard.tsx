@@ -4,25 +4,29 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Database } from "@/integrations/supabase/types";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  getDashboardStats,
+  paymentStatusBadge,
+  type DashboardEvent,
+  type DashboardInvoice,
+  type BookingAgentCommissionRow,
+} from "@/lib/dashboardAnalytics";
+import {
   Calendar, DollarSign, TrendingDown, AlertCircle, Eye, Pencil,
-  ArrowUpRight, Plus, UserPlus, FileText, Wallet, BarChart3, Clock,
+  ArrowUpRight, UserPlus, FileText, Wallet, BarChart3,
 } from "lucide-react";
 
-const statusBadge: Record<string, { label: string; className: string }> = {
-  paid: { label: "Paid", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800" },
-  partial: { label: "Partial", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800" },
-  unpaid: { label: "Unpaid", className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800" },
-};
+const statusBadge = paymentStatusBadge;
 
 function StatCard({
   label, value, sub, icon: Icon, accent,
@@ -54,7 +58,6 @@ function StatCard({
 }
 
 function QuickActions() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const actions = [
     { label: "New Booking", icon: Calendar, onClick: () => navigate("/app/bookings"), color: "text-primary" },
@@ -86,9 +89,9 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
 }
 
 function UpcomingEvents({ events, onView, onEdit }: {
-  events: any[];
-  onView: (e: any) => void;
-  onEdit: (e: any) => void;
+  events: DashboardEvent[];
+  onView: (e: DashboardEvent) => void;
+  onEdit: (e: DashboardEvent) => void;
 }) {
   const { t } = useLanguage();
   if (events.length === 0) {
@@ -104,9 +107,8 @@ function UpcomingEvents({ events, onView, onEdit }: {
   }
   return (
     <div className="divide-y divide-border/50">
-      {events.slice(0, 5).map((ev: any) => {
-        const ps = ev.payment_status || "unpaid";
-        const badge = statusBadge[ps] || statusBadge.unpaid;
+      {events.slice(0, 5).map((ev: DashboardEvent) => {
+        const badge = statusBadge[ev.payment_status] ?? statusBadge.unpaid;
         return (
           <div key={ev.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-muted/30 -mx-1 px-1 rounded-lg">
             <div className="flex flex-col items-center justify-center w-10 h-11 rounded-lg bg-gradient-to-b from-primary/10 to-primary/5 shrink-0 border border-primary/10">
@@ -135,7 +137,7 @@ function UpcomingEvents({ events, onView, onEdit }: {
   );
 }
 
-function RecentInvoices({ invoices, onView }: { invoices: any[]; onView: (e: any) => void }) {
+function RecentInvoices({ invoices }: { invoices: DashboardInvoice[] }) {
   if (invoices.length === 0) {
     return (
       <CardContent>
@@ -149,7 +151,7 @@ function RecentInvoices({ invoices, onView }: { invoices: any[]; onView: (e: any
   }
   return (
     <div className="divide-y divide-border/50">
-      {invoices.slice(0, 5).map((inv: any) => {
+      {invoices.slice(0, 5).map((inv: DashboardInvoice) => {
         const badge = inv.status === "paid"
           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200"
           : inv.status === "sent"
@@ -202,49 +204,49 @@ export default function Dashboard() {
   const showProfitAnalytics = canAccess("expenses_profit") && !isSocialOnly;
   const hasBillAccess = plan !== "none" && !isSocialOnly;
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading } = useQuery<DashboardEvent[]>({
     queryKey: ["events", tenantId],
     queryFn: async () => {
       const { data, error } = await supabase.from("events").select("*, clients(name)").eq("tenant_id", tenantId!).order("event_date", { ascending: true });
       if (error) throw error;
-      return data;
+      return data as DashboardEvent[];
     },
     enabled: !!tenantId && hasBillAccess,
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [] } = useQuery<DashboardInvoice[]>({
     queryKey: ["invoices", tenantId],
     queryFn: async () => {
       const { data, error } = await supabase.from("invoices").select("*").eq("tenant_id", tenantId!).order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as DashboardInvoice[];
     },
     enabled: !!tenantId && hasBillAccess,
   });
 
-  const eventIds = events.map((e: any) => e.id);
+  const eventIds = useMemo(() => events.map((event) => event.id), [events]);
 
-  const { data: allExpenses = [] } = useQuery({
+  const { data: allExpenses = [] } = useQuery<Database["public"]["Tables"]["event_expenses"]["Row"][]>({
     queryKey: ["all-event-expenses", tenantId, eventIds],
     queryFn: async () => {
       const { data, error } = await supabase.from("event_expenses").select("amount, event_id").in("event_id", eventIds);
       if (error) throw error;
-      return data;
+      return (data ?? []) as Database["public"]["Tables"]["event_expenses"]["Row"][];
     },
     enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
-  const { data: allColleagueCosts = [] } = useQuery({
+  const { data: allColleagueCosts = [] } = useQuery<Database["public"]["Tables"]["event_colleagues"]["Row"][]>({
     queryKey: ["all-colleague-costs", tenantId, eventIds],
     queryFn: async () => {
       const { data, error } = await supabase.from("event_colleagues").select("price, event_id, payment_responsibility").eq("payment_responsibility", "paid_by_me").in("event_id", eventIds);
       if (error) throw error;
-      return data;
+      return (data ?? []) as Database["public"]["Tables"]["event_colleagues"]["Row"][];
     },
     enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
-  const { data: allCommissions = [] } = useQuery({
+  const { data: allCommissions = [] } = useQuery<BookingAgentCommissionRow[]>({
     queryKey: ["all-commissions", tenantId, eventIds],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -253,39 +255,57 @@ export default function Dashboard() {
         .eq("agents.tenant_id", tenantId!)
         .in("event_id", eventIds);
       if (error) throw error;
-      return data;
+      return (data ?? []) as BookingAgentCommissionRow[];
     },
     enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  const now = useMemo(() => new Date(), []);
+  const monthStart = useMemo(() => startOfMonth(now), [now]);
+  const monthEnd = useMemo(() => endOfMonth(now), [now]);
 
-  const upcoming = events.filter((e: any) => new Date(e.event_date) >= now).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-  const paidEvents = events.filter((e: any) => e.payment_status === "paid");
-  const unpaidEvents = events.filter((e: any) => e.payment_status !== "paid");
-  const thisMonthEvents = events.filter((e: any) => {
-    const d = new Date(e.event_date);
-    return d >= monthStart && d <= monthEnd;
-  });
+  const upcoming = useMemo(
+    () => events.filter((event) => new Date(event.event_date) >= now).sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+    [events, now],
+  );
 
-  const totalTravelFees = events.filter((e: any) => e.travel_fee_type !== "charge_customer").reduce((s: number, e: any) => s + (Number(e.travel_fee) || 0), 0);
-  const totalTravelRevenue = events.filter((e: any) => e.travel_fee_type === "charge_customer").reduce((s: number, e: any) => s + (Number(e.travel_fee) || 0), 0);
+  const thisMonthEvents = useMemo(
+    () => events.filter((event) => {
+      const date = new Date(event.event_date);
+      return date >= monthStart && date <= monthEnd;
+    }),
+    [events, monthStart, monthEnd],
+  );
 
-  const totalRevenue = events.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + totalTravelRevenue;
-  const revenueReceived = paidEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + paidEvents.reduce((s: number, e: any) => s + (e.travel_fee_type === "charge_customer" ? (Number(e.travel_fee) || 0) : 0), 0);
-  const outstanding = unpaidEvents.reduce((s: number, e: any) => s + Math.max((Number(e.total_price) || 0) - (Number(e.deposit) || 0), 0), 0);
-  const thisMonthRevenue = thisMonthEvents.reduce((s: number, e: any) => s + (Number(e.total_price) || 0), 0) + thisMonthEvents.reduce((s: number, e: any) => s + (e.travel_fee_type === "charge_customer" ? (Number(e.travel_fee) || 0) : 0), 0);
-  const invoicePaid = invoices.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + i.amount, 0);
+  const analytics = useMemo(
+    () =>
+      getDashboardStats({
+        events,
+        invoices,
+        expenses: allExpenses,
+        colleagueCosts: allColleagueCosts,
+        commissions: allCommissions,
+        now,
+      }),
+    [events, invoices, allExpenses, allColleagueCosts, allCommissions, now],
+  );
+
+  const {
+    totalRevenue,
+    revenueReceived,
+    outstanding,
+    thisMonthRevenue,
+    totalExpenses,
+    netProfit,
+    avgProfitPerBooking,
+    totalBookings,
+    paidBookings,
+    unpaidBookings,
+    invoicePaid,
+    invoicePaidCount,
+  } = analytics;
+
   const recentInvoices = invoices.slice(0, 10);
-
-  const totalManualExpenses = allExpenses.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
-  const totalColleagueCosts = allColleagueCosts.reduce((s: number, c: any) => s + (Number(c.price) || 0), 0);
-  const totalCommissions = allCommissions.reduce((s: number, c: any) => s + (Number(c.commission_amount) || 0), 0);
-  const totalExpenses = totalManualExpenses + totalColleagueCosts + totalCommissions + totalTravelFees;
-  const netProfit = totalRevenue - totalExpenses;
-  const avgProfitPerBooking = events.length > 0 ? Math.round(netProfit / events.length) : 0;
 
   if (isSocialOnly) {
     return (
@@ -328,9 +348,9 @@ export default function Dashboard() {
             <SectionHeader title="Overview" />
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               <StatCard label="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} sub={`$${revenueReceived.toLocaleString()} received`} icon={DollarSign} accent="emerald" />
-              <StatCard label="Outstanding" value={`$${outstanding.toLocaleString()}`} sub={`${events.length - paidEvents.length} unpaid bookings`} icon={AlertCircle} accent="amber" />
+              <StatCard label="Outstanding" value={`$${outstanding.toLocaleString()}`} sub={`${unpaidBookings} unpaid bookings`} icon={AlertCircle} accent="amber" />
               <StatCard label="This Month" value={`$${thisMonthRevenue.toLocaleString()}`} sub={`${thisMonthEvents.length} event(s)`} icon={Calendar} accent="cyan" />
-              <StatCard label="Total Bookings" value={`${events.length}`} sub={`${paidEvents.length} paid`} icon={BarChart3} accent="violet" />
+              <StatCard label="Total Bookings" value={`${totalBookings}`} sub={`${paidBookings} paid`} icon={BarChart3} accent="violet" />
             </div>
           </section>
 
@@ -362,7 +382,7 @@ export default function Dashboard() {
               <SectionHeader title="Recent Invoices" count={recentInvoices.length} />
               <Card className="animate-card-in">
                 <CardContent className="p-4 md:p-5">
-                  <RecentInvoices invoices={recentInvoices} onView={() => navigate("/app/invoices")} />
+                  <RecentInvoices invoices={recentInvoices} />
                   {invoices.length > 5 && (
                     <>
                       <Separator className="my-3" />
@@ -385,7 +405,7 @@ export default function Dashboard() {
                 <StatCard label="Total Expenses" value={`$${totalExpenses.toLocaleString()}`} icon={TrendingDown} accent="rose" />
                 <StatCard label="Net Profit" value={`${netProfit >= 0 ? "+" : ""}$${netProfit.toLocaleString()}`} icon={ArrowUpRight} accent={netProfit >= 0 ? "emerald" : "rose"} />
                 <StatCard label="Avg Profit / Booking" value={`$${avgProfitPerBooking.toLocaleString()}`} icon={DollarSign} accent="violet" />
-                <StatCard label="Invoices Paid" value={`$${invoicePaid.toLocaleString()}`} sub={`${invoices.filter((i: any) => i.status === "paid").length} invoices`} icon={Wallet} accent="cyan" />
+                <StatCard label="Invoices Paid" value={`$${invoicePaid.toLocaleString()}`} sub={`${invoicePaidCount} invoices`} icon={Wallet} accent="cyan" />
               </div>
             </section>
           )}

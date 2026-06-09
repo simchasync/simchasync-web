@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Car } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import type { Database } from "@/integrations/supabase/types";
+
+type TravelFeeType = "charge_customer" | "expense";
+type EventExpenseRow = Database["public"]["Tables"]["event_expenses"]["Row"];
+type EventDetailRow = Pick<Database["public"]["Tables"]["events"]["Row"], "travel_fee" | "travel_fee_type" | "payment_status" | "total_price">;
+type EventColleagueCostRow = Pick<Database["public"]["Tables"]["event_colleagues"]["Row"], "name" | "price" | "payment_responsibility">;
+type BookingAgentCommissionRow = Pick<Database["public"]["Tables"]["booking_agents"]["Row"], "commission_amount" | "commission_rate" | "commission_paid"> & {
+  agents?: { name: string | null } | null;
+};
 
 interface ExpensesProfitSectionProps {
   eventId: string;
@@ -21,7 +30,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
   const [showAdd, setShowAdd] = useState(false);
 
   // Fetch event data for payment status and travel fee
-  const { data: eventData } = useQuery({
+  const { data: eventData } = useQuery<EventDetailRow>({
     queryKey: ["event-detail-for-expenses", eventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,12 +39,12 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         .eq("id", eventId)
         .single();
       if (error) throw error;
-      return data;
+      return data as EventDetailRow;
     },
   });
 
   // Fetch manual expenses
-  const { data: expenses = [] } = useQuery({
+  const { data: expenses = [] } = useQuery<EventExpenseRow[]>({
     queryKey: ["event-expenses", eventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -44,12 +53,12 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         .eq("event_id", eventId)
         .order("created_at");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
   // Fetch colleague costs (paid_by_me only)
-  const { data: colleagueCosts = [] } = useQuery({
+  const { data: colleagueCosts = [] } = useQuery<EventColleagueCostRow[]>({
     queryKey: ["event-colleagues-costs", eventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,12 +67,12 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         .eq("event_id", eventId)
         .eq("payment_responsibility", "paid_by_me");
       if (error) throw error;
-      return data;
+      return (data ?? []) as EventColleagueCostRow[];
     },
   });
 
   // Fetch agent commissions for this booking
-  const { data: agentCommissions = [] } = useQuery({
+  const { data: agentCommissions = [] } = useQuery<BookingAgentCommissionRow[]>({
     queryKey: ["event-agent-commissions", eventId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,7 +80,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         .select("commission_amount, commission_rate, commission_paid, agents(name)")
         .eq("event_id", eventId);
       if (error) throw error;
-      return data;
+      return (data ?? []) as BookingAgentCommissionRow[];
     },
   });
 
@@ -106,18 +115,40 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
     },
   });
 
-  const travelFee = Number(eventData?.travel_fee) || 0;
-  const travelFeeType = eventData?.travel_fee_type ?? "expense";
-  const travelFeeCharged = travelFeeType === "charge_customer";
-  const isPaid = eventData?.payment_status === "paid";
-  const manualTotal = expenses.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
-  const colleagueTotal = colleagueCosts.reduce((s: number, c: any) => s + (Number(c.price) || 0), 0);
-  const commissionTotal = agentCommissions.reduce((s: number, c: any) => s + (Number(c.commission_amount) || 0), 0);
+  const safeNumber = (value: number | string | null | undefined) => Number(value ?? 0) || 0;
 
-  // Travel fee is revenue when charged to customer, expense otherwise
-  const effectiveRevenue = totalRevenue + (travelFeeCharged ? travelFee : 0);
-  const totalExpenses = manualTotal + colleagueTotal + commissionTotal + (travelFeeCharged ? 0 : travelFee);
-  const netProfit = effectiveRevenue - totalExpenses;
+  const {
+    travelFee,
+    travelFeeCharged,
+    isPaid,
+    effectiveRevenue,
+    totalExpenses,
+    netProfit,
+  } = useMemo(() => {
+    const fee = safeNumber(eventData?.travel_fee);
+    const feeType = (eventData?.travel_fee_type as TravelFeeType) ?? "expense";
+    const charged = feeType === "charge_customer";
+
+    const manualSum = expenses.reduce((sum, expense) => sum + safeNumber(expense.amount), 0);
+    const colleagueSum = colleagueCosts.reduce((sum, colleague) => sum + safeNumber(colleague.price), 0);
+    const commissionSum = agentCommissions.reduce((sum, commission) => sum + safeNumber(commission.commission_amount), 0);
+
+    const revenue = totalRevenue + (charged ? fee : 0);
+    const expensesTotal = manualSum + colleagueSum + commissionSum + (charged ? 0 : fee);
+
+    return {
+      travelFee: fee,
+      travelFeeType: feeType,
+      travelFeeCharged: charged,
+      isPaid: eventData?.payment_status === "paid",
+      manualTotal: manualSum,
+      colleagueTotal: colleagueSum,
+      commissionTotal: commissionSum,
+      effectiveRevenue: revenue,
+      totalExpenses: expensesTotal,
+      netProfit: revenue - expensesTotal,
+    };
+  }, [eventData, expenses, colleagueCosts, agentCommissions, totalRevenue]);
 
   return (
     <div className="space-y-3">
@@ -177,9 +208,9 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
       {agentCommissions.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Agent Commissions (auto)</p>
-          {agentCommissions.map((c: any, i: number) => (
+          {agentCommissions.map((c: BookingAgentCommissionRow, i: number) => (
             <div key={i} className="flex items-center justify-between text-xs rounded border px-2 py-1.5">
-              <span>{(c.agents as any)?.name || "Agent"} ({c.commission_rate}%)</span>
+              <span>{c.agents?.name || "Agent"} ({c.commission_rate}%)</span>
               <div className="flex items-center gap-2">
                 <span className="font-medium">${Number(c.commission_amount || 0).toLocaleString()}</span>
                 <Badge variant="outline" className={c.commission_paid ? "bg-emerald-500/15 text-emerald-700 border-emerald-200 text-[10px]" : "bg-amber/15 text-amber border-amber/20 text-[10px]"}>
@@ -195,7 +226,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
       {colleagueCosts.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Musician Costs (auto)</p>
-          {colleagueCosts.map((c: any, i: number) => (
+          {colleagueCosts.map((c: EventColleagueCostRow, i: number) => (
             <div key={i} className="flex items-center justify-between text-xs rounded border px-2 py-1.5">
               <span>{c.name || "Unnamed"}</span>
               <span className="font-medium">${Number(c.price || 0).toLocaleString()}</span>
@@ -217,7 +248,7 @@ export default function ExpensesProfitSection({ eventId, canWrite, totalRevenue 
         {expenses.length === 0 && !showAdd && (
           <p className="text-xs text-muted-foreground py-1">No manual expenses.</p>
         )}
-        {expenses.map((exp: any) => (
+        {expenses.map((exp: EventExpenseRow) => (
           <div key={exp.id} className="flex items-center justify-between text-xs rounded border px-2 py-1.5">
             <div>
               <span className="font-medium">{exp.expense_name}</span>
