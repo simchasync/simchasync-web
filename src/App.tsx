@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
+import PhoneNumber from "./pages/PhoneNumber";
 import PublicBooking from "./pages/PublicBooking";
 import AppShell from "./components/AppShell";
 import Dashboard from "./pages/app/Dashboard";
@@ -68,6 +69,7 @@ const App = () => (
                     <Route path="/auth/login" element={<Login />} />
                     <Route path="/auth/register" element={<Register />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/auth/phone" element={<PhoneNumber />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/book/:slug" element={<PublicBooking />} />
                     <Route path="/payment-success" element={<PaymentSuccess />} />

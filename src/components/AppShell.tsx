@@ -50,6 +50,10 @@ export default function AppShell() {
     () => workspaceActive ? filteredNavItems : [],
     [workspaceActive, filteredNavItems]
   );
+  const userPhone = useMemo(() => {
+    const metadata = user?.user_metadata as { phone?: string } | undefined;
+    return metadata?.phone?.trim() || "";
+  }, [user]);
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -63,6 +67,12 @@ export default function AppShell() {
   useEffect(() => {
     if (!loading && !user) navigate("/auth/login");
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!loading && user && !userPhone && location.pathname.startsWith("/app")) {
+      navigate("/auth/phone", { replace: true });
+    }
+  }, [loading, user, userPhone, location.pathname, navigate]);
 
   useEffect(() => {
     if (!role) return;
