@@ -311,7 +311,7 @@ export default function UpgradePage() {
   const { loadingTier, handleCheckout } = useCheckout();
   const { loadingPortal, handleManageOnStripe } = useCustomerPortal();
 
-  const tierIcons: Record<keyof typeof SUBSCRIPTION_TIERS, typeof Crown> = {
+  const tierIcons: Partial<Record<keyof typeof SUBSCRIPTION_TIERS, typeof Crown>> = {
     lite: Zap,
     full: Crown,
   };
@@ -322,7 +322,7 @@ export default function UpgradePage() {
     const data = SUBSCRIPTION_TIERS[key];
     return {
       key,
-      icon: tierIcons[key],
+      icon: tierIcons[key] ?? Crown,
       popular: ("popular" in data ? data.popular : false) as boolean,
       name: data.name,
       price: data.price,
@@ -331,7 +331,9 @@ export default function UpgradePage() {
     };
   });
 
-  const currentTierData = (tier === "lite" || tier === "full") ? SUBSCRIPTION_TIERS[tier] : null;
+  const currentTierData = tier && (tier in SUBSCRIPTION_TIERS)
+    ? SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS]
+    : null;
   const trialDays = getTrialDays();
 
   if (loading) {
