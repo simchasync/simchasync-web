@@ -53,14 +53,14 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
   const [permissionRequested, setPermissionRequested] = useState(false);
   const [permissionLoading, setPermissionLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter ?? FALLBACK_CENTER);
-  const [zoom, setZoom] = useState(11);
+  const [zoom, setZoom] = useState(14);
 
   const center = mapCenter;
 
   const handlePin = useCallback(async (coords: Coords) => {
     setMarker(coords);
     setMapCenter([coords.lat, coords.lng]);
-    setZoom(15);
+    setZoom(17);
     setGeocoding(true);
     try {
       const { data, error } = await supabase.functions.invoke("google-places-autocomplete", {
@@ -111,7 +111,7 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
       (position) => {
         const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
         setMapCenter([coords.lat, coords.lng]);
-        setZoom(15);
+        setZoom(17);
         handlePin(coords).finally(() => setPermissionLoading(false));
       },
       (error) => {
