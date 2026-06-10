@@ -241,18 +241,7 @@ export default function Auth() {
     }
   };
 
-  const googleEnabled = false;
-
   const handleGoogleAuth = async () => {
-    if (!googleEnabled) {
-      toast({
-        title: "Google sign-in unavailable",
-        description: "Google login is not available right now. Please use email and password to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -490,9 +479,6 @@ export default function Auth() {
                     )}
                     {mode === "login" ? "Continue with Google" : "Sign up with Google"}
                   </Button>
-                  <p className="mt-2 text-center text-xs text-muted-foreground/70">
-                    Google sign-in is temporarily unavailable. Use email and password to continue.
-                  </p>
                 </div>
               )}
 
