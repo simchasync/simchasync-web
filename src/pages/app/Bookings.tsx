@@ -36,7 +36,6 @@ import PaymentsSection from "@/components/bookings/PaymentsSection";
 import SongsSection from "@/components/bookings/SongsSection";
 import AttachmentsSection from "@/components/bookings/AttachmentsSection";
 import VenueAutocomplete from "@/components/bookings/VenueAutocomplete";
-import VenueTypeSelect from "@/components/bookings/VenueTypeSelect";
 import EventTypeSelect from "@/components/bookings/EventTypeSelect";
 import SectionLabel from "@/components/bookings/SectionLabel";
 import LocationAutocomplete from "@/components/bookings/LocationAutocomplete";
@@ -59,7 +58,7 @@ const emptyTiming: TimingFields = {
 };
 
 const emptyForm = {
-  client_id: "", event_date: "", event_type: "wedding" as string, venue: "", venue_type: "", location: "",
+  client_id: "", event_date: "", event_type: "wedding" as string, venue: "", location: "",
   total_price: "", deposit: "", balance_due: "", payment_status: "unpaid" as string,
   deposit_status: "unpaid" as string,
   due_date: "", notes: "", travel_fee: "", travel_fee_type: "expense",
@@ -180,7 +179,6 @@ export default function Bookings() {
         event_date: values.event_date,
         event_type: values.event_type,
         venue: values.venue || null,
-        venue_type: values.venue_type || null,
         location: values.location || null,
         total_price: totalPrice,
         deposit: deposit,
@@ -283,7 +281,6 @@ export default function Bookings() {
           event_date: data.event_date,
           event_type: data.event_type,
           venue: data.venue ?? "",
-          venue_type: (data as any).venue_type ?? "",
           location: data.location ?? "",
           total_price: String(data.total_price ?? ""),
           deposit: String(data.deposit ?? ""),
@@ -421,7 +418,6 @@ export default function Bookings() {
       event_date: ev.event_date,
       event_type: ev.event_type,
       venue: ev.venue ?? "",
-      venue_type: ev.venue_type ?? "",
       location: ev.location ?? "",
       total_price: String(ev.total_price ?? ""),
       deposit: String(ev.deposit ?? ""),
@@ -821,15 +817,7 @@ export default function Bookings() {
             {/* Location */}
             <div className="space-y-3">
               <SectionLabel icon={MapPin} title="Location" />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">{b.venueType}</Label>
-                  <VenueTypeSelect
-                    value={form.venue_type}
-                    onChange={(venue_type) => setForm(prev => ({ ...prev, venue_type }))}
-                  />
-                  <p className="text-[11px] text-muted-foreground/80">{b.venueTypeHint}</p>
-                </div>
+              <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.venue}</Label>
                   <VenueAutocomplete
@@ -839,7 +827,7 @@ export default function Bookings() {
                   />
                   <p className="text-[11px] text-muted-foreground/80">{b.venueNameHint}</p>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <Label className="text-sm">{b.location}</Label>
                   <div className="flex gap-1.5">
                     <LocationAutocomplete

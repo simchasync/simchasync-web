@@ -661,7 +661,6 @@ export type Database = {
           travel_fee_type: string
           updated_at: string
           venue: string | null
-          venue_type: string | null
         }
         Insert: {
           balance_due?: number | null
@@ -689,7 +688,6 @@ export type Database = {
           travel_fee_type?: string
           updated_at?: string
           venue?: string | null
-          venue_type?: string | null
         }
         Update: {
           balance_due?: number | null
@@ -717,7 +715,6 @@ export type Database = {
           travel_fee_type?: string
           updated_at?: string
           venue?: string | null
-          venue_type?: string | null
         }
         Relationships: [
           {
