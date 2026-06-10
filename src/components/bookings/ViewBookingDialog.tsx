@@ -160,6 +160,21 @@ export default function ViewBookingDialog({
     enabled: !!event?.id && role !== "member",
   });
 
+  // Shares its query key with PaymentsSection, so adding/removing a payment
+  // there immediately refreshes the Balance Due shown here.
+  const { data: paymentRecords = [] } = useQuery({
+    queryKey: ["event_payments", event?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_payments").select("amount").eq("event_id", event!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!event?.id && showFinancialFields,
+  });
+
+  const paymentsTotal = paymentRecords.reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0);
+
   // ── Mutation ──────────────────────────────────────────────────────────────
 
   const updateFinancials = (field: string, value: string) => {
@@ -268,6 +283,11 @@ export default function ViewBookingDialog({
   const displayPaymentStatus = getEventPaymentStatus(event, linkedInvoices);
   const address = event.location || event.venue || "";
   const totalCommission = assignedAgents.reduce((s: number, ba: any) => s + (Number(ba.commission_amount) || 0), 0);
+
+  // Live balance due = stored (total - deposit) less any payments recorded in
+  // the Payments section below, so it reflects changes made without re-saving the form.
+  const baseBalance = mode === "edit" ? Number(form.balance_due) || 0 : Number(event.balance_due) || 0;
+  const remainingBalance = Math.max(baseBalance - paymentsTotal, 0);
 
   const statusMap: Record<string, { label: string; className: string }> = {
     paid: { label: (b.paymentStatus as any).paid ?? "Paid", className: "bg-emerald-500/15 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800" },
@@ -392,8 +412,8 @@ export default function ViewBookingDialog({
                   </div>
                 </Field>
                 <Field label={b.balanceDue}>
-                  <span className={`font-medium text-sm ${Number(event.balance_due) > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
-                    ${Number(event.balance_due ?? 0).toLocaleString()}
+                  <span className={`font-medium text-sm ${remainingBalance > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+                    ${remainingBalance.toLocaleString()}
                   </span>
                 </Field>
                 {Number(event.travel_fee) > 0 && (
@@ -608,13 +628,27 @@ export default function ViewBookingDialog({
                 )}
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.balanceDue}</Label>
-                  <Input disabled value={form.balance_due} className="bg-muted" />
+                  <Input disabled value={remainingBalance} className="bg-muted" />
+                  {paymentsTotal > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      ${Number(form.balance_due || 0).toLocaleString()} less ${paymentsTotal.toLocaleString()} in recorded payments
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">Booking Status</Label>
                   <Select value={form.payment_status} onValueChange={(v) => {
                     const total = Number(form.total_price) || 0;
                     const dep = Number(form.deposit) || 0;
+                    if (v === "paid") {
+                      const outstanding = Math.max(total - dep - paymentsTotal, 0);
+                      if (outstanding > 0) {
+                        toast({
+                          title: "Heads up",
+                          description: `$${outstanding.toLocaleString()} still appears unpaid based on the total, deposit, and recorded payments. Marking this "Paid" will set the balance due to $0.`,
+                        });
+                      }
+                    }
                     setForm(prev => ({
                       ...prev,
                       payment_status: v,

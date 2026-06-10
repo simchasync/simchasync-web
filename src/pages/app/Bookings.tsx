@@ -150,6 +150,21 @@ export default function Bookings() {
     enabled: !!tenantId && role !== "member",
   });
 
+  // Shares its query key with PaymentsSection, so adding/removing a payment
+  // there immediately refreshes the Balance Due shown in the edit form.
+  const { data: editingPayments = [] } = useQuery({
+    queryKey: ["event_payments", editing?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_payments").select("amount").eq("event_id", editing!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!editing?.id && role !== "member",
+  });
+
+  const editingPaymentsTotal = editingPayments.reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0);
+
   const saveMutation = useMutation({
     mutationFn: async (values: typeof form) => {
       const hebrewDate = values.event_date ? toHebrewDate(values.event_date) : null;
@@ -875,7 +890,12 @@ export default function Bookings() {
                     )}
                     <div className="space-y-1.5">
                       <Label className="text-sm">{b.balanceDue}</Label>
-                      <Input disabled value={form.balance_due} className="bg-muted" />
+                      <Input disabled value={Math.max((Number(form.balance_due) || 0) - editingPaymentsTotal, 0)} className="bg-muted" />
+                      {editingPaymentsTotal > 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          ${Number(form.balance_due || 0).toLocaleString()} less ${editingPaymentsTotal.toLocaleString()} in recorded payments
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Booking Status</Label>
@@ -883,6 +903,15 @@ export default function Bookings() {
                         const total = Number(form.total_price) || 0;
                         const dep = Number(form.deposit) || 0;
                         const balanceDue = v === "paid" ? 0 : Math.max(total - dep, 0);
+                        if (v === "paid") {
+                          const outstanding = Math.max(total - dep - editingPaymentsTotal, 0);
+                          if (outstanding > 0) {
+                            toast({
+                              title: "Heads up",
+                              description: `$${outstanding.toLocaleString()} still appears unpaid based on the total, deposit, and recorded payments. Marking this "Paid" will set the balance due to $0.`,
+                            });
+                          }
+                        }
                         setForm({ ...form, payment_status: v, balance_due: String(balanceDue) });
                       }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
