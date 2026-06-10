@@ -2,6 +2,8 @@
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { ONE_YEAR_MS, BAN_DURATION_HOURS, getPlanFromPrice } from "../_shared/pricing.ts";
+import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { adminActionSchemas } from "./schemas.ts";
 
 type JsonMap = Record<string, unknown>;
 
@@ -138,9 +140,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const body = await req.json();
-    const { action } = body;
+    const rawBody = await req.json();
+    const { action } = rawBody;
     console.log("[ADMIN] Action:", action);
+
+    const schema = adminActionSchemas[action as keyof typeof adminActionSchemas];
+    if (!schema) {
+      return new Response(JSON.stringify({ error: "Unknown action" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const body = parseBody(schema, rawBody) as any;
 
     switch (action) {
       case "list_tenants": {
@@ -1056,7 +1066,7 @@ Deno.serve(async (req: Request) => {
     const message = getErrorMessage(err);
     console.error("[ADMIN] Error:", message);
     return new Response(JSON.stringify({ error: message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: err instanceof ValidationError ? 400 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

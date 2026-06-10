@@ -8,21 +8,20 @@ import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { computeBalanceDue } from "@/lib/bookingFinancials";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card as MuiCard, CardContent as MuiCardContent, Chip } from "@mui/material";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List, MapPin } from "lucide-react";
+import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List, MapPin, BarChart3, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -52,6 +51,7 @@ import BookingCalendar from "@/components/bookings/BookingCalendar";
 type Event = Tables<"events">;
 type Client = Tables<"clients">;
 const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
+const BOOKINGS_PAGE_SIZE = 10;
 
 const emptyTiming: TimingFields = {
   chuppah_time: "", meal_time: "", first_dance_time: "", second_dance_time: "", mitzvah_tanz_time: "", event_start_time: "",
@@ -67,6 +67,7 @@ const emptyForm = {
 export default function Bookings() {
   const { t } = useLanguage();
   const b = t.app.bookings;
+  const d = t.app.dashboard;
   const { tenantId } = useTenantId();
   const { canWrite, role, isLoading: roleLoading } = useUserRole();
   const { canAccess } = useSubscription();
@@ -76,6 +77,7 @@ export default function Bookings() {
 
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [eventDateFilter, setEventDateFilter] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -405,6 +407,11 @@ export default function Bookings() {
     }
   }, [searchParams, setSearchParams, events]);
 
+  // Reset to first page whenever the filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [paymentFilter, eventDateFilter]);
+
   const openNew = () => { setEditing(null); setForm(emptyForm); setTiming(emptyTiming); setDialogOpen(true); };
   const openEdit = (ev: any) => {
     setEditing(ev);
@@ -484,10 +491,22 @@ export default function Bookings() {
   const todayIso = format(new Date(), "yyyy-MM-dd");
   const eventDateMin = editing && form.event_date && form.event_date < todayIso ? form.event_date : todayIso;
 
+  const totalBookingsCount = events.length;
+  const paidBookingsCount = events.filter((ev: any) => getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) === "paid").length;
+  const upcomingCount = events.filter((ev: any) => ev.event_date >= todayIso).length;
+  const unpaidCount = events.filter((ev: any) => getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) !== "paid").length;
+  const outstandingTotal = events.reduce((sum: number, ev: any) => {
+    if (getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) === "paid") return sum;
+    return sum + Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0);
+  }, 0);
+
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl">{b.title}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{b.title}</h1>
+          <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+        </div>
         {canWrite && (
           <Button onClick={openNew} className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
             <Plus className="mr-2 h-4 w-4" /> {b.newEvent}
@@ -512,41 +531,75 @@ export default function Bookings() {
         </TabsList>
 
         <TabsContent value="events" className="space-y-4">
-          {/* Filters */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div className="flex gap-2 flex-wrap">
-              {["all", "unpaid", "partial", "paid"].map((status) => (
-                <Button
-                  key={status}
-                  variant={paymentFilter === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPaymentFilter(status)}
-                  className={paymentFilter === status ? "" : ""}
-                >
-                  {status === "all" ? "All" : (b.paymentStatus as any)[status] ?? status}
-                </Button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="bookings-date-filter" className="text-xs text-muted-foreground whitespace-nowrap">
-                {b.date}
-              </Label>
-              <div>
-                <Input
-                  id="bookings-date-filter"
-                  type="date"
-                  value={eventDateFilter}
-                  onChange={(e) => setEventDateFilter(e.target.value)}
-                  className="w-full md:w-[180px]"
+          {/* Stats */}
+          {!isLoading && events.length > 0 && (
+            <section>
+              <SectionHeader title={d.overview} />
+              <div className={`grid grid-cols-2 gap-3 md:gap-4 ${showFinancialFields ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                <StatCard
+                  label={d.totalBookings}
+                  value={`${totalBookingsCount}`}
+                  sub={d.paidCount.replace("{count}", String(paidBookingsCount))}
+                  icon={BarChart3}
+                  accent="violet"
                 />
+                <StatCard label={d.upcoming} value={`${upcomingCount}`} icon={Calendar} accent="cyan" />
+                {showFinancialFields && (
+                  <StatCard
+                    label={d.outstanding}
+                    value={`$${outstandingTotal.toLocaleString()}`}
+                    sub={d.unpaidBookings.replace("{count}", String(unpaidCount))}
+                    icon={AlertCircle}
+                    accent="amber"
+                  />
+                )}
               </div>
-              {eventDateFilter && (
-                <Button variant="outline" size="sm" onClick={() => setEventDateFilter("")}>
-                  Clear
-                </Button>
-              )}
-            </div>
-          </div>
+            </section>
+          )}
+
+          {/* Filters */}
+          <MuiCard variant="outlined">
+            <MuiCardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1 overflow-x-auto max-w-full">
+                {["all", "unpaid", "partial", "paid"].map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setPaymentFilter(status)}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      paymentFilter === status
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {status === "all" ? "All" : (b.paymentStatus as any)[status] ?? status}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                <Label htmlFor="bookings-date-filter" className="text-xs font-medium text-muted-foreground">
+                  {b.date}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-[200px]">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="bookings-date-filter"
+                      type="date"
+                      value={eventDateFilter}
+                      onChange={(e) => setEventDateFilter(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {eventDateFilter && (
+                    <Button variant="ghost" size="sm" onClick={() => setEventDateFilter("")}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </MuiCardContent>
+          </MuiCard>
 
           {(() => {
             const filteredEvents = events.filter((ev: any) => {
@@ -554,11 +607,14 @@ export default function Bookings() {
               const matchesDate = !eventDateFilter || ev.event_date === eventDateFilter;
               return matchesPayment && matchesDate;
             });
+            const totalPages = Math.max(1, Math.ceil(filteredEvents.length / BOOKINGS_PAGE_SIZE));
+            const page = Math.min(currentPage, totalPages);
+            const paginatedEvents = filteredEvents.slice((page - 1) * BOOKINGS_PAGE_SIZE, page * BOOKINGS_PAGE_SIZE);
 
             if (isLoading) return <><CardListSkeleton count={3} /><TableSkeleton columns={7} rows={4} /></>;
             if (filteredEvents.length === 0) return (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
+              <MuiCard variant="outlined">
+                <MuiCardContent className="flex flex-col items-center justify-center py-16">
                   <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-violet/10 mb-4">
                     <Calendar className="h-8 w-8 text-primary/40" />
                   </div>
@@ -570,19 +626,19 @@ export default function Bookings() {
                       {b.newEvent}
                     </Button>
                   )}
-                </CardContent>
-              </Card>
+                </MuiCardContent>
+              </MuiCard>
             );
 
             return (
             <>
               {/* Mobile Cards */}
               <div className="space-y-3 md:hidden">
-                {filteredEvents.map((ev: any) => {
+                {paginatedEvents.map((ev: any) => {
                   const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
                   const badgeCfg = paymentBadgeConfig[eventPaymentStatus] || paymentBadgeConfig.unpaid;
                   return (
-                  <Card key={ev.id} className="overflow-hidden animate-card-in card-interactive">
+                  <MuiCard variant="outlined" key={ev.id} className="overflow-hidden animate-card-in card-interactive">
                     <div className="divide-y divide-border/50">
                       <div className="p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
@@ -590,9 +646,13 @@ export default function Bookings() {
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-sm truncate">{(b.types as any)[ev.event_type] ?? ev.event_type}</p>
                               {showFinancialFields && (
-                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 font-medium ${badgeCfg.className}`}>
-                                  {badgeCfg.label}
-                                </Badge>
+                                <Chip
+                                  label={badgeCfg.label}
+                                  variant="outlined"
+                                  size="small"
+                                  className={`font-medium ${badgeCfg.className}`}
+                                  sx={{ height: 20, fontSize: "10px", "& .MuiChip-label": { px: "6px" } }}
+                                />
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{ev.clients?.name ?? ev.client_name ?? "No client"}</p>
@@ -641,12 +701,12 @@ export default function Bookings() {
                         )}
                       </div>
                     </div>
-                  </Card>
+                  </MuiCard>
                 )})}
               </div>
 
               {/* Desktop Table */}
-              <Card className="hidden md:block">
+              <MuiCard variant="outlined" className="hidden md:block">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -663,7 +723,7 @@ export default function Bookings() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEvents.map((ev: any) => {
+                      {paginatedEvents.map((ev: any) => {
                         const eventPaymentStatus = getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []);
                         return (
                         <TableRow key={ev.id} className="animate-row-in row-interactive group">
@@ -680,13 +740,17 @@ export default function Bookings() {
                           )}
                           {showFinancialFields && (
                             <TableCell>
-                              <Badge variant="outline" className={statusColor(eventPaymentStatus)}>
-                                {(b.paymentStatus as any)[eventPaymentStatus]}
-                              </Badge>
+                              <Chip
+                                label={(b.paymentStatus as any)[eventPaymentStatus]}
+                                variant="outlined"
+                                size="small"
+                                className={`font-medium ${statusColor(eventPaymentStatus)}`}
+                                sx={{ height: 22, fontSize: "11px", "& .MuiChip-label": { px: "8px" } }}
+                              />
                             </TableCell>
                           )}
                           <TableCell>
-                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-1 justify-end">
                               <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setViewing(ev)}>
                                 <Eye className="mr-1.5 h-3.5 w-3.5" /> View
                               </Button>
@@ -715,7 +779,32 @@ export default function Bookings() {
                     </TableBody>
                   </Table>
                 </div>
-              </Card>
+              </MuiCard>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </>
             );
           })()}
@@ -758,7 +847,7 @@ export default function Bookings() {
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
             {/* Event Details */}
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
               <SectionLabel icon={Calendar} title="Event Details" />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
@@ -812,10 +901,8 @@ export default function Bookings() {
               </div>
             </div>
 
-            <Separator />
-
             {/* Location */}
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
               <SectionLabel icon={MapPin} title="Location" />
               <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
@@ -842,10 +929,7 @@ export default function Bookings() {
             </div>
 
             {showFinancialFields && (
-              <>
-                <Separator />
-                {/* Financials */}
-                <div className="space-y-3">
+                <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
                   <SectionLabel icon={DollarSign} title="Financials" />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
@@ -926,47 +1010,45 @@ export default function Bookings() {
                     </div>
                   </div>
                 </div>
-              </>
             )}
 
-            <Separator />
-
             {/* Notes */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 rounded-xl border bg-muted/30 p-4">
               <Label className="text-sm">{b.notes}</Label>
               <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="resize-none" />
             </div>
 
             {/* Event Timing */}
-            <Separator />
-            <EventTimingSection eventType={form.event_type} timing={timing} onChange={setTiming} canWrite={canWrite} />
+            <div className="rounded-xl border bg-muted/30 p-4">
+              <EventTimingSection eventType={form.event_type} timing={timing} onChange={setTiming} canWrite={canWrite} />
+            </div>
 
             {/* Extended sections — only for existing events */}
             {editing && tenantId && (
               <>
-                <Separator />
-                <ColleaguesSection eventId={editing.id} canWrite={canWrite} tenantId={tenantId} />
+                <div className="rounded-xl border bg-muted/30 p-4">
+                  <ColleaguesSection eventId={editing.id} canWrite={canWrite} tenantId={tenantId} />
+                </div>
                 {showFinancialFields && (
-                  <>
-                    <Separator />
+                  <div className="rounded-xl border bg-muted/30 p-4">
                     <PaymentsSection eventId={editing.id} canWrite={canWrite} />
-                  </>
+                  </div>
                 )}
-                <Separator />
-                <SongsSection eventId={editing.id} canWrite={canWrite} />
-                <Separator />
-                <AttachmentsSection eventId={editing.id} canWrite={canWrite} />
+                <div className="rounded-xl border bg-muted/30 p-4">
+                  <SongsSection eventId={editing.id} canWrite={canWrite} />
+                </div>
+                <div className="rounded-xl border bg-muted/30 p-4">
+                  <AttachmentsSection eventId={editing.id} canWrite={canWrite} />
+                </div>
                 {showExpenses && (
-                  <>
-                    <Separator />
+                  <div className="rounded-xl border bg-muted/30 p-4">
                     <ExpensesProfitSection eventId={editing.id} canWrite={canWrite} totalRevenue={Number(form.total_price) || 0} />
-                  </>
+                  </div>
                 )}
                 {role === "owner" && (
-                  <>
-                    <Separator />
+                  <div className="rounded-xl border bg-muted/30 p-4">
                     <AgentAssignmentSection eventId={editing.id} canWrite={canWrite} totalPrice={Number(form.total_price) || 0} />
-                  </>
+                  </div>
                 )}
               </>
             )}

@@ -1,6 +1,13 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { ValidationError, parseBody } from "../_shared/validation.ts";
+
+const checkoutSchema = z.object({
+  price_id: z.string().min(1, "price_id is required"),
+  tenant_id: z.string().uuid("tenant_id must be a valid UUID"),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,9 +44,7 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { price_id, tenant_id } = await req.json();
-    if (!price_id) throw new Error("price_id is required");
-    if (!tenant_id) throw new Error("tenant_id is required");
+    const { price_id, tenant_id } = parseBody(checkoutSchema, await req.json());
 
     const { data: membership, error: membershipError } = await supabaseClient
       .from("tenant_members")
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: error instanceof ValidationError ? 400 : 500,
     });
   }
 });

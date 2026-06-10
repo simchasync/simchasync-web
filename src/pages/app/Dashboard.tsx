@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Card, CardContent, Button, IconButton, Chip, Divider } from "@mui/material";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
@@ -24,36 +25,6 @@ import {
 } from "lucide-react";
 
 const statusBadge = paymentStatusBadge;
-
-const ACCENT_STYLES: Record<string, { border: string; iconBg: string; iconText: string }> = {
-  emerald: { border: "border-t-emerald-400/40", iconBg: "bg-emerald-500/10", iconText: "text-emerald-600 dark:text-emerald-400" },
-  amber: { border: "border-t-amber-400/40", iconBg: "bg-amber-500/10", iconText: "text-amber-600 dark:text-amber-400" },
-  cyan: { border: "border-t-cyan-400/40", iconBg: "bg-cyan-500/10", iconText: "text-cyan-600 dark:text-cyan-400" },
-  violet: { border: "border-t-violet-400/40", iconBg: "bg-violet-500/10", iconText: "text-violet-600 dark:text-violet-400" },
-  rose: { border: "border-t-rose-400/40", iconBg: "bg-rose-500/10", iconText: "text-rose-600 dark:text-rose-400" },
-};
-
-function StatCard({
-  label, value, sub, icon: Icon, accent,
-}: {
-  label: string; value: string; sub?: string; icon: typeof DollarSign; accent: string;
-}) {
-  const a = ACCENT_STYLES[accent] ?? ACCENT_STYLES.emerald;
-  return (
-    <Card variant="outlined" className={`animate-card-in overflow-hidden border-t-[3px] ${a.border}`}>
-      <CardContent className="p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-          <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${a.iconBg}`}>
-            <Icon className={`h-4 w-4 ${a.iconText}`} />
-          </div>
-        </div>
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground/70 mt-0.5">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
-}
 
 function QuickActions() {
   const { t } = useLanguage();
@@ -77,23 +48,6 @@ function QuickActions() {
           {a.label}
         </Button>
       ))}
-    </div>
-  );
-}
-
-function SectionHeader({ title, count }: { title: string; count?: number }) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="h-1 w-6 rounded-full bg-gradient-to-r from-primary to-primary/40" />
-      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</h2>
-      {count !== undefined && (
-        <Chip
-          label={count}
-          size="small"
-          className="font-normal bg-secondary text-secondary-foreground"
-          sx={{ height: 16, fontSize: "10px", "& .MuiChip-label": { px: "6px" } }}
-        />
-      )}
     </div>
   );
 }

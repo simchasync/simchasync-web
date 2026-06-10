@@ -1,5 +1,13 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { ValidationError, parseBody } from "../_shared/validation.ts";
+
+const inviteSchema = z.object({
+  email: z.string().email("email must be a valid email address"),
+  tenant_id: z.string().uuid("tenant_id must be a valid UUID"),
+  role: z.enum(["owner", "booking_manager", "social_media_manager", "member"]).optional(),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -107,17 +115,8 @@ Deno.serve(async (req) => {
 
     const caller = { id: claimsData.claims.sub as string };
 
-    const { email, tenant_id, role } = await req.json() as {
-      email?: string;
-      tenant_id?: string;
-      role?: InviteRole;
-    };
-
+    const { email, tenant_id, role } = parseBody(inviteSchema, await req.json());
     const requestedRole: InviteRole = role ?? "member";
-
-    if (!email || !tenant_id) {
-      return jsonResponse({ error: "email and tenant_id are required" }, 400);
-    }
 
     const { data: callerMembership, error: membershipError } = await supabase
       .from("tenant_members")
@@ -269,6 +268,6 @@ Deno.serve(async (req) => {
     console.error("invite-team-member error:", err);
     return jsonResponse({
       error: err instanceof Error ? err.message : "Unknown error",
-    }, 500);
+    }, err instanceof ValidationError ? 400 : 500);
   }
 });

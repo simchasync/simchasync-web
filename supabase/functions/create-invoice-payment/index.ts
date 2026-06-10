@@ -1,6 +1,13 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { z } from "zod";
+import { ValidationError, parseBody } from "../_shared/validation.ts";
+
+const invoicePaymentSchema = z.object({
+  invoice_id: z.string().uuid("invoice_id must be a valid UUID"),
+  amount: z.number().positive("amount must be positive").optional(),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,12 +45,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { invoice_id, amount } = await req.json();
-    if (!invoice_id) {
-      return new Response(JSON.stringify({ error: "invoice_id required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { invoice_id, amount } = parseBody(invoicePaymentSchema, await req.json());
 
     const { data: invoice, error: invErr } = await supabase
       .from("invoices")
@@ -117,7 +119,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("create-invoice-payment error:", err);
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: err instanceof ValidationError ? 400 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

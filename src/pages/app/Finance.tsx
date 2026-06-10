@@ -22,6 +22,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { computeBalanceDue, getEffectiveTotal } from "@/lib/bookingFinancials";
+import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 
 const EXPENSE_CATEGORIES = [
   "fuel", "marketing", "salaries", "equipment", "rent", "insurance",
@@ -62,7 +63,7 @@ export default function Finance() {
   const dateRange = getDateRange(datePreset, customFrom, customTo);
 
   // Fetch confirmed bookings (income)
-  const { data: events = [] } = useQuery({
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
     queryKey: ["finance-events", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -76,7 +77,7 @@ export default function Finance() {
   });
 
   // Fetch workspace expenses
-  const { data: workspaceExpenses = [] } = useQuery({
+  const { data: workspaceExpenses = [], isLoading: workspaceExpensesLoading } = useQuery({
     queryKey: ["workspace-expenses", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -91,7 +92,7 @@ export default function Finance() {
   });
 
   // Fetch per-event expenses
-  const { data: eventExpenses = [] } = useQuery({
+  const { data: eventExpenses = [], isLoading: eventExpensesLoading } = useQuery({
     queryKey: ["finance-event-expenses", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -105,7 +106,7 @@ export default function Finance() {
   });
 
   // Fetch commissions with agent and booking details
-  const { data: commissions = [] } = useQuery({
+  const { data: commissions = [], isLoading: commissionsLoading } = useQuery({
     queryKey: ["finance-commissions", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -119,7 +120,7 @@ export default function Finance() {
   });
 
   // Fetch colleague costs (paid_by_me)
-  const { data: colleagueCosts = [] } = useQuery({
+  const { data: colleagueCosts = [], isLoading: colleagueCostsLoading } = useQuery({
     queryKey: ["finance-colleague-costs", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -283,6 +284,8 @@ export default function Finance() {
     window.print();
   };
 
+  const isLoading = eventsLoading || workspaceExpensesLoading || eventExpensesLoading || commissionsLoading || colleagueCostsLoading;
+
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dateLabel = `${format(dateRange.from, "MMM d, yyyy")} — ${format(dateRange.to, "MMM d, yyyy")}`;
 
@@ -343,6 +346,9 @@ export default function Finance() {
         </div>
 
         {/* Summary Cards */}
+        {isLoading ? (
+          <StatCardsSkeleton count={5} />
+        ) : (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -401,6 +407,7 @@ export default function Finance() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Chart */}
         {monthlyData.length > 0 && (
