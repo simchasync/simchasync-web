@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { computeBalanceDue } from "@/lib/bookingFinancials";
+import { buildNavigationAddress } from "@/lib/utils";
 import NavigateButton from "./NavigateButton";
 import PaymentsSection from "./PaymentsSection";
 import SongsSection from "./SongsSection";
@@ -287,7 +288,7 @@ export default function ViewBookingDialog({
   if (!event) return null;
 
   const displayPaymentStatus = getEventPaymentStatus(event, linkedInvoices);
-  const address = event.location || event.venue || "";
+  const address = buildNavigationAddress(event.venue, event.location);
   const totalCommission = assignedAgents.reduce((s: number, ba: any) => s + (Number(ba.commission_amount) || 0), 0);
 
   // Live balance due = stored (total - deposit) less any payments recorded in
@@ -573,7 +574,7 @@ export default function ViewBookingDialog({
                   onChange={(location) => setForm(prev => ({ ...prev, location }))}
                   placeholder="Search for an address..."
                 />
-                {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
+                {(form.location || form.venue) && <NavigateButton address={buildNavigationAddress(form.venue, form.location)} size="icon" />}
               </div>
             </div>
           </div>

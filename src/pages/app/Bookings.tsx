@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { computeBalanceDue } from "@/lib/bookingFinancials";
+import { buildNavigationAddress } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card as MuiCard, CardContent as MuiCardContent, Chip } from "@mui/material";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
@@ -922,7 +923,7 @@ export default function Bookings() {
                       onChange={(location) => setForm(prev => ({ ...prev, location }))}
                       placeholder="Search for an address..."
                     />
-                    {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
+                    {(form.location || form.venue) && <NavigateButton address={buildNavigationAddress(form.venue, form.location)} size="icon" />}
                   </div>
                 </div>
               </div>
