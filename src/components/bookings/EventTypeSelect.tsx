@@ -1,21 +1,21 @@
 import EnumSelectWithOther from "./EnumSelectWithOther";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { VENUE_TYPES } from "@/lib/venueTypes";
+import { EVENT_TYPES } from "@/lib/eventTypes";
 
-interface VenueTypeSelectProps {
+interface EventTypeSelectProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export default function VenueTypeSelect({ value, onChange }: VenueTypeSelectProps) {
+export default function EventTypeSelect({ value, onChange }: EventTypeSelectProps) {
   const { t } = useLanguage();
-  const labels = t.app.bookings.venueTypes as Record<string, string>;
+  const labels = t.app.bookings.types as Record<string, string>;
 
   return (
     <EnumSelectWithOther
       value={value}
       onChange={onChange}
-      options={VENUE_TYPES}
+      options={EVENT_TYPES}
       labels={labels}
       placeholder={labels.placeholder}
       customPlaceholder={labels.customPlaceholder}

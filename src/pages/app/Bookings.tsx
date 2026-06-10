@@ -21,7 +21,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List } from "lucide-react";
+import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -36,6 +36,8 @@ import SongsSection from "@/components/bookings/SongsSection";
 import AttachmentsSection from "@/components/bookings/AttachmentsSection";
 import VenueAutocomplete from "@/components/bookings/VenueAutocomplete";
 import VenueTypeSelect from "@/components/bookings/VenueTypeSelect";
+import EventTypeSelect from "@/components/bookings/EventTypeSelect";
+import SectionLabel from "@/components/bookings/SectionLabel";
 import LocationAutocomplete from "@/components/bookings/LocationAutocomplete";
 import BookingMap from "@/components/bookings/BookingMap";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
@@ -50,8 +52,6 @@ import BookingCalendar from "@/components/bookings/BookingCalendar";
 
 type Event = Tables<"events">;
 type Client = Tables<"clients">;
-
-const EVENT_TYPES = ["wedding", "bar_mitzvah", "bat_mitzvah", "corporate", "concert", "other"] as const;
 const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
 
 const emptyTiming: TimingFields = {
@@ -757,18 +757,14 @@ export default function Bookings() {
 
             {/* Event Details */}
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Event Details</p>
+              <SectionLabel icon={Calendar} title="Event Details" />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.eventType} *</Label>
-                  <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {EVENT_TYPES.map((et) => (
-                        <SelectItem key={et} value={et}>{(b.types as any)[et]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <EventTypeSelect
+                    value={form.event_type}
+                    onChange={(event_type) => setForm(prev => ({ ...prev, event_type }))}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.client}</Label>
@@ -818,7 +814,7 @@ export default function Bookings() {
 
             {/* Location */}
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Location</p>
+              <SectionLabel icon={MapPin} title="Location" />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.venueType}</Label>
@@ -826,6 +822,7 @@ export default function Bookings() {
                     value={form.venue_type}
                     onChange={(venue_type) => setForm(prev => ({ ...prev, venue_type }))}
                   />
+                  <p className="text-[11px] text-muted-foreground/80">{b.venueTypeHint}</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.venue}</Label>
@@ -834,8 +831,9 @@ export default function Bookings() {
                     onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
                     placeholder="Search venue name..."
                   />
+                  <p className="text-[11px] text-muted-foreground/80">{b.venueNameHint}</p>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-sm">{b.location}</Label>
                   <div className="flex gap-1.5">
                     <LocationAutocomplete
@@ -861,7 +859,7 @@ export default function Bookings() {
                 <Separator />
                 {/* Financials */}
                 <div className="space-y-3">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Financials</p>
+                  <SectionLabel icon={DollarSign} title="Financials" />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label className="text-sm">{b.totalPrice}</Label>

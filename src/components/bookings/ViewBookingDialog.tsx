@@ -28,18 +28,19 @@ import AgentAssignmentSection from "./AgentAssignmentSection";
 import EventTimingSection, { type TimingFields } from "./EventTimingSection";
 import VenueAutocomplete from "./VenueAutocomplete";
 import VenueTypeSelect from "./VenueTypeSelect";
+import EventTypeSelect from "./EventTypeSelect";
+import SectionLabel from "./SectionLabel";
 import LocationAutocomplete from "./LocationAutocomplete";
 import BookingMap from "./BookingMap";
 import InlineClientDialog from "./InlineClientDialog";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
 import {
   Calendar, DollarSign, Clock, UserCheck, UserPlus, History,
-  Pencil, Eye, CheckCircle2, Car,
+  Pencil, Eye, CheckCircle2, Car, MapPin,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const EVENT_TYPES = ["wedding", "bar_mitzvah", "bat_mitzvah", "corporate", "concert", "other"] as const;
 const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
 
 const emptyTiming: TimingFields = {
@@ -516,18 +517,14 @@ export default function ViewBookingDialog({
 
         {/* Event Details */}
         <div className="space-y-3">
-          <SectionLabel title="Event Details" />
+          <SectionLabel icon={Calendar} title="Event Details" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-sm">{b.eventType} *</Label>
-              <Select value={form.event_type} onValueChange={(v) => setForm(prev => ({ ...prev, event_type: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map(et => (
-                    <SelectItem key={et} value={et}>{(b.types as any)[et]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EventTypeSelect
+                value={form.event_type}
+                onChange={(event_type) => setForm(prev => ({ ...prev, event_type }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">{b.client}</Label>
@@ -562,7 +559,7 @@ export default function ViewBookingDialog({
 
         {/* Location */}
         <div className="space-y-3">
-          <SectionLabel title="Location" />
+          <SectionLabel icon={MapPin} title="Location" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-sm">{b.venueType}</Label>
@@ -570,6 +567,7 @@ export default function ViewBookingDialog({
                 value={form.venue_type}
                 onChange={(venue_type) => setForm(prev => ({ ...prev, venue_type }))}
               />
+              <p className="text-[11px] text-muted-foreground/80">{b.venueTypeHint}</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">{b.venue}</Label>
@@ -578,8 +576,9 @@ export default function ViewBookingDialog({
                 onChange={(venue, location) => setForm(prev => ({ ...prev, venue, location: location || prev.location }))}
                 placeholder="Search venue name..."
               />
+              <p className="text-[11px] text-muted-foreground/80">{b.venueNameHint}</p>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <Label className="text-sm">{b.location}</Label>
               <div className="flex gap-1.5">
                 <LocationAutocomplete
@@ -797,17 +796,6 @@ export default function ViewBookingDialog({
         }}
       />
     </>
-  );
-}
-
-// ── Shared presentational helpers ─────────────────────────────────────────────
-
-function SectionLabel({ icon: Icon, title }: { icon?: React.ElementType; title: string }) {
-  return (
-    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-      {Icon && <Icon className="h-3.5 w-3.5" />}
-      {title}
-    </p>
   );
 }
 
