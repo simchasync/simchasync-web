@@ -4,17 +4,24 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import { Plus, Users, Search, Pencil, Trash2, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
@@ -133,23 +140,40 @@ export default function Clients() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold md:text-3xl">{c.title}</h1>
         {canWrite && (
-          <Button onClick={openNew} className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
-            <Plus className="mr-2 h-4 w-4" /> {c.newClient}
+          <Button
+            onClick={openNew}
+            variant="contained"
+            className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
+            startIcon={<Plus className="h-4 w-4" />}
+          >
+            {c.newClient}
           </Button>
         )}
       </div>
 
       {clients.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder={t.common.search} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
+        <TextField
+          size="small"
+          placeholder={t.common.search}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm w-full"
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       )}
 
       {isLoading ? (
         <><CardListSkeleton count={3} /><TableSkeleton columns={4} rows={4} /></>
       ) : filtered.length === 0 ? (
-        <Card>
+        <Card variant="outlined">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Users className="mb-3 h-12 w-12 text-muted-foreground/30" />
             <p className="text-muted-foreground">{t.common.noData}</p>
@@ -160,7 +184,7 @@ export default function Clients() {
           {/* Mobile Cards */}
           <div className="space-y-3 md:hidden">
             {filtered.map((cl) => (
-              <Card key={cl.id} className="animate-card-in card-interactive">
+              <Card key={cl.id} variant="outlined" className="animate-card-in card-interactive">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
@@ -170,16 +194,16 @@ export default function Clients() {
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => setHistoryClient(cl)}>
-                      <History className="mr-1.5 h-3.5 w-3.5" /> History
+                    <Button variant="outlined" size="small" className="flex-1 h-9" onClick={() => setHistoryClient(cl)} startIcon={<History className="h-3.5 w-3.5" />}>
+                      {c.history}
                     </Button>
                     {canWrite && (
                       <>
-                        <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => openEdit(cl)}>
-                          <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                        <Button variant="outlined" size="small" className="flex-1 h-9" onClick={() => openEdit(cl)} startIcon={<Pencil className="h-3.5 w-3.5" />}>
+                          {t.common.edit}
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)}>
-                          <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+                        <Button variant="text" size="small" className="h-9 shrink-0 text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)} startIcon={<Trash2 className="h-3.5 w-3.5" />}>
+                          {t.common.delete}
                         </Button>
                       </>
                     )}
@@ -190,81 +214,70 @@ export default function Clients() {
           </div>
 
           {/* Desktop Table */}
-          <Card className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{c.name}</TableHead>
-                  <TableHead>{c.email}</TableHead>
-                  <TableHead>{c.phone}</TableHead>
-                  <TableHead className="w-auto" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((cl) => (
-                  <TableRow key={cl.id} className="animate-row-in row-interactive">
-                    <TableCell className="font-medium">{cl.name}</TableCell>
-                    <TableCell>{cl.email ?? "—"}</TableCell>
-                    <TableCell>{cl.phone ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1 justify-end">
-                        <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setHistoryClient(cl)}>
-                          <History className="mr-1.5 h-3.5 w-3.5" /> History
-                        </Button>
-                        {canWrite && (
-                          <>
-                            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" onClick={() => openEdit(cl)}>
-                              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)}>
-                              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+          <Card variant="outlined" className="hidden md:block">
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{c.name}</TableCell>
+                    <TableCell>{c.email}</TableCell>
+                    <TableCell>{c.phone}</TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {filtered.map((cl) => (
+                    <TableRow key={cl.id} className="animate-row-in row-interactive">
+                      <TableCell className="font-medium">{cl.name}</TableCell>
+                      <TableCell>{cl.email ?? "—"}</TableCell>
+                      <TableCell>{cl.phone ?? "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button variant="text" size="small" className="h-8 px-2.5 text-xs" onClick={() => setHistoryClient(cl)} startIcon={<History className="h-3.5 w-3.5" />}>
+                            {c.history}
+                          </Button>
+                          {canWrite && (
+                            <>
+                              <Button variant="text" size="small" className="h-8 px-2.5 text-xs" onClick={() => openEdit(cl)} startIcon={<Pencil className="h-3.5 w-3.5" />}>
+                                {t.common.edit}
+                              </Button>
+                              <Button variant="text" size="small" className="h-8 px-2.5 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTargetId(cl.id)} startIcon={<Trash2 className="h-3.5 w-3.5" />}>
+                                {t.common.delete}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Card>
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
+        <DialogTitle>{editing ? t.common.edit : t.common.create} {c.title.toLowerCase()}</DialogTitle>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? t.common.edit : t.common.create} {c.title.toLowerCase()}</DialogTitle>
-            <DialogDescription>{editing ? "Update client details" : "Add a new client to your workspace"}</DialogDescription>
-          </DialogHeader>
+          <DialogContentText className="mb-2">{editing ? c.editHint : c.addHint}</DialogContentText>
           <form
+            id="client-form"
             onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
-            className="space-y-4"
+            className="flex flex-col gap-4 pt-2"
           >
-            <div className="space-y-2">
-              <Label>{c.name} *</Label>
-              <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>{c.email}</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>{c.phone}</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>{c.notes}</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeDialog}>{t.common.cancel}</Button>
-              <Button type="submit" disabled={saveMutation.isPending} className="bg-gradient-gold text-primary-foreground font-semibold">
-                {saveMutation.isPending ? t.common.loading : t.common.save}
-              </Button>
-            </DialogFooter>
+            <TextField label={c.name} required fullWidth size="small" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <TextField label={c.email} type="email" fullWidth size="small" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <TextField label={c.phone} fullWidth size="small" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <TextField label={c.notes} fullWidth size="small" multiline rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </form>
         </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={closeDialog}>{t.common.cancel}</Button>
+          <Button type="submit" form="client-form" variant="contained" disabled={saveMutation.isPending} className="bg-gradient-gold text-primary-foreground font-semibold">
+            {saveMutation.isPending ? t.common.loading : t.common.save}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {historyClient && (

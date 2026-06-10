@@ -174,13 +174,13 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
-  /* Keep form controls clearly visible in light mode */
-  :root :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  /* Keep form controls clearly visible in light mode (MUI inputs already have their own outlined border) */
+  :root :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(.MuiInputBase-input) {
     outline: 1px solid hsl(var(--input));
     outline-offset: 0;
   }
 
-  .dark :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  .dark :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(.MuiInputBase-input) {
     outline: none;
   }
 

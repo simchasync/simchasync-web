@@ -1,5 +1,6 @@
 import { endOfMonth, isWithinInterval, startOfMonth } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import { getEffectiveTotal, isTravelFeeChargedToCustomer } from "@/lib/bookingFinancials";
 
 export type DashboardEvent = Database["public"]["Tables"]["events"]["Row"] & {
   clients?: { name: string | null } | null;
@@ -49,7 +50,6 @@ export type DashboardStats = {
 
 const toNumber = (value: number | string | null | undefined) => Number(value ?? 0) || 0;
 const isPaid = (status: Database["public"]["Enums"]["payment_status"] | null | undefined) => status === "paid";
-const isTravelFeeChargedToCustomer = (feeType: string | null | undefined) => feeType === "charge_customer";
 const isThisMonth = (dateString: string, now: Date) => {
   const date = new Date(dateString);
   return isWithinInterval(date, { start: startOfMonth(now), end: endOfMonth(now) });
@@ -58,13 +58,13 @@ const isThisMonth = (dateString: string, now: Date) => {
 const sum = <T,>(items: T[], selector: (item: T) => number) => items.reduce((sumValue, item) => sumValue + selector(item), 0);
 
 export const getBookingRevenue = (event: DashboardEvent) =>
-  toNumber(event.total_price) + (isTravelFeeChargedToCustomer(event.travel_fee_type) ? toNumber(event.travel_fee) : 0);
+  getEffectiveTotal(toNumber(event.total_price), toNumber(event.travel_fee), event.travel_fee_type);
 
 export const getTravelFeeExpense = (event: DashboardEvent) =>
   isTravelFeeChargedToCustomer(event.travel_fee_type) ? 0 : toNumber(event.travel_fee);
 
 export const getEventOutstanding = (event: DashboardEvent) =>
-  !isPaid(event.payment_status) ? Math.max(toNumber(event.total_price) - toNumber(event.deposit), 0) : 0;
+  !isPaid(event.payment_status) ? Math.max(getBookingRevenue(event) - toNumber(event.deposit), 0) : 0;
 
 export const getDashboardStats = (args: {
   events: DashboardEvent[];

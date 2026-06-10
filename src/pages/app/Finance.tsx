@@ -21,6 +21,7 @@ import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, pa
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
+import { computeBalanceDue, getEffectiveTotal } from "@/lib/bookingFinancials";
 
 const EXPENSE_CATEGORIES = [
   "fuel", "marketing", "salaries", "equipment", "rent", "insurance",
@@ -192,12 +193,12 @@ export default function Finance() {
   // Revenue received (paid bookings only)
   const paidEvents = filteredEvents.filter((e: any) => e.payment_status === "paid");
   const revenueReceived = paidEvents.reduce((s: number, e: any) =>
-    s + (Number(e.total_price) || 0), 0);
+    s + getEffectiveTotal(Number(e.total_price) || 0, Number(e.travel_fee) || 0, e.travel_fee_type), 0);
 
-  // Outstanding = unpaid booking totals minus deposits
+  // Outstanding = unpaid booking totals (incl. travel fees billed to the customer) minus deposits
   const unpaidEvents = filteredEvents.filter((e: any) => e.payment_status !== "paid");
   const totalOutstanding = unpaidEvents.reduce((s: number, e: any) =>
-    s + Math.max((Number(e.total_price) || 0) - (Number(e.deposit) || 0), 0), 0);
+    s + computeBalanceDue(Number(e.total_price) || 0, Number(e.deposit) || 0, Number(e.travel_fee) || 0, e.travel_fee_type), 0);
 
   // Monthly breakdown for chart
   const monthlyData = useMemo(() => {

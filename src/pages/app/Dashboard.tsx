@@ -5,10 +5,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, Button, IconButton, Chip, Divider } from "@mui/material";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
 import { format, startOfMonth, endOfMonth } from "date-fns";
@@ -28,26 +25,27 @@ import {
 
 const statusBadge = paymentStatusBadge;
 
+const ACCENT_STYLES: Record<string, { border: string; iconBg: string; iconText: string }> = {
+  emerald: { border: "border-t-emerald-400/40", iconBg: "bg-emerald-500/10", iconText: "text-emerald-600 dark:text-emerald-400" },
+  amber: { border: "border-t-amber-400/40", iconBg: "bg-amber-500/10", iconText: "text-amber-600 dark:text-amber-400" },
+  cyan: { border: "border-t-cyan-400/40", iconBg: "bg-cyan-500/10", iconText: "text-cyan-600 dark:text-cyan-400" },
+  violet: { border: "border-t-violet-400/40", iconBg: "bg-violet-500/10", iconText: "text-violet-600 dark:text-violet-400" },
+  rose: { border: "border-t-rose-400/40", iconBg: "bg-rose-500/10", iconText: "text-rose-600 dark:text-rose-400" },
+};
+
 function StatCard({
   label, value, sub, icon: Icon, accent,
 }: {
   label: string; value: string; sub?: string; icon: typeof DollarSign; accent: string;
 }) {
-  const accentMap: Record<string, string> = {
-    emerald: "border-emerald-400/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    amber: "border-amber-400/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    cyan: "border-cyan-400/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-    violet: "border-violet-400/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    rose: "border-rose-400/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  };
-  const a = accentMap[accent] || accentMap.emerald;
+  const a = ACCENT_STYLES[accent] ?? ACCENT_STYLES.emerald;
   return (
-    <Card className="animate-card-in overflow-hidden border-t-[3px]" style={{ borderTopColor: `hsl(var(--${accent === "emerald" ? "142 76% 36%" : accent === "amber" ? "35 92% 50%" : accent === "cyan" ? "187 85% 42%" : accent === "violet" ? "263 70% 60%" : "340 82% 52%"}) / 0.3)` }}>
+    <Card variant="outlined" className={`animate-card-in overflow-hidden border-t-[3px] ${a.border}`}>
       <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-          <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${a.split(" ")[1]}`}>
-            <Icon className={`h-4 w-4 ${a.split(" ").slice(2).join(" ")}`} />
+          <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${a.iconBg}`}>
+            <Icon className={`h-4 w-4 ${a.iconText}`} />
           </div>
         </div>
         <p className="text-2xl font-bold tracking-tight">{value}</p>
@@ -58,17 +56,24 @@ function StatCard({
 }
 
 function QuickActions() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const actions = [
-    { label: "New Booking", icon: Calendar, onClick: () => navigate("/app/bookings"), color: "text-primary" },
-    { label: "New Client", icon: UserPlus, onClick: () => navigate("/app/clients"), color: "text-cyan-500" },
-    { label: "New Invoice", icon: FileText, onClick: () => navigate("/app/invoices"), color: "text-amber-500" },
+    { label: t.app.dashboard.newBooking, icon: Calendar, onClick: () => navigate("/app/bookings"), color: "text-primary" },
+    { label: t.app.clients.newClient, icon: UserPlus, onClick: () => navigate("/app/clients"), color: "text-cyan-500" },
+    { label: t.app.invoices.newInvoice, icon: FileText, onClick: () => navigate("/app/invoices"), color: "text-amber-500" },
   ];
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map((a) => (
-        <Button key={a.label} variant="outline" size="sm" onClick={a.onClick} className="h-9 gap-1.5 text-xs">
-          <a.icon className={`h-4 w-4 ${a.color}`} />
+        <Button
+          key={a.label}
+          variant="outlined"
+          size="small"
+          onClick={a.onClick}
+          startIcon={<a.icon className={`h-4 w-4 ${a.color}`} />}
+          className="h-9 text-xs"
+        >
           {a.label}
         </Button>
       ))}
@@ -82,7 +87,12 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
       <div className="h-1 w-6 rounded-full bg-gradient-to-r from-primary to-primary/40" />
       <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</h2>
       {count !== undefined && (
-        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">{count}</Badge>
+        <Chip
+          label={count}
+          size="small"
+          className="font-normal bg-secondary text-secondary-foreground"
+          sx={{ height: 16, fontSize: "10px", "& .MuiChip-label": { px: "6px" } }}
+        />
       )}
     </div>
   );
@@ -94,15 +104,14 @@ function UpcomingEvents({ events, onView, onEdit }: {
   onEdit: (e: DashboardEvent) => void;
 }) {
   const { t } = useLanguage();
+  const d = t.app.dashboard;
   if (events.length === 0) {
     return (
-      <CardContent>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Calendar className="h-8 w-8 text-muted-foreground/30 mb-3" />
-          <p className="text-sm font-medium text-foreground">No upcoming events</p>
-          <p className="text-xs mt-0.5">Create your first booking to get started</p>
-        </div>
-      </CardContent>
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <Calendar className="h-8 w-8 text-muted-foreground/30 mb-3" />
+        <p className="text-sm font-medium text-foreground">{d.noEvents}</p>
+        <p className="text-xs mt-0.5">{d.noEventsHint}</p>
+      </div>
     );
   }
   return (
@@ -118,17 +127,23 @@ function UpcomingEvents({ events, onView, onEdit }: {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="font-medium text-sm truncate">{(t.app.bookings.types as any)[ev.event_type] ?? ev.event_type}</p>
-                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 font-medium ${badge.className}`}>{badge.label}</Badge>
+                <Chip
+                  label={badge.label}
+                  variant="outlined"
+                  size="small"
+                  className={`font-medium ${badge.className}`}
+                  sx={{ height: 16, fontSize: "10px", "& .MuiChip-label": { px: "6px" } }}
+                />
               </div>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{ev.clients?.name ?? "No client"}{ev.venue ? ` · ${ev.venue}` : ""}</p>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{ev.clients?.name ?? d.noClient}{ev.venue ? ` · ${ev.venue}` : ""}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => onView(ev)} title="View">
+              <IconButton size="small" className="text-muted-foreground hover:text-foreground" sx={{ width: 32, height: 32 }} onClick={() => onView(ev)} title={t.common.view}>
                 <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => onEdit(ev)} title="Edit">
+              </IconButton>
+              <IconButton size="small" className="text-muted-foreground hover:text-foreground" sx={{ width: 32, height: 32 }} onClick={() => onEdit(ev)} title={t.common.edit}>
                 <Pencil className="h-4 w-4" />
-              </Button>
+              </IconButton>
             </div>
           </div>
         );
@@ -138,15 +153,15 @@ function UpcomingEvents({ events, onView, onEdit }: {
 }
 
 function RecentInvoices({ invoices }: { invoices: DashboardInvoice[] }) {
+  const { t } = useLanguage();
+  const d = t.app.dashboard;
   if (invoices.length === 0) {
     return (
-      <CardContent>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <FileText className="h-8 w-8 text-muted-foreground/30 mb-3" />
-          <p className="text-sm font-medium text-foreground">No invoices yet</p>
-          <p className="text-xs mt-0.5">Create a booking with a deposit to auto-generate invoices</p>
-        </div>
-      </CardContent>
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <FileText className="h-8 w-8 text-muted-foreground/30 mb-3" />
+        <p className="text-sm font-medium text-foreground">{d.noInvoices}</p>
+        <p className="text-xs mt-0.5">{d.noInvoicesHint}</p>
+      </div>
     );
   }
   return (
@@ -170,9 +185,13 @@ function RecentInvoices({ invoices }: { invoices: DashboardInvoice[] }) {
                 ${inv.amount?.toLocaleString()} · {inv.created_at ? format(new Date(inv.created_at), "MMM d") : ""}
               </p>
             </div>
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 font-medium ${badge}`}>
-              {inv.status}
-            </Badge>
+            <Chip
+              label={inv.status}
+              variant="outlined"
+              size="small"
+              className={`font-medium ${badge}`}
+              sx={{ height: 16, fontSize: "10px", "& .MuiChip-label": { px: "6px" } }}
+            />
           </div>
         );
       })}
@@ -310,14 +329,12 @@ export default function Dashboard() {
   if (isSocialOnly) {
     return (
       <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-1">
-          <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">Dashboard</h1>
-        </div>
-        <Card>
+        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{d.title}</h1>
+        <Card variant="outlined">
           <CardContent className="flex flex-col items-center justify-center py-20 text-center">
             <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-4" />
-            <h2 className="text-lg font-display font-semibold mb-1">Social Media Dashboard</h2>
-            <p className="text-sm text-muted-foreground max-w-sm">Analytics and performance metrics will appear here once available.</p>
+            <h2 className="text-lg font-display font-semibold mb-1">{d.socialTitle}</h2>
+            <p className="text-sm text-muted-foreground max-w-sm">{d.socialHint}</p>
           </CardContent>
         </Card>
       </div>
@@ -329,9 +346,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 mb-0.5">
-            <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{d.title}</h1>
-          </div>
+          <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{d.title}</h1>
           <p className="text-sm text-muted-foreground">
             {format(now, "EEEE, MMMM d, yyyy")}
           </p>
@@ -345,12 +360,12 @@ export default function Dashboard() {
         <>
           {/* Stat Cards */}
           <section>
-            <SectionHeader title="Overview" />
+            <SectionHeader title={d.overview} />
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              <StatCard label="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} sub={`$${revenueReceived.toLocaleString()} received`} icon={DollarSign} accent="emerald" />
-              <StatCard label="Outstanding" value={`$${outstanding.toLocaleString()}`} sub={`${unpaidBookings} unpaid bookings`} icon={AlertCircle} accent="amber" />
-              <StatCard label="This Month" value={`$${thisMonthRevenue.toLocaleString()}`} sub={`${thisMonthEvents.length} event(s)`} icon={Calendar} accent="cyan" />
-              <StatCard label="Total Bookings" value={`${totalBookings}`} sub={`${paidBookings} paid`} icon={BarChart3} accent="violet" />
+              <StatCard label={d.totalRevenue} value={`$${totalRevenue.toLocaleString()}`} sub={`$${revenueReceived.toLocaleString()} ${d.received}`} icon={DollarSign} accent="emerald" />
+              <StatCard label={d.outstanding} value={`$${outstanding.toLocaleString()}`} sub={d.unpaidBookings.replace("{count}", String(unpaidBookings))} icon={AlertCircle} accent="amber" />
+              <StatCard label={d.thisMonth} value={`$${thisMonthRevenue.toLocaleString()}`} sub={d.eventsCount.replace("{count}", String(thisMonthEvents.length))} icon={Calendar} accent="cyan" />
+              <StatCard label={d.totalBookings} value={`${totalBookings}`} sub={d.paidCount.replace("{count}", String(paidBookings))} icon={BarChart3} accent="violet" />
             </div>
           </section>
 
@@ -358,7 +373,7 @@ export default function Dashboard() {
           <div className="grid gap-6 md:grid-cols-2">
             <section>
               <SectionHeader title={d.upcoming} count={upcoming.length} />
-              <Card className="animate-card-in">
+              <Card variant="outlined" className="animate-card-in">
                 <CardContent className="p-4 md:p-5">
                   <UpcomingEvents
                     events={upcoming}
@@ -367,10 +382,9 @@ export default function Dashboard() {
                   />
                   {upcoming.length > 5 && (
                     <>
-                      <Separator className="my-3" />
-                      <Button variant="ghost" size="sm" className="w-full text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => navigate("/app/bookings")}>
-                        View all {upcoming.length} events
-                        <ArrowUpRight className="h-3 w-3" />
+                      <Divider className="my-3" />
+                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/bookings")}>
+                        {d.viewAllEvents.replace("{count}", String(upcoming.length))}
                       </Button>
                     </>
                   )}
@@ -379,16 +393,15 @@ export default function Dashboard() {
             </section>
 
             <section>
-              <SectionHeader title="Recent Invoices" count={recentInvoices.length} />
-              <Card className="animate-card-in">
+              <SectionHeader title={d.recentInvoices} count={recentInvoices.length} />
+              <Card variant="outlined" className="animate-card-in">
                 <CardContent className="p-4 md:p-5">
                   <RecentInvoices invoices={recentInvoices} />
                   {invoices.length > 5 && (
                     <>
-                      <Separator className="my-3" />
-                      <Button variant="ghost" size="sm" className="w-full text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => navigate("/app/invoices")}>
-                        View all {invoices.length} invoices
-                        <ArrowUpRight className="h-3 w-3" />
+                      <Divider className="my-3" />
+                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/invoices")}>
+                        {d.viewAllInvoices.replace("{count}", String(invoices.length))}
                       </Button>
                     </>
                   )}
@@ -400,12 +413,12 @@ export default function Dashboard() {
           {/* Profit Analytics — Full Plan Only */}
           {showProfitAnalytics && (
             <section>
-              <SectionHeader title="Profit Analytics" />
+              <SectionHeader title={d.profitAnalytics} />
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-                <StatCard label="Total Expenses" value={`$${totalExpenses.toLocaleString()}`} icon={TrendingDown} accent="rose" />
-                <StatCard label="Net Profit" value={`${netProfit >= 0 ? "+" : ""}$${netProfit.toLocaleString()}`} icon={ArrowUpRight} accent={netProfit >= 0 ? "emerald" : "rose"} />
-                <StatCard label="Avg Profit / Booking" value={`$${avgProfitPerBooking.toLocaleString()}`} icon={DollarSign} accent="violet" />
-                <StatCard label="Invoices Paid" value={`$${invoicePaid.toLocaleString()}`} sub={`${invoicePaidCount} invoices`} icon={Wallet} accent="cyan" />
+                <StatCard label={d.totalExpenses} value={`$${totalExpenses.toLocaleString()}`} icon={TrendingDown} accent="rose" />
+                <StatCard label={d.netProfit} value={`${netProfit >= 0 ? "+" : ""}$${netProfit.toLocaleString()}`} icon={ArrowUpRight} accent={netProfit >= 0 ? "emerald" : "rose"} />
+                <StatCard label={d.avgProfitPerBooking} value={`$${avgProfitPerBooking.toLocaleString()}`} icon={DollarSign} accent="violet" />
+                <StatCard label={d.invoicesPaid} value={`$${invoicePaid.toLocaleString()}`} sub={d.invoicesCount.replace("{count}", String(invoicePaidCount))} icon={Wallet} accent="cyan" />
               </div>
             </section>
           )}

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
+import { computeBalanceDue } from "@/lib/bookingFinancials";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +40,6 @@ import VenueTypeSelect from "@/components/bookings/VenueTypeSelect";
 import EventTypeSelect from "@/components/bookings/EventTypeSelect";
 import SectionLabel from "@/components/bookings/SectionLabel";
 import LocationAutocomplete from "@/components/bookings/LocationAutocomplete";
-import BookingMap from "@/components/bookings/BookingMap";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
 import NavigateButton from "@/components/bookings/NavigateButton";
 import EventTimingSection, { type TimingFields } from "@/components/bookings/EventTimingSection";
@@ -172,7 +172,8 @@ export default function Bookings() {
       const travelFee = values.travel_fee ? Number(values.travel_fee) : 0;
       const totalPrice = values.total_price ? Number(values.total_price) : 0;
       const deposit = values.deposit ? Number(values.deposit) : 0;
-      const balanceDue = Math.max(totalPrice - deposit, 0);
+      const travelFeeType = travelFee > 0 ? (values.travel_fee_type || "expense") : "expense";
+      const balanceDue = computeBalanceDue(totalPrice, deposit, travelFee, travelFeeType);
 
       const payload: any = {
         client_id: values.client_id || null,
@@ -190,7 +191,7 @@ export default function Bookings() {
         notes: values.notes || null,
         hebrew_date: hebrewDate,
         travel_fee: travelFee,
-        travel_fee_type: travelFee > 0 ? (values.travel_fee_type || "expense") : "expense",
+        travel_fee_type: travelFeeType,
         chuppah_time: timing.chuppah_time || null,
         meal_time: timing.meal_time || null,
         first_dance_time: timing.first_dance_time || null,
@@ -274,7 +275,9 @@ export default function Bookings() {
         setEditing(data);
         const savedTotal = Number(data.total_price) || 0;
         const savedDep = Number(data.deposit) || 0;
-        const savedBalance = data.payment_status === "paid" ? 0 : Math.max(savedTotal - savedDep, 0);
+        const savedTravelFee = Number((data as any).travel_fee) || 0;
+        const savedTravelFeeType = (data as any).travel_fee_type ?? "expense";
+        const savedBalance = data.payment_status === "paid" ? 0 : computeBalanceDue(savedTotal, savedDep, savedTravelFee, savedTravelFeeType);
         setForm({
           client_id: data.client_id ?? "",
           event_date: data.event_date,
@@ -410,7 +413,9 @@ export default function Bookings() {
     setEditing(ev);
     const total = Number(ev.total_price) || 0;
     const dep = Number(ev.deposit) || 0;
-    const computedBalance = ev.payment_status === "paid" ? 0 : Math.max(total - dep, 0);
+    const evTravelFee = Number(ev.travel_fee) || 0;
+    const evTravelFeeType = ev.travel_fee_type ?? "expense";
+    const computedBalance = ev.payment_status === "paid" ? 0 : computeBalanceDue(total, dep, evTravelFee, evTravelFeeType);
     setForm({
       client_id: ev.client_id ?? "",
       event_date: ev.event_date,
@@ -467,12 +472,13 @@ export default function Bookings() {
     generateInvoiceMutation.mutate(ev);
   };
 
-  const updateFinancials = (field: "total_price" | "deposit" | "travel_fee", value: string) => {
+  const updateFinancials = (field: "total_price" | "deposit" | "travel_fee" | "travel_fee_type", value: string) => {
     const updated = { ...form, [field]: value };
     const total = Number(updated.total_price) || 0;
     const dep = Number(updated.deposit) || 0;
-    // Balance due = collectable money only (total price - deposit), travel fee is our expense
-    updated.balance_due = String(Math.max(total - dep, 0));
+    const travelFee = Number(updated.travel_fee) || 0;
+    // Balance due includes the travel fee only when it's billed to the customer
+    updated.balance_due = String(computeBalanceDue(total, dep, travelFee, updated.travel_fee_type));
     setForm(updated);
   };
 
@@ -839,19 +845,12 @@ export default function Bookings() {
                     <LocationAutocomplete
                       value={form.location}
                       onChange={(location) => setForm(prev => ({ ...prev, location }))}
-                      placeholder="Search or pin on map below"
+                      placeholder="Search for an address..."
                     />
                     {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
                   </div>
                 </div>
               </div>
-              <BookingMap
-                onLocationSelect={(venue, address) => setForm(prev => ({
-                  ...prev,
-                  venue: venue || prev.venue,
-                  location: address,
-                }))}
-              />
             </div>
 
             {showFinancialFields && (
@@ -872,7 +871,7 @@ export default function Bookings() {
                     {Number(form.travel_fee) > 0 && (
                       <div className="space-y-1.5 sm:col-span-2">
                         <Label className="text-sm">Travel Fee — How to treat it?</Label>
-                        <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
+                        <Select value={form.travel_fee_type} onValueChange={(v) => updateFinancials("travel_fee_type", v)}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
@@ -911,9 +910,11 @@ export default function Bookings() {
                       <Select value={form.payment_status} onValueChange={(v) => {
                         const total = Number(form.total_price) || 0;
                         const dep = Number(form.deposit) || 0;
-                        const balanceDue = v === "paid" ? 0 : Math.max(total - dep, 0);
+                        const travelFee = Number(form.travel_fee) || 0;
+                        const rawBalance = computeBalanceDue(total, dep, travelFee, form.travel_fee_type);
+                        const balanceDue = v === "paid" ? 0 : rawBalance;
                         if (v === "paid") {
-                          const outstanding = Math.max(total - dep - editingPaymentsTotal, 0);
+                          const outstanding = Math.max(rawBalance - editingPaymentsTotal, 0);
                           if (outstanding > 0) {
                             toast({
                               title: "Heads up",

@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
+import { computeBalanceDue } from "@/lib/bookingFinancials";
 import NavigateButton from "./NavigateButton";
 import PaymentsSection from "./PaymentsSection";
 import SongsSection from "./SongsSection";
@@ -31,7 +32,6 @@ import VenueTypeSelect from "./VenueTypeSelect";
 import EventTypeSelect from "./EventTypeSelect";
 import SectionLabel from "./SectionLabel";
 import LocationAutocomplete from "./LocationAutocomplete";
-import BookingMap from "./BookingMap";
 import InlineClientDialog from "./InlineClientDialog";
 import ClientHistoryDialog from "@/components/clients/ClientHistoryDialog";
 import {
@@ -60,6 +60,8 @@ type FormState = {
 function buildForm(ev: any): FormState {
   const total = Number(ev.total_price) || 0;
   const dep = Number(ev.deposit) || 0;
+  const travelFee = Number(ev.travel_fee) || 0;
+  const travelFeeType = ev.travel_fee_type ?? "expense";
   return {
     client_id: ev.client_id ?? "",
     event_date: ev.event_date ?? "",
@@ -69,7 +71,7 @@ function buildForm(ev: any): FormState {
     location: ev.location ?? "",
     total_price: String(ev.total_price ?? ""),
     deposit: String(ev.deposit ?? ""),
-    balance_due: String(ev.payment_status === "paid" ? 0 : Math.max(total - dep, 0)),
+    balance_due: String(ev.payment_status === "paid" ? 0 : computeBalanceDue(total, dep, travelFee, travelFeeType)),
     payment_status: ev.payment_status ?? "unpaid",
     deposit_status: ev.deposit_status ?? "unpaid",
     due_date: ev.due_date ?? "",
@@ -185,7 +187,9 @@ export default function ViewBookingDialog({
       const updated = { ...prev, [field]: value };
       const total = Number(updated.total_price) || 0;
       const dep = Number(updated.deposit) || 0;
-      return { ...updated, balance_due: String(updated.payment_status === "paid" ? 0 : Math.max(total - dep, 0)) };
+      const travelFee = Number(updated.travel_fee) || 0;
+      const balance = updated.payment_status === "paid" ? 0 : computeBalanceDue(total, dep, travelFee, updated.travel_fee_type);
+      return { ...updated, balance_due: String(balance) };
     });
   };
 
@@ -195,6 +199,7 @@ export default function ViewBookingDialog({
       const travelFee = Number(values.travel_fee) || 0;
       const totalPrice = Number(values.total_price) || 0;
       const deposit = Number(values.deposit) || 0;
+      const travelFeeType = travelFee > 0 ? (values.travel_fee_type || "expense") : "expense";
 
       const payload: any = {
         client_id: values.client_id || null,
@@ -205,14 +210,14 @@ export default function ViewBookingDialog({
         location: values.location || null,
         total_price: totalPrice,
         deposit,
-        balance_due: values.payment_status === "paid" ? 0 : Math.max(totalPrice - deposit, 0),
+        balance_due: values.payment_status === "paid" ? 0 : computeBalanceDue(totalPrice, deposit, travelFee, travelFeeType),
         payment_status: values.payment_status,
         deposit_status: values.deposit_status || "unpaid",
         due_date: values.due_date || null,
         notes: values.notes || null,
         hebrew_date: hebrewDate,
         travel_fee: travelFee,
-        travel_fee_type: travelFee > 0 ? (values.travel_fee_type || "expense") : "expense",
+        travel_fee_type: travelFeeType,
         chuppah_time: timing.chuppah_time || null,
         meal_time: timing.meal_time || null,
         first_dance_time: timing.first_dance_time || null,
@@ -584,19 +589,12 @@ export default function ViewBookingDialog({
                 <LocationAutocomplete
                   value={form.location}
                   onChange={(location) => setForm(prev => ({ ...prev, location }))}
-                  placeholder="Search or pin on map below"
+                  placeholder="Search for an address..."
                 />
                 {(form.location || form.venue) && <NavigateButton address={form.location || form.venue} size="icon" />}
               </div>
             </div>
           </div>
-          <BookingMap
-            onLocationSelect={(venue, address) => setForm(prev => ({
-              ...prev,
-              venue: venue || prev.venue,
-              location: address,
-            }))}
-          />
         </div>
 
         {/* Financials */}
@@ -617,7 +615,7 @@ export default function ViewBookingDialog({
                 {Number(form.travel_fee) > 0 && (
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-sm">Travel Fee — How to treat it?</Label>
-                    <Select value={form.travel_fee_type} onValueChange={(v) => setForm(prev => ({ ...prev, travel_fee_type: v }))}>
+                    <Select value={form.travel_fee_type} onValueChange={(v) => updateFinancials("travel_fee_type", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
@@ -656,8 +654,10 @@ export default function ViewBookingDialog({
                   <Select value={form.payment_status} onValueChange={(v) => {
                     const total = Number(form.total_price) || 0;
                     const dep = Number(form.deposit) || 0;
+                    const travelFee = Number(form.travel_fee) || 0;
+                    const rawBalance = computeBalanceDue(total, dep, travelFee, form.travel_fee_type);
                     if (v === "paid") {
-                      const outstanding = Math.max(total - dep - paymentsTotal, 0);
+                      const outstanding = Math.max(rawBalance - paymentsTotal, 0);
                       if (outstanding > 0) {
                         toast({
                           title: "Heads up",
@@ -668,7 +668,7 @@ export default function ViewBookingDialog({
                     setForm(prev => ({
                       ...prev,
                       payment_status: v,
-                      balance_due: String(v === "paid" ? 0 : Math.max(total - dep, 0)),
+                      balance_due: String(v === "paid" ? 0 : rawBalance),
                     }));
                   }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
