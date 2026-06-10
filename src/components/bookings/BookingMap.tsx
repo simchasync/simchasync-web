@@ -54,6 +54,7 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
   const [permissionLoading, setPermissionLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter ?? FALLBACK_CENTER);
   const [zoom, setZoom] = useState(14);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
 
   const center = mapCenter;
 
@@ -102,24 +103,29 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
 
   const requestGeolocation = useCallback(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-      toast({ title: "Location not supported", description: "Your browser does not support location lookup.", variant: "destructive" });
+      const message = "Your browser does not support location lookup.";
+      toast({ title: "Location not supported", description: message, variant: "destructive" });
+      setLocationNotice(message);
       return;
     }
 
     setPermissionLoading(true);
+    setLocationNotice(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
         setMapCenter([coords.lat, coords.lng]);
         setZoom(17);
+        setLocationNotice(null);
         handlePin(coords).finally(() => setPermissionLoading(false));
       },
       (error) => {
         setPermissionLoading(false);
         const message = error.code === error.PERMISSION_DENIED
-          ? "Location access was denied. You can still pin a location manually."
-          : "Could not determine your location. Pin a location manually on the map.";
+          ? "Location access is turned off. Enable location permission for this site in your browser/phone settings, or tap the map to pin manually."
+          : "Couldn't get your location. Make sure location services are turned on, then try again — or tap the map to pin manually.";
         toast({ title: "Location unavailable", description: message, variant: "destructive" });
+        setLocationNotice(message);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
@@ -151,6 +157,20 @@ export default function BookingMap({ onLocationSelect, defaultCenter }: BookingM
               ? "Requesting your location..."
               : "Allow location access when prompted to auto-pin your current address, or tap the map to choose a place manually."}
           </p>
+          {locationNotice && !permissionLoading && (
+            <div className="flex items-start justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-[11px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+              <span>{locationNotice}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 shrink-0 px-2 text-[11px]"
+                onClick={requestGeolocation}
+              >
+                Try again
+              </Button>
+            </div>
+          )}
           <div className="relative rounded-lg overflow-hidden border" style={{ height: 250 }}>
             <MapContainer center={center} zoom={zoom} className="h-full w-full" scrollWheelZoom={true}>
               <TileLayer

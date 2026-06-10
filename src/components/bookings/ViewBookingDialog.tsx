@@ -27,6 +27,7 @@ import ExpensesProfitSection from "./ExpensesProfitSection";
 import AgentAssignmentSection from "./AgentAssignmentSection";
 import EventTimingSection, { type TimingFields } from "./EventTimingSection";
 import VenueAutocomplete from "./VenueAutocomplete";
+import VenueTypeSelect from "./VenueTypeSelect";
 import LocationAutocomplete from "./LocationAutocomplete";
 import BookingMap from "./BookingMap";
 import InlineClientDialog from "./InlineClientDialog";
@@ -48,7 +49,7 @@ const emptyTiming: TimingFields = {
 
 type FormState = {
   client_id: string; event_date: string; event_type: string;
-  venue: string; location: string; total_price: string; deposit: string;
+  venue: string; venue_type: string; location: string; total_price: string; deposit: string;
   balance_due: string; payment_status: string; deposit_status: string;
   due_date: string; notes: string; travel_fee: string; travel_fee_type: string;
 };
@@ -63,6 +64,7 @@ function buildForm(ev: any): FormState {
     event_date: ev.event_date ?? "",
     event_type: ev.event_type ?? "wedding",
     venue: ev.venue ?? "",
+    venue_type: ev.venue_type ?? "",
     location: ev.location ?? "",
     total_price: String(ev.total_price ?? ""),
     deposit: String(ev.deposit ?? ""),
@@ -198,6 +200,7 @@ export default function ViewBookingDialog({
         event_date: values.event_date,
         event_type: values.event_type,
         venue: values.venue || null,
+        venue_type: values.venue_type || null,
         location: values.location || null,
         total_price: totalPrice,
         deposit,
@@ -373,6 +376,13 @@ export default function ViewBookingDialog({
             </Field>
             <Field label={b.eventType}>
               <span className="font-medium text-sm">{(b.types as any)[event.event_type] ?? event.event_type}</span>
+            </Field>
+            <Field label={b.venueType}>
+              <span className="font-medium text-sm">
+                {event.venue_type
+                  ? ((b.venueTypes as any)[event.venue_type] ?? event.venue_type)
+                  : "—"}
+              </span>
             </Field>
             <Field label={b.venue}>
               <span className="font-medium text-sm">{event.venue || "—"}</span>
@@ -554,6 +564,13 @@ export default function ViewBookingDialog({
         <div className="space-y-3">
           <SectionLabel title="Location" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm">{b.venueType}</Label>
+              <VenueTypeSelect
+                value={form.venue_type}
+                onChange={(venue_type) => setForm(prev => ({ ...prev, venue_type }))}
+              />
+            </div>
             <div className="space-y-1.5">
               <Label className="text-sm">{b.venue}</Label>
               <VenueAutocomplete

@@ -55,8 +55,9 @@ export const yi = {
     },
     dashboard: { title: "דעשבאָרד", upcoming: "קומענדיקע אירועים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "אויסשטייענדיק", paid: "באַצאָלט", recentActivity: "לעצטע אַקטיוויטעט", noEvents: "קיין קומענדיקע אירועים" },
     bookings: {
-      title: "באָקינגס", newEvent: "נײַער אירוע", client: "קליענט", date: "דאַטום", hebrewDate: "ייִדישער דאַטום", venue: "מקום", location: "אַדרעס", eventType: "טיפּ אירוע", notes: "באַמערקונגען", totalPrice: "גאַנצער פּרײַז", deposit: "מקדמה", balanceDue: "באַלאַנס צו צאָלן", dueDate: "צאָלונגס דאַטום", status: "סטאַטוס",
+      title: "באָקינגס", newEvent: "נײַער אירוע", client: "קליענט", date: "דאַטום", hebrewDate: "ייִדישער דאַטום", venue: "מקום", venueType: "טיפּ מקום", location: "אַדרעס", eventType: "טיפּ אירוע", notes: "באַמערקונגען", totalPrice: "גאַנצער פּרײַז", deposit: "מקדמה", balanceDue: "באַלאַנס צו צאָלן", dueDate: "צאָלונגס דאַטום", status: "סטאַטוס",
       types: { wedding: "חתונה", bar_mitzvah: "בר מצוה", bat_mitzvah: "בת מצוה", corporate: "געשעפֿט אירוע", concert: "קאָנצערט", other: "אַנדערש" },
+      venueTypes: { hotel: "האָטעל", function_hall: "זאַל פֿאַר אונטערנעמונגען", banquet_hall: "חתונה זאַל", garden: "גאָרטן / דרויסן", synagogue: "שיל", restaurant: "רעסטאָראַן", country_club: "קאַנטרי קלוב", private_residence: "פּריוואַטער דירה", other: "אַנדערש (שרײַב אַרײַן)", placeholder: "קלײַב טיפּ מקום", customPlaceholder: "שרײַב אַרײַן טיפּ מקום..." },
       paymentStatus: { paid: "באַצאָלט", partial: "טיילווײַז", unpaid: "ניט באַצאָלט" },
       requests: "אָנפֿראַגעס",
       requestStatuses: { new: "נײַ", contacted: "קאָנטאַקטירט", booked: "באָקט", declined: "אָפּגעזאָגט" },

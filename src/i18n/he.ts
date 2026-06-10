@@ -55,8 +55,9 @@ export const he = {
     },
     dashboard: { title: "לוח בקרה", upcoming: "אירועים קרובים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "ממתין", paid: "שולם", recentActivity: "פעילות אחרונה", noEvents: "אין אירועים קרובים" },
     bookings: {
-      title: "הזמנות", newEvent: "אירוע חדש", client: "לקוח", date: "תאריך", hebrewDate: "תאריך עברי", venue: "מקום", location: "כתובת", eventType: "סוג אירוע", notes: "הערות", totalPrice: "מחיר כולל", deposit: "מקדמה", balanceDue: "יתרה לתשלום", dueDate: "תאריך לתשלום", status: "סטטוס",
+      title: "הזמנות", newEvent: "אירוע חדש", client: "לקוח", date: "תאריך", hebrewDate: "תאריך עברי", venue: "מקום", venueType: "סוג מקום", location: "כתובת", eventType: "סוג אירוע", notes: "הערות", totalPrice: "מחיר כולל", deposit: "מקדמה", balanceDue: "יתרה לתשלום", dueDate: "תאריך לתשלום", status: "סטטוס",
       types: { wedding: "חתונה", bar_mitzvah: "בר מצווה", bat_mitzvah: "בת מצווה", corporate: "אירוע עסקי", concert: "הופעה", other: "אחר" },
+      venueTypes: { hotel: "מלון", function_hall: "אולם אירועים", banquet_hall: "אולם שמחות", garden: "גן / חוץ", synagogue: "בית כנסת", restaurant: "מסעדה", country_club: "מועדון כפרי / נופש", private_residence: "בית פרטי", other: "אחר (פרט)", placeholder: "בחר סוג מקום", customPlaceholder: "הזן סוג מקום..." },
       paymentStatus: { paid: "שולם", partial: "חלקי", unpaid: "לא שולם" },
       requests: "בקשות",
       requestStatuses: { new: "חדש", contacted: "יצרנו קשר", booked: "הוזמן", declined: "נדחה" },
