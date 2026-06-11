@@ -120,7 +120,7 @@ export default function NotificationsDropdown() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-100 p-0" align="end">
         <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Notifications</p>
           <div className="flex shrink-0 items-center gap-0.5">

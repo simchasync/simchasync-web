@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
+import { formatCurrency } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +19,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, FileText, Pencil, Trash2, Link2, Copy, Eye, Send, DollarSign, Printer } from "lucide-react";
+import { Plus, FileText, Pencil, Trash2, Link2, Copy, Eye, Send, DollarSign, Printer, Wallet, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -237,6 +239,21 @@ export default function Invoices() {
     pending: invoices.filter((i: any) => i.status === "sent").length,
   };
 
+  const stats = useMemo(() => {
+    const sum = (items: any[]) => items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const paid = invoices.filter((i: any) => i.status === "paid");
+    const pending = invoices.filter((i: any) => i.status === "sent");
+    const unpaid = invoices.filter((i: any) => i.status === "draft" || i.status === "overdue");
+    return {
+      totalSum: sum(invoices),
+      paidSum: sum(paid),
+      paidCount: paid.length,
+      pendingSum: sum(pending),
+      unpaidSum: sum(unpaid),
+      unpaidCount: unpaid.length,
+    };
+  }, [invoices]);
+
   useEffect(() => {
     const invoiceId = searchParams.get("invoice");
     const eventId = searchParams.get("event");
@@ -252,49 +269,76 @@ export default function Invoices() {
   }, [searchParams, invoices, setSearchParams]);
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl">{inv.title}</h1>
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{inv.title}</h1>
         {canWrite && (
-          <Button onClick={openNew} className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
+          <Button onClick={openNew} className="w-full sm:w-auto bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
             <Plus className="mr-2 h-4 w-4" /> {inv.newInvoice}
           </Button>
         )}
       </div>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Stats */}
+      {!isLoading && invoices.length > 0 && (
+        <section>
+          <SectionHeader title={t.app.dashboard.overview} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <StatCard label={inv.totalInvoiced} value={formatCurrency(stats.totalSum)} sub={t.app.dashboard.invoicesCount.replace("{count}", String(invoices.length))} icon={FileText} accent="violet" />
+            <StatCard label={t.app.dashboard.invoicesPaid} value={formatCurrency(stats.paidSum)} sub={t.app.dashboard.invoicesCount.replace("{count}", String(stats.paidCount))} icon={Wallet} accent="emerald" />
+            <StatCard label={inv.awaitingPayment} value={formatCurrency(stats.pendingSum)} icon={Send} accent="cyan" />
+            <StatCard label={t.app.dashboard.outstanding} value={formatCurrency(stats.unpaidSum)} sub={t.app.dashboard.invoicesCount.replace("{count}", String(stats.unpaidCount))} icon={AlertCircle} accent={stats.unpaidCount > 0 ? "amber" : "emerald"} />
+          </div>
+        </section>
+      )}
+
+      {/* Status filter — segmented pill toggle */}
+      <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-muted p-1">
         {[
           { key: "all", label: "All" },
           { key: "paid", label: "Paid" },
           { key: "unpaid", label: "Unpaid" },
           { key: "pending", label: "Pending" },
-        ].map((tab) => (
-          <Button
-            key={tab.key}
-            variant={statusFilter === tab.key ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter(tab.key)}
-            className={statusFilter === tab.key ? "bg-gradient-gold text-primary-foreground" : ""}
-          >
-            {tab.label}
-            <Badge
-              variant="secondary"
-              className="ml-1.5 flex h-5 min-w-5 shrink-0 items-center justify-center px-1 py-0 text-xs font-semibold leading-none tabular-nums"
+        ].map((tab) => {
+          const active = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatusFilter(tab.key)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all ${
+                active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              {filterCounts[tab.key as keyof typeof filterCounts]}
-            </Badge>
-          </Button>
-        ))}
+              {tab.label}
+              <span className={`tabular-nums text-xs ${active ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
+                {filterCounts[tab.key as keyof typeof filterCounts]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {isLoading ? (
         <><CardListSkeleton count={3} /><TableSkeleton columns={5} rows={4} /></>
       ) : invoices.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="mb-3 h-12 w-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground">{t.common.noData}</p>
+        <Card className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <FileText className="h-7 w-7 text-primary" />
+            </div>
+            <p className="font-display text-lg font-semibold">{t.common.noData}</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">{t.app.dashboard.noInvoicesHint}</p>
+          </CardContent>
+        </Card>
+      ) : filteredInvoices.length === 0 ? (
+        <Card className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-14 text-center">
+            <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">{t.common.noData}</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setStatusFilter("all")}>
+              All ({filterCounts.all})
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -306,7 +350,7 @@ export default function Invoices() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-lg font-bold">${i.amount}</p>
+                      <p className="text-lg font-bold tabular-nums">{formatCurrency(Number(i.amount) || 0)}</p>
                       <p className="text-sm text-muted-foreground">{i.clients?.name ?? "No client"}</p>
                       {i.description && <p className="text-xs text-muted-foreground/80 mt-0.5">{i.description}</p>}
                     </div>
@@ -364,7 +408,7 @@ export default function Invoices() {
               <TableBody>
                 {filteredInvoices.map((i: any) => (
                   <TableRow key={i.id} className="animate-row-in row-interactive">
-                    <TableCell className="font-medium">${i.amount}</TableCell>
+                    <TableCell className="font-medium tabular-nums">{formatCurrency(Number(i.amount) || 0)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{i.description || "—"}</TableCell>
                     <TableCell>{i.clients?.name ?? "—"}</TableCell>
                     <TableCell className="text-sm">{i.events ? bookingsLabel(i.events) : "—"}</TableCell>

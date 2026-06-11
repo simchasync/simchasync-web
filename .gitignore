@@ -34,3 +34,4 @@ documentation
 *.njsproj
 *.sln
 *.sw?
+.claude\

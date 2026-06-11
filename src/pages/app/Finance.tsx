@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "@/hooks/useTenantId";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3, Plus, Pencil, Trash2,
-  FileDown, Printer, Calendar as CalendarIcon
+  Printer, Calendar as CalendarIcon
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, parseISO, isWithinInterval } from "date-fns";
 import {
@@ -23,6 +22,7 @@ import {
 } from "recharts";
 import { computeBalanceDue, getEffectiveTotal } from "@/lib/bookingFinancials";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
+import { StatCard } from "@/components/ui/stat-card";
 
 const EXPENSE_CATEGORIES = [
   "fuel", "marketing", "salaries", "equipment", "rent", "insurance",
@@ -47,7 +47,6 @@ function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string
 
 export default function Finance() {
   const { tenantId } = useTenantId();
-  const { t } = useLanguage();
   const qc = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -294,22 +293,20 @@ export default function Finance() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Financial Reports</h1>
+          <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">Financial Reports</h1>
           <p className="text-sm text-muted-foreground">{dateLabel}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-1" /> Print / PDF
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handlePrint} className="w-full sm:w-auto">
+          <Printer className="h-4 w-4 mr-2" /> Print / PDF
+        </Button>
       </div>
 
       {/* Date Filter */}
-      <Card>
-        <CardContent className="p-4">
+      <Card className="rounded-xl">
+        <CardContent className="p-3 md:p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Period</Label>
+              <Label className="text-xs flex items-center gap-1.5"><CalendarIcon className="h-3 w-3 text-muted-foreground" /> Period</Label>
               <Select value={datePreset} onValueChange={(v) => setDatePreset(v as DatePreset)}>
                 <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -349,63 +346,12 @@ export default function Finance() {
         {isLoading ? (
           <StatCardsSkeleton count={5} />
         ) : (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-emerald" />
-                <span className="text-xs text-muted-foreground font-medium">Total Revenue</span>
-              </div>
-              <p className="text-xl font-bold text-emerald">{fmt(totalRevenue)}</p>
-              <p className="text-xs text-muted-foreground">{filteredEvents.length} bookings · {fmt(revenueReceived)} received</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="h-4 w-4 text-destructive" />
-                <span className="text-xs text-muted-foreground font-medium">Expenses</span>
-              </div>
-              <p className="text-xl font-bold text-destructive">{fmt(totalExpenses)}</p>
-              <p className="text-xs text-muted-foreground">
-                incl. {fmt(totalTravelFees)} travel
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-amber" />
-                <span className="text-xs text-muted-foreground font-medium">Commissions</span>
-              </div>
-              <p className="text-xl font-bold text-amber">{fmt(totalCommissions)}</p>
-              <p className="text-xs text-muted-foreground">{filteredCommissions.length} agents</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CalendarIcon className="h-4 w-4 text-rose" />
-                <span className="text-xs text-muted-foreground font-medium">Outstanding</span>
-              </div>
-              <p className="text-xl font-bold text-rose">{fmt(totalOutstanding)}</p>
-              <p className="text-xs text-muted-foreground">{unpaidEvents.length} unpaid</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className={`h-4 w-4 ${netProfit >= 0 ? "text-emerald-500" : "text-destructive"}`} />
-                <span className="text-xs text-muted-foreground font-medium">Net Profit</span>
-              </div>
-              <p className={`text-xl font-bold ${netProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                {fmt(netProfit)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {totalRevenue > 0 ? `${((netProfit / totalRevenue) * 100).toFixed(1)}% margin` : "—"}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 md:gap-4">
+          <StatCard label="Total Revenue" value={fmt(totalRevenue)} sub={`${filteredEvents.length} bookings · ${fmt(revenueReceived)} received`} icon={TrendingUp} accent="emerald" />
+          <StatCard label="Expenses" value={fmt(totalExpenses)} sub={`incl. ${fmt(totalTravelFees)} travel`} icon={TrendingDown} accent="rose" />
+          <StatCard label="Commissions" value={fmt(totalCommissions)} sub={`${filteredCommissions.length} agents`} icon={DollarSign} accent="amber" />
+          <StatCard label="Outstanding" value={fmt(totalOutstanding)} sub={`${unpaidEvents.length} unpaid`} icon={CalendarIcon} accent="violet" />
+          <StatCard label="Net Profit" value={fmt(netProfit)} sub={totalRevenue > 0 ? `${((netProfit / totalRevenue) * 100).toFixed(1)}% margin` : "—"} icon={BarChart3} accent={netProfit >= 0 ? "emerald" : "rose"} />
         </div>
         )}
 

@@ -1,7 +1,7 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import Stripe from "stripe";
 import {
-  corsHeaders, getErrorMessage, createAdminClient,
+  adminCors, getErrorMessage, createAdminClient,
   authenticate, getUserRoles,
   isAdmin, isBillingAdmin,
   auditLog,
@@ -9,6 +9,7 @@ import {
 import { ONE_YEAR_MS } from "../_shared/pricing.ts";
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = adminCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const adminClient = createAdminClient();

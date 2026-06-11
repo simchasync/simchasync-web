@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { ONE_YEAR_MS, BAN_DURATION_HOURS, getPlanFromPrice } from "../_shared/pricing.ts";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { adminCors } from "../_shared/admin-helpers.ts";
 import { adminActionSchemas } from "./schemas.ts";
 
 type JsonMap = Record<string, unknown>;
@@ -12,12 +13,6 @@ function getErrorMessage(err: unknown): string {
   return typeof err === "string" ? err : "Unknown error";
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 async function auditLog(
   adminClient: any,
@@ -91,6 +86,7 @@ async function enrichLogsWithProfiles(adminClient: any, logs: any[]) {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = adminCors(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

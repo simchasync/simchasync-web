@@ -3,12 +3,28 @@ import { createClient } from "@supabase/supabase-js";
 
 export type JsonMap = Record<string, unknown>;
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const PROD_ORIGIN = "https://simchasync-web.vercel.app";
+
+function isAllowedAdminOrigin(origin: string): boolean {
+  if (origin === PROD_ORIGIN || origin === (Deno.env.get("APP_URL") ?? "")) return true;
+  // Vercel preview deployments of this project
+  if (/^https:\/\/simchasync-web[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
+  // Local development
+  return /^http:\/\/localhost:\d+$/.test(origin);
+}
+
+/** Origin-allow-listed CORS for internal admin functions (no wildcard).
+ * Call once at the top of the handler: `const corsHeaders = adminCors(req);` */
+export function adminCors(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": isAllowedAdminOrigin(origin) ? origin : PROD_ORIGIN,
+    Vary: "Origin",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 export function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;

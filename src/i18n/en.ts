@@ -209,6 +209,8 @@ export const en = {
       status: "Status",
       sentAt: "Sent",
       statuses: { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue" },
+      totalInvoiced: "Total Invoiced",
+      awaitingPayment: "Awaiting Payment",
       paymentLink: "Payment Link",
       copyLink: "Copy Link",
       linkCopied: "Payment link copied!",

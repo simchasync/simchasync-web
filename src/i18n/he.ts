@@ -132,6 +132,8 @@ export const he = {
     invoices: {
       title: "חשבוניות", newInvoice: "חשבונית חדשה", amount: "סכום", status: "סטטוס", sentAt: "נשלח",
       statuses: { draft: "טיוטה", sent: "נשלח", paid: "שולם", overdue: "באיחור" },
+      totalInvoiced: "סך חשבוניות",
+      awaitingPayment: "ממתין לתשלום",
       paymentLink: "קישור תשלום",
       copyLink: "העתק קישור",
       linkCopied: "קישור תשלום הועתק!",

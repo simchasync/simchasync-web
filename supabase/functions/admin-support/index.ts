@@ -1,12 +1,13 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import {
-  corsHeaders, getErrorMessage, createAdminClient,
+  adminCors, getErrorMessage, createAdminClient,
   authenticate, getUserRoles,
   isAdmin, isSupportAgent,
   auditLog,
 } from "../_shared/admin-helpers.ts";
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = adminCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const adminClient = createAdminClient();

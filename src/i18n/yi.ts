@@ -132,6 +132,8 @@ export const yi = {
     invoices: {
       title: "חשבונות", newInvoice: "נײַער חשבון", amount: "סכום", status: "סטאַטוס", sentAt: "געשיקט",
       statuses: { draft: "טיוטה", sent: "געשיקט", paid: "באַצאָלט", overdue: "פֿאַרשפּעטיקט" },
+      totalInvoiced: "גאַנץ פֿאַקטורירט",
+      awaitingPayment: "ווארט אויף צאָלונג",
       paymentLink: "באַצאָלונג לינק",
       copyLink: "קאָפּירן לינק",
       linkCopied: "באַצאָלונג לינק קאָפּירט!",

@@ -12,40 +12,51 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import PhoneNumber from "./pages/PhoneNumber";
-import PublicBooking from "./pages/PublicBooking";
-import AppShell from "./components/AppShell";
-import Dashboard from "./pages/app/Dashboard";
-import Bookings from "./pages/app/Bookings";
-import Clients from "./pages/app/Clients";
-import Invoices from "./pages/app/Invoices";
-import Team from "./pages/app/Team";
-import SocialMedia from "./pages/app/SocialMedia";
-import Support from "./pages/app/Support";
-import SettingsPage from "./pages/app/SettingsPage";
-import UpgradePage from "./pages/app/UpgradePage";
-import LandingPageEditor from "./pages/app/LandingPageEditor";
-import Agents from "./pages/app/Agents";
-import Finance from "./pages/app/Finance";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminShell from "./pages/admin/AdminShell";
-import AdminTenants from "./pages/admin/AdminTenants";
-import AdminBilling from "./pages/admin/AdminBilling";
-import AdminManageAdmins from "./pages/admin/AdminManageAdmins";
-import AdminRevenue from "./pages/admin/AdminRevenue";
-import AdminAuditLog from "./pages/admin/AdminAuditLog";
-import AdminImpersonate from "./pages/admin/AdminImpersonate";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
-import NotFound from "./pages/NotFound";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentCancelled from "./pages/PaymentCancelled";
 import AuthRedirect from "./components/AuthRedirect";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PhoneNumber = lazy(() => import("./pages/PhoneNumber"));
+const PublicBooking = lazy(() => import("./pages/PublicBooking"));
+const AppShell = lazy(() => import("./components/AppShell"));
+const Dashboard = lazy(() => import("./pages/app/Dashboard"));
+const Bookings = lazy(() => import("./pages/app/Bookings"));
+const Clients = lazy(() => import("./pages/app/Clients"));
+const Invoices = lazy(() => import("./pages/app/Invoices"));
+const Team = lazy(() => import("./pages/app/Team"));
+const SocialMedia = lazy(() => import("./pages/app/SocialMedia"));
+const Support = lazy(() => import("./pages/app/Support"));
+const SettingsPage = lazy(() => import("./pages/app/SettingsPage"));
+const UpgradePage = lazy(() => import("./pages/app/UpgradePage"));
+const LandingPageEditor = lazy(() => import("./pages/app/LandingPageEditor"));
+const Agents = lazy(() => import("./pages/app/Agents"));
+const Finance = lazy(() => import("./pages/app/Finance"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminShell = lazy(() => import("./pages/admin/AdminShell"));
+const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
+const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
+const AdminManageAdmins = lazy(() => import("./pages/admin/AdminManageAdmins"));
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminImpersonate = lazy(() => import("./pages/admin/AdminImpersonate"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSupportTickets = lazy(() => import("./pages/admin/AdminSupportTickets"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
+
+function RouteLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -79,7 +90,8 @@ const App = () => (
                   <Analytics />
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <AuthRedirect />
-                    <Routes>
+                    <Suspense fallback={<RouteLoader />}>
+                      <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/auth/login" element={<Login />} />
                       <Route path="/auth/register" element={<Register />} />
@@ -115,7 +127,8 @@ const App = () => (
                         <Route path="impersonate/:tenantId" element={<AdminImpersonate />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
-                    </Routes>
+                      </Routes>
+                    </Suspense>
                   </BrowserRouter>
                 </TooltipProvider>
               </SubscriptionProvider>
