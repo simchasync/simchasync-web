@@ -28,6 +28,22 @@ export const paymentStatusBadge: Record<Database["public"]["Enums"]["payment_sta
   },
 };
 
+export const invoiceStatusBadge: Record<string, { iconClassName: string; chipClassName: string }> = {
+  paid: {
+    iconClassName: "bg-emerald-500/10 text-emerald-500",
+    chipClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  },
+  sent: {
+    iconClassName: "bg-amber-500/10 text-amber-500",
+    chipClassName: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+  },
+};
+
+export const defaultInvoiceStatusBadge = {
+  iconClassName: "bg-muted text-muted-foreground",
+  chipClassName: "bg-muted text-muted-foreground border-border",
+};
+
 export type DashboardStats = {
   totalBookings: number;
   paidBookings: number;

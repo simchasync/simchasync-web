@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("APP_SECRET_API_KEY") ?? "",
     );
 
     const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);

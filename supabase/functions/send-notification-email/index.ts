@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const supabase = createClient(supabaseUrl, Deno.env.get("APP_SECRET_API_KEY")!);
 
     const { type, tenant_id, event_id, invoice_id } = await req.json();
 

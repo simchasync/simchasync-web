@@ -15,7 +15,7 @@ export function StatCard({
 }) {
   const a = ACCENT_STYLES[accent] ?? ACCENT_STYLES.emerald;
   return (
-    <Card variant="outlined" className={`animate-card-in overflow-hidden border-t-[3px] ${a.border}`}>
+    <Card variant="outlined" className={`animate-card-in card-interactive overflow-hidden border-t-[3px] ${a.border}`}>
       <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
@@ -23,7 +23,7 @@ export function StatCard({
             <Icon className={`h-4 w-4 ${a.iconText}`} />
           </div>
         </div>
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
+        <p className="text-2xl font-bold tracking-tight tabular-nums">{value}</p>
         {sub && <p className="text-xs text-muted-foreground/70 mt-0.5">{sub}</p>}
       </CardContent>
     </Card>

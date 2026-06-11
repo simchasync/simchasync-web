@@ -3,10 +3,10 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qxcatdirkfbqitvkuvbu.supabase.co';
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = process.env.SEED_SCRIPT_SECRET_KEY;
 
 if (!supabaseServiceKey) {
-  throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+  throw new Error('SEED_SCRIPT_SECRET_KEY is not set in environment variables');
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {

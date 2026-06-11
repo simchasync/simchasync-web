@@ -1,7 +1,12 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+// @ts-expect-error - Deno runtime module resolution
+import * as React from "npm:react@18.3.1";
+// @ts-expect-error - External module
+import { renderAsync } from "npm:@react-email/components@0.0.22";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { InviteEmail } from "../_shared/email-templates/invite.tsx";
 
 const inviteSchema = z.object({
   email: z.string().email("email must be a valid email address"),
@@ -21,6 +26,13 @@ function getFallbackAppOrigin(): string {
 }
 
 type InviteRole = "owner" | "booking_manager" | "social_media_manager" | "member";
+
+const ROLE_LABELS: Record<InviteRole, string> = {
+  owner: "an Owner",
+  booking_manager: "a Booking Manager",
+  social_media_manager: "a Social Media Manager",
+  member: "a Member",
+};
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -45,44 +57,58 @@ function resolveAppOrigin(req: Request) {
   return getFallbackAppOrigin();
 }
 
-async function sendExistingUserLoginEmail({
-  supabaseUrl,
-  anonKey,
+async function sendInviteEmail({
   recipientEmail,
-  tenantId,
+  recipientName,
   tenantName,
-  appOrigin,
+  inviterName,
   requestedRole,
+  actionLink,
+  appOrigin,
+  existingUser,
 }: {
-  supabaseUrl: string;
-  anonKey: string;
   recipientEmail: string;
-  tenantId: string;
+  recipientName?: string;
   tenantName: string;
-  appOrigin: string;
+  inviterName?: string;
   requestedRole: InviteRole;
+  actionLink: string;
+  appOrigin: string;
+  existingUser: boolean;
 }) {
-  const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) throw new Error("RESEND_API_KEY is not set");
+
+  const siteName = Deno.env.get("SITE_NAME") ?? "SimchaSync";
+  const from = Deno.env.get("RESEND_FROM") ?? `${siteName} <onboarding@resend.dev>`;
+
+  const props = {
+    siteName,
+    siteUrl: appOrigin,
+    confirmationUrl: actionLink,
+    recipientName,
+    tenantName,
+    roleLabel: ROLE_LABELS[requestedRole],
+    inviterName,
+    existingUser,
+  };
+  const html = await renderAsync(React.createElement(InviteEmail, props));
+  const text = await renderAsync(React.createElement(InviteEmail, props), { plainText: true });
+
+  const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      apikey: anonKey,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: recipientEmail,
-      create_user: false,
-      data: {
-        invited_to_tenant: tenantId,
-        invited_to_tenant_name: tenantName,
-        role: requestedRole,
-      },
-      email_redirect_to: `${appOrigin}/app/bookings?tenant=${tenantId}`,
+      from,
+      to: [recipientEmail],
+      subject: `You've been invited to join ${tenantName} on ${siteName}`,
+      html,
+      text,
     }),
   });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to send workspace login email: ${text}`);
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Resend error ${res.status}: ${errBody}`);
   }
 }
 
@@ -93,7 +119,7 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceRoleKey = Deno.env.get("APP_SECRET_API_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -152,6 +178,13 @@ Deno.serve(async (req) => {
     const tenantName = tenantData.name || "your workspace";
     const appOrigin = resolveAppOrigin(req);
 
+    const { data: inviterProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+    const inviterName = inviterProfile?.full_name || undefined;
+
     const { data: existingUsersData, error: usersError } = await supabase.auth.admin.listUsers();
     if (usersError) throw usersError;
 
@@ -191,70 +224,65 @@ Deno.serve(async (req) => {
         if (updateErr) throw updateErr;
       }
 
-      let emailSent = false;
-      try {
-        await sendExistingUserLoginEmail({
-          supabaseUrl,
-          anonKey,
-          recipientEmail: email,
-          tenantId: tenant_id,
-          tenantName,
-          appOrigin,
-          requestedRole,
-        });
-        emailSent = true;
-      } catch (emailErr) {
-        const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
-        if (msg.includes("over_email_send_rate_limit")) {
-          console.warn("Email rate limited, membership created but email skipped:", msg);
-        } else {
-          throw emailErr;
-        }
-      }
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${appOrigin}/app/bookings?tenant=${tenant_id}` },
+      });
+      if (linkError) throw linkError;
+
+      await sendInviteEmail({
+        recipientEmail: email,
+        recipientName: (existingUser.user_metadata?.full_name as string) || undefined,
+        tenantName,
+        inviterName,
+        requestedRole,
+        actionLink: linkData.properties.action_link,
+        appOrigin,
+        existingUser: true,
+      });
 
       return jsonResponse({
         success: true,
         invited: !existingMembership || existingMembership.invitation_status !== "accepted",
         added: !existingMembership,
         already_member: !!existingMembership && existingMembership.invitation_status === "accepted",
-        email_sent: emailSent,
+        email_sent: true,
         user_id: existingUser.id,
       });
     }
 
-    const { error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${appOrigin}/reset-password?tenant=${tenant_id}`,
-      data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
+    const { data: inviteLinkData, error: inviteErr } = await supabase.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        redirectTo: `${appOrigin}/reset-password?tenant=${tenant_id}`,
+        data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
+      },
     });
     if (inviteErr) throw inviteErr;
 
-    const { data: newUsersData, error: refreshUsersError } = await supabase.auth.admin.listUsers();
-    if (refreshUsersError) throw refreshUsersError;
+    const invitedUser = inviteLinkData.user;
 
-    const invitedUser = newUsersData?.users?.find(
-      (user) => user.email?.toLowerCase() === email.toLowerCase(),
-    );
+    const { error: membershipInsertError } = await supabase.from("tenant_members").insert({
+      tenant_id,
+      user_id: invitedUser.id,
+      role: requestedRole,
+      invitation_status: "invited",
+      invitation_email: email,
+      invited_by: caller.id,
+    });
+    if (membershipInsertError) throw membershipInsertError;
 
-    if (invitedUser) {
-      const { data: existingMembership } = await supabase
-        .from("tenant_members")
-        .select("id")
-        .eq("tenant_id", tenant_id)
-        .eq("user_id", invitedUser.id)
-        .maybeSingle();
-
-      if (!existingMembership) {
-        const { error: membershipInsertError } = await supabase.from("tenant_members").insert({
-          tenant_id,
-          user_id: invitedUser.id,
-          role: requestedRole,
-          invitation_status: "invited",
-          invitation_email: email,
-          invited_by: caller.id,
-        });
-        if (membershipInsertError) throw membershipInsertError;
-      }
-    }
+    await sendInviteEmail({
+      recipientEmail: email,
+      tenantName,
+      inviterName,
+      requestedRole,
+      actionLink: inviteLinkData.properties.action_link,
+      appOrigin,
+      existingUser: false,
+    });
 
     return jsonResponse({
       success: true,
@@ -262,7 +290,7 @@ Deno.serve(async (req) => {
       added: true,
       already_member: false,
       email_sent: true,
-      user_id: invitedUser?.id ?? null,
+      user_id: invitedUser.id,
     });
   } catch (err) {
     console.error("invite-team-member error:", err);

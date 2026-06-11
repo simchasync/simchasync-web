@@ -77,7 +77,7 @@ export function requireRoles(userRoles: string[], required: string[]) {
 
 export function createAdminClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const serviceRoleKey = Deno.env.get("APP_SECRET_API_KEY")!;
   return createClient(supabaseUrl, serviceRoleKey);
 }
 

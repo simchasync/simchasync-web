@@ -9,6 +9,10 @@ interface InviteEmailProps {
   siteUrl: string
   confirmationUrl: string
   recipientName?: string
+  tenantName?: string
+  roleLabel?: string
+  inviterName?: string
+  existingUser?: boolean
 }
 
 export const InviteEmail = ({
@@ -16,20 +20,40 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
   recipientName,
+  tenantName,
+  roleLabel,
+  inviterName,
+  existingUser,
 }: InviteEmailProps) => (
-  <EmailShell preview="You've been invited to join SimchaSync — accept your invitation inside.">
+  <EmailShell
+    preview={
+      tenantName
+        ? `You've been invited to join ${tenantName} on SimchaSync — accept your invitation inside.`
+        : "You've been invited to join SimchaSync — accept your invitation inside."
+    }
+  >
     <Heading style={styles.h1}>
-      {recipientName ? `Hi ${recipientName}, you've been invited!` : "You've been invited to SimchaSync"}
+      {tenantName
+        ? `You've been invited to join ${tenantName}!`
+        : recipientName
+          ? `Hi ${recipientName}, you've been invited!`
+          : "You've been invited to SimchaSync"}
     </Heading>
 
     <Text style={styles.text}>
-      Someone has invited you to collaborate on{' '}
+      {inviterName ? `${inviterName} has` : 'Someone has'} invited you
+      {recipientName ? ` (${recipientName})` : ''} to collaborate on{' '}
+      {tenantName ? <strong>{tenantName}</strong> : null}
+      {tenantName ? ' in ' : ''}
       <Link href={siteUrl} style={styles.link}>SimchaSync</Link>,
       the event management platform for music professionals.
+      {roleLabel ? ` You'll be joining as ${roleLabel}.` : ''}
     </Text>
 
     <Text style={styles.text}>
-      Click the button below to accept your invitation and set up your account.
+      {existingUser
+        ? 'Click the button below to sign in and open the workspace — your existing SimchaSync account will be used.'
+        : 'Click the button below to accept your invitation and set up your account.'}
     </Text>
 
     <div style={styles.buttonSection}>
@@ -39,8 +63,9 @@ export const InviteEmail = ({
     </div>
 
     <Text style={styles.mutedNote}>
-      This invitation link expires in 24 hours. If you weren't expecting this,
-      you can safely ignore this email — no account will be created.
+      {existingUser
+        ? "This link expires shortly and can only be used once. If you weren't expecting this invitation, you can safely ignore this email."
+        : "This invitation link expires in 24 hours. If you weren't expecting this, you can safely ignore this email — no account will be created."}
     </Text>
   </EmailShell>
 )

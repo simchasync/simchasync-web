@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceRoleKey = Deno.env.get("APP_SECRET_API_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
