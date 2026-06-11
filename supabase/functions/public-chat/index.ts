@@ -5,15 +5,51 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const MAX_MESSAGES = 20;
+const MAX_CONTENT_LENGTH = 2000;
+const MAX_CONTEXT_LENGTH = 8000;
+const MAX_TENANT_NAME_LENGTH = 200;
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+function jsonError(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function parseMessages(raw: unknown): ChatMessage[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_MESSAGES) return null;
+  const messages: ChatMessage[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) return null;
+    const { role, content } = item as Record<string, unknown>;
+    if (role !== "user" && role !== "assistant") return null;
+    if (typeof content !== "string" || content.length === 0 || content.length > MAX_CONTENT_LENGTH) return null;
+    messages.push({ role, content });
+  }
+  return messages;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, tenant_name, context } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const body = await req.json();
+    const messages = parseMessages(body.messages);
+    if (!messages) return jsonError("Invalid messages", 400);
 
-    const systemPrompt = `You are a friendly, professional assistant for "${tenant_name}". You help potential clients learn about their services, packages, pricing, and availability. Answer questions based on the following business information:
+    const tenantName = typeof body.tenant_name === "string" ? body.tenant_name.slice(0, MAX_TENANT_NAME_LENGTH) : "this business";
+    const context = typeof body.context === "string" ? body.context.slice(0, MAX_CONTEXT_LENGTH) : "";
+
+    // Any OpenAI-compatible provider (Groq, Gemini, OpenRouter...) — switch via secrets, no redeploy.
+    const apiKey = Deno.env.get("AI_API_KEY") ?? Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey) throw new Error("AI_API_KEY is not configured");
+    const baseUrl = Deno.env.get("AI_BASE_URL") ?? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    const model = Deno.env.get("AI_MODEL") ?? Deno.env.get("GEMINI_MODEL") ?? "gemini-3.1-flash-lite";
+
+    const systemPrompt = `You are a friendly, professional assistant for "${tenantName}". You help potential clients learn about their services, packages, pricing, and availability. Answer questions based on the following business information:
 
 ${context}
 
@@ -24,14 +60,14 @@ Guidelines:
 - Keep responses under 3 sentences unless more detail is needed
 - Do not make up information not provided in the business context`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -41,24 +77,10 @@ Guidelines:
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (response.status === 429) return jsonError("Rate limited", 429);
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("AI provider error:", response.status, t);
+      return jsonError("AI service error", 500);
     }
 
     return new Response(response.body, {
@@ -66,9 +88,6 @@ Guidelines:
     });
   } catch (e) {
     console.error("public-chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonError(e instanceof Error ? e.message : "Unknown error", 500);
   }
 });

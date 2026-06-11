@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { GradientBackground } from "@/components/ui/gradient-background";
 import { ThemeProvider } from "next-themes";
 import MuiThemeBridge from "@/theme/MuiThemeBridge";
 import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
@@ -72,6 +73,7 @@ const App = () => (
             <AuthProvider>
               <SubscriptionProvider>
                 <TooltipProvider>
+                  <GradientBackground />
                   <Toaster />
                   <Sonner />
                   <Analytics />

@@ -84,7 +84,7 @@ export default function Index() {
   if (!loading && user) return <Navigate to="/app" replace />;
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased">
+    <div className="min-h-screen text-foreground antialiased">
       {/* ── Dark Hero Section with Video ─────────────────────────────────────── */}
       <section className="relative bg-black min-h-screen flex flex-col overflow-hidden selection:bg-white selection:text-black">
         <BackgroundVideo />

@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,8 +23,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Chip,
+  IconButton,
 } from "@mui/material";
-import { Plus, Users, Search, Pencil, Trash2, History } from "lucide-react";
+import { Plus, Users, Search, Pencil, Trash2, History, UserPlus, AlertCircle, Mail, Phone, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -33,6 +37,22 @@ import { getOrCreateClient } from "@/lib/clientDedup";
 type Client = Tables<"clients">;
 
 const emptyForm = { name: "", email: "", phone: "", notes: "" };
+
+const clientInitials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+function ClientAvatar({ name }: { name: string }) {
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+      {clientInitials(name) || "?"}
+    </div>
+  );
+}
 
 export default function Clients() {
   const { t } = useLanguage();
@@ -47,6 +67,20 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [historyClient, setHistoryClient] = useState<Client | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // "/" focuses the search field (unless already typing somewhere)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(target.tagName) && !target.isContentEditable) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", tenantId],
@@ -135,15 +169,30 @@ export default function Clients() {
     (cl) => cl.name.toLowerCase().includes(search.toLowerCase()) || cl.email?.toLowerCase().includes(search.toLowerCase()) || cl.phone?.includes(search)
   );
 
+  const stats = useMemo(() => {
+    const now = new Date();
+    const month = { start: startOfMonth(now), end: endOfMonth(now) };
+    return {
+      total: clients.length,
+      newThisMonth: clients.filter((cl) => cl.created_at && isWithinInterval(new Date(cl.created_at), month)).length,
+      missingContact: clients.filter((cl) => !cl.email && !cl.phone).length,
+    };
+  }, [clients]);
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl">{c.title}</h1>
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{c.title}</h1>
+          <p className="text-sm text-muted-foreground">{c.subtitle}</p>
+        </div>
         {canWrite && (
           <Button
             onClick={openNew}
             variant="contained"
-            className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
+            disableElevation
+            className="w-full sm:w-auto bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
             startIcon={<Plus className="h-4 w-4" />}
           >
             {c.newClient}
@@ -151,32 +200,97 @@ export default function Clients() {
         )}
       </div>
 
+      {/* Stats */}
+      {!isLoading && clients.length > 0 && (
+        <section>
+          <SectionHeader title={t.app.dashboard.overview} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+            <StatCard label={c.totalClients} value={`${stats.total}`} icon={Users} accent="violet" />
+            <StatCard label={c.newThisMonth} value={`${stats.newThisMonth}`} icon={UserPlus} accent="emerald" />
+            <StatCard
+              label={c.missingContact}
+              value={`${stats.missingContact}`}
+              sub={stats.missingContact > 0 ? c.missingContactSub.replace("{count}", String(stats.missingContact)) : undefined}
+              icon={AlertCircle}
+              accent={stats.missingContact > 0 ? "amber" : "emerald"}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Search toolbar */}
       {clients.length > 0 && (
-        <TextField
-          size="small"
-          placeholder={t.common.search}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm w-full"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-center">
+          <TextField
+            size="small"
+            fullWidth
+            placeholder={c.searchPlaceholder}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            inputRef={searchInputRef}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {search ? (
+                      <IconButton size="small" onClick={() => setSearch("")} title={c.clearSearch} sx={{ width: 28, height: 28 }}>
+                        <X className="h-3.5 w-3.5" />
+                      </IconButton>
+                    ) : (
+                      <kbd className="hidden md:inline-flex h-5 items-center rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">/</kbd>
+                    )}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <Chip
+            label={c.resultsCount.replace("{shown}", String(filtered.length)).replace("{total}", String(clients.length))}
+            variant="outlined"
+            size="small"
+            className="shrink-0 self-end sm:self-auto font-medium text-muted-foreground"
+            sx={{ height: 24, fontSize: "11px" }}
+          />
+        </div>
       )}
 
       {isLoading ? (
         <><CardListSkeleton count={3} /><TableSkeleton columns={4} rows={4} /></>
+      ) : clients.length === 0 ? (
+        <Card variant="outlined" className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Users className="h-7 w-7 text-primary" />
+            </div>
+            <p className="font-display text-lg font-semibold">{c.emptyTitle}</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">{c.emptyHint}</p>
+            {canWrite && (
+              <Button
+                onClick={openNew}
+                variant="contained"
+                disableElevation
+                className="mt-5 bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
+                startIcon={<Plus className="h-4 w-4" />}
+              >
+                {c.addFirst}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : filtered.length === 0 ? (
-        <Card variant="outlined">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Users className="mb-3 h-12 w-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground">{t.common.noData}</p>
+        <Card variant="outlined" className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-14 text-center">
+            <Search className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="font-medium">{c.noMatches}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{c.noMatchesHint}</p>
+            <Button variant="outlined" size="small" className="mt-4" onClick={() => setSearch("")} startIcon={<X className="h-3.5 w-3.5" />}>
+              {c.clearSearch}
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -186,11 +300,20 @@ export default function Clients() {
             {filtered.map((cl) => (
               <Card key={cl.id} variant="outlined" className="animate-card-in card-interactive">
                 <CardContent className="p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0">
+                  <div className="flex items-start gap-3">
+                    <ClientAvatar name={cl.name} />
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold truncate">{cl.name}</p>
-                      {cl.email && <p className="text-sm text-muted-foreground truncate">{cl.email}</p>}
-                      {cl.phone && <p className="text-sm text-muted-foreground">{cl.phone}</p>}
+                      {cl.email && (
+                        <a href={`mailto:${cl.email}`} className="flex items-center gap-1.5 text-sm text-muted-foreground truncate hover:text-foreground">
+                          <Mail className="h-3.5 w-3.5 shrink-0" />{cl.email}
+                        </a>
+                      )}
+                      {cl.phone && (
+                        <a href={`tel:${cl.phone}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />{cl.phone}
+                        </a>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
@@ -228,9 +351,22 @@ export default function Clients() {
                 <TableBody>
                   {filtered.map((cl) => (
                     <TableRow key={cl.id} className="animate-row-in row-interactive">
-                      <TableCell className="font-medium">{cl.name}</TableCell>
-                      <TableCell>{cl.email ?? "—"}</TableCell>
-                      <TableCell>{cl.phone ?? "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2.5">
+                          <ClientAvatar name={cl.name} />
+                          <span className="truncate">{cl.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {cl.email
+                          ? <a href={`mailto:${cl.email}`} className="text-muted-foreground hover:text-foreground hover:underline">{cl.email}</a>
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {cl.phone
+                          ? <a href={`tel:${cl.phone}`} className="text-muted-foreground hover:text-foreground hover:underline">{cl.phone}</a>
+                          : "—"}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
                           <Button variant="text" size="small" className="h-8 px-2.5 text-xs" onClick={() => setHistoryClient(cl)} startIcon={<History className="h-3.5 w-3.5" />}>

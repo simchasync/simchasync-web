@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import PublicChatWidget from "@/components/public/PublicChatWidget";
 
 const EVENT_TYPES = ["wedding", "bar_mitzvah", "bat_mitzvah", "corporate", "concert", "other"] as const;
 
@@ -73,6 +74,22 @@ export default function PublicBooking() {
     enabled: !!tenant?.id,
   });
 
+  const chatContext = useMemo(() => {
+    const parts: string[] = [];
+    if (landingPage?.tagline) parts.push(`Tagline: ${landingPage.tagline}`);
+    if (landingPage?.about) parts.push(`About:\n${landingPage.about}`);
+    if (landingPage?.services_description) parts.push(`Services:\n${landingPage.services_description}`);
+    if (packages?.length) {
+      const lines = packages.map((pkg: any) => {
+        const price = pkg.price != null ? ` — $${Number(pkg.price).toLocaleString()}` : "";
+        const desc = pkg.description ? `: ${pkg.description}` : "";
+        return `- ${pkg.name}${price}${desc}`;
+      });
+      parts.push(`Packages:\n${lines.join("\n")}`);
+    }
+    return parts.join("\n\n");
+  }, [landingPage, packages]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
@@ -121,7 +138,7 @@ export default function PublicBooking() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -129,7 +146,7 @@ export default function PublicBooking() {
 
   if (!tenant || error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md text-center shadow-card">
           <CardContent className="py-12">
             <Music className="mx-auto mb-4 h-12 w-12 text-muted-foreground/30" />
@@ -142,7 +159,7 @@ export default function PublicBooking() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md text-center shadow-card animate-fade-in">
           <CardContent className="py-12">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
@@ -163,7 +180,7 @@ export default function PublicBooking() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen pb-16 md:pb-0">
       {/* Sticky Header */}
       <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
@@ -410,6 +427,8 @@ export default function PublicBooking() {
           {pb.bookNow}
         </Button>
       </div>
+
+      {tenant && <PublicChatWidget tenantName={tenant.name} context={chatContext} />}
     </div>
   );
 }

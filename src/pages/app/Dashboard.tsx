@@ -9,12 +9,14 @@ import { Card, CardContent, Button, IconButton, Chip, Divider } from "@mui/mater
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import ViewBookingDialog from "@/components/bookings/ViewBookingDialog";
-import { format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import {
   getDashboardStats,
+  getBookingRevenue,
   paymentStatusBadge,
   invoiceStatusBadge,
   defaultInvoiceStatusBadge,
@@ -245,6 +247,19 @@ export default function Dashboard() {
     [events, now],
   );
 
+  const monthlyRevenue = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, i) => {
+        const month = subMonths(now, 5 - i);
+        const interval = { start: startOfMonth(month), end: endOfMonth(month) };
+        const revenue = events
+          .filter((event) => isWithinInterval(new Date(event.event_date), interval))
+          .reduce((sum, event) => sum + getBookingRevenue(event), 0);
+        return { month: format(month, "MMM"), revenue };
+      }),
+    [events, now],
+  );
+
   const analytics = useMemo(
     () =>
       getDashboardStats({
@@ -295,6 +310,8 @@ export default function Dashboard() {
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{d.title}</h1>
           <p className="text-sm text-muted-foreground">
+            {now.getHours() < 12 ? d.goodMorning : now.getHours() < 18 ? d.goodAfternoon : d.goodEvening}
+            {" · "}
             {format(now, "EEEE, MMMM d, yyyy")}
           </p>
         </div>
@@ -314,6 +331,60 @@ export default function Dashboard() {
               <StatCard label={d.thisMonth} value={formatCurrency(thisMonthRevenue)} sub={d.eventsCount.replace("{count}", String(thisMonthCount))} icon={Calendar} accent="cyan" />
               <StatCard label={d.totalBookings} value={`${totalBookings}`} sub={d.paidCount.replace("{count}", String(paidBookings))} icon={BarChart3} accent="violet" />
             </div>
+          </section>
+
+          {/* Revenue Trend */}
+          <section>
+            <SectionHeader title={d.revenueTrend} />
+            <Card variant="outlined" className="animate-card-in">
+              <CardContent className="p-4 md:p-5">
+                <p className="text-xs text-muted-foreground/70 mb-3">{d.lastSixMonths}</p>
+                <div className="h-52 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyRevenue} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      />
+                      <YAxis
+                        width={52}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tickFormatter={(v: number) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)}
+                      />
+                      <ChartTooltip
+                        cursor={{ stroke: "hsl(var(--border))" }}
+                        formatter={(value: number | string) => [formatCurrency(Number(value)), d.revenue]}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "0.75rem",
+                          fontSize: "12px",
+                          color: "hsl(var(--foreground))",
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        fill="url(#revenueFill)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Upcoming + Invoices */}

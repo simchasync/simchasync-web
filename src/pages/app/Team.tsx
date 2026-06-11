@@ -202,10 +202,18 @@ export default function Team() {
       return data;
     },
     onSuccess: (data) => {
-      toast({
-        title: data.invited ? "Invitation sent!" : "Member updated!",
-        description: "You have been invited to join the workspace. Please accept the invitation to access your role.",
-      });
+      if (data.email_sent === false) {
+        toast({
+          title: "Member added — invite email pending",
+          description: data.email_error || "The invite email could not be sent. You can re-invite later to resend it.",
+          variant: "warning",
+        });
+      } else {
+        toast({
+          title: data.invited ? "Invitation sent!" : "Member updated!",
+          description: "An invitation email has been sent. The member gets access once they accept it.",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["team-members", tenantId] });
       setInviteOpen(false);
       setInviteEmail("");

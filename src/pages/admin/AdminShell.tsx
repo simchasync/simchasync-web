@@ -34,7 +34,7 @@ export default function AdminShell() {
 
   if (authLoading || adminRole.loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -45,7 +45,7 @@ export default function AdminShell() {
   const visibleNav = navItems.filter((item) => adminRole[item.requiredPermission]);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="flex items-center gap-2 px-6 py-5 border-b border-sidebar-border">

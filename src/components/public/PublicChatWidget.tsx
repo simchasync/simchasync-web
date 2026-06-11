@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
   role: "user" | "assistant";
@@ -10,12 +9,11 @@ interface Message {
 }
 
 interface PublicChatWidgetProps {
-  tenantId: string;
   tenantName: string;
   context: string; // about, services, packages info
 }
 
-export default function PublicChatWidget({ tenantId, tenantName, context }: PublicChatWidgetProps) {
+export default function PublicChatWidget({ tenantName, context }: PublicChatWidgetProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -117,7 +115,7 @@ export default function PublicChatWidget({ tenantId, tenantName, context }: Publ
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-gold text-primary-foreground shadow-gold transition-transform hover:scale-105"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-gold text-primary-foreground shadow-gold transition-transform hover:scale-105"
         aria-label="Open chat"
       >
         <MessageCircle className="h-6 w-6" />
@@ -126,7 +124,7 @@ export default function PublicChatWidget({ tenantId, tenantName, context }: Publ
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex h-[28rem] w-[22rem] flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden">
+    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex h-[28rem] w-[calc(100vw-2rem)] max-w-[22rem] flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between bg-gradient-gold px-4 py-3">
         <div>

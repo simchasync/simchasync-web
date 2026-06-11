@@ -41,6 +41,43 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+function friendlyEmailError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes("verify a domain")) {
+    return "The email service is in test mode (no verified sending domain), so the invite email could only be delivered to the email service account owner.";
+  }
+  if (msg.includes("rate_limit") || msg.includes("rate limit")) {
+    return "Email rate limit reached — wait a few minutes and re-invite to resend the email.";
+  }
+  return msg;
+}
+
+/** Fallback when Resend can't deliver (e.g. unverified domain): send a magic
+ * sign-in link through Supabase Auth's built-in mailer, which delivers to any
+ * address. The user always exists by the time this is called. */
+async function sendFallbackAuthEmail({
+  supabaseUrl,
+  anonKey,
+  email,
+  redirectTo,
+  data,
+}: {
+  supabaseUrl: string;
+  anonKey: string;
+  email: string;
+  redirectTo: string;
+  data: Record<string, unknown>;
+}) {
+  const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
+    method: "POST",
+    headers: { apikey: anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, create_user: false, data, email_redirect_to: redirectTo }),
+  });
+  if (!response.ok) {
+    throw new Error(`Fallback auth email failed: ${await response.text()}`);
+  }
+}
+
 function resolveAppOrigin(req: Request) {
   const origin = req.headers.get("origin");
   if (origin) return origin;
@@ -192,6 +229,10 @@ Deno.serve(async (req) => {
       (user) => user.email?.toLowerCase() === email.toLowerCase(),
     );
 
+    if (existingUser && existingUser.id === caller.id) {
+      return jsonResponse({ error: "You cannot invite yourself — you are already a member of this workspace." }, 400);
+    }
+
     if (existingUser) {
       const { data: existingMembership } = await supabase
         .from("tenant_members")
@@ -231,23 +272,43 @@ Deno.serve(async (req) => {
       });
       if (linkError) throw linkError;
 
-      await sendInviteEmail({
-        recipientEmail: email,
-        recipientName: (existingUser.user_metadata?.full_name as string) || undefined,
-        tenantName,
-        inviterName,
-        requestedRole,
-        actionLink: linkData.properties.action_link,
-        appOrigin,
-        existingUser: true,
-      });
+      let emailSent = true;
+      let emailError: string | null = null;
+      try {
+        await sendInviteEmail({
+          recipientEmail: email,
+          recipientName: (existingUser.user_metadata?.full_name as string) || undefined,
+          tenantName,
+          inviterName,
+          requestedRole,
+          actionLink: linkData.properties.action_link,
+          appOrigin,
+          existingUser: true,
+        });
+      } catch (emailErr) {
+        console.error("Branded invite email failed, trying built-in mailer:", emailErr);
+        try {
+          await sendFallbackAuthEmail({
+            supabaseUrl,
+            anonKey,
+            email,
+            redirectTo: `${appOrigin}/app/bookings?tenant=${tenant_id}`,
+            data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
+          });
+        } catch (fallbackErr) {
+          console.error("Fallback invite email also failed:", fallbackErr);
+          emailSent = false;
+          emailError = friendlyEmailError(fallbackErr);
+        }
+      }
 
       return jsonResponse({
         success: true,
         invited: !existingMembership || existingMembership.invitation_status !== "accepted",
         added: !existingMembership,
         already_member: !!existingMembership && existingMembership.invitation_status === "accepted",
-        email_sent: true,
+        email_sent: emailSent,
+        email_error: emailError,
         user_id: existingUser.id,
       });
     }
@@ -274,22 +335,42 @@ Deno.serve(async (req) => {
     });
     if (membershipInsertError) throw membershipInsertError;
 
-    await sendInviteEmail({
-      recipientEmail: email,
-      tenantName,
-      inviterName,
-      requestedRole,
-      actionLink: inviteLinkData.properties.action_link,
-      appOrigin,
-      existingUser: false,
-    });
+    let emailSent = true;
+    let emailError: string | null = null;
+    try {
+      await sendInviteEmail({
+        recipientEmail: email,
+        tenantName,
+        inviterName,
+        requestedRole,
+        actionLink: inviteLinkData.properties.action_link,
+        appOrigin,
+        existingUser: false,
+      });
+    } catch (emailErr) {
+      console.error("Branded invite email failed, trying built-in mailer:", emailErr);
+      try {
+        await sendFallbackAuthEmail({
+          supabaseUrl,
+          anonKey,
+          email,
+          redirectTo: `${appOrigin}/reset-password?tenant=${tenant_id}`,
+          data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
+        });
+      } catch (fallbackErr) {
+        console.error("Fallback invite email also failed:", fallbackErr);
+        emailSent = false;
+        emailError = friendlyEmailError(fallbackErr);
+      }
+    }
 
     return jsonResponse({
       success: true,
       invited: true,
       added: true,
       already_member: false,
-      email_sent: true,
+      email_sent: emailSent,
+      email_error: emailError,
       user_id: invitedUser.id,
     });
   } catch (err) {
