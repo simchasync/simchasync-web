@@ -15,6 +15,10 @@ enable_confirmations = true
 max_frequency = "1m0s"
 otp_length = 8
 
+[auth.rate_limit]
+# Emails per hour through the custom SMTP (Gmail allows ~500/day)
+email_sent = 60
+
 # Branded auth email templates (pushed to the remote project via `supabase config push`)
 [auth.email.template.magic_link]
 subject = "Your SimchaSync sign-in link"

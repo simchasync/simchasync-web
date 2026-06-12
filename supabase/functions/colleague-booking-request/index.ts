@@ -65,8 +65,27 @@ async function sendResendEmail(to: string, subject: string, html: string): Promi
   if (!res.ok) throw new Error(`Resend error ${res.status}: ${await res.text()}`);
 }
 
-/** Fallback when Resend can't deliver: magic sign-in link through Supabase
- * Auth's built-in mailer (custom SMTP). The user always exists by this point. */
+/** True only when Resend has a verified sending domain. Without one,
+ * Resend rejects all non-owner recipients — and calling generateLink first
+ * would start the per-address email cooldown, guaranteeing the native
+ * fallback 429s. */
+async function resendCanDeliver(): Promise<boolean> {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) return false;
+  try {
+    const res = await fetch("https://api.resend.com/domains", {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return (body?.data ?? []).some((d: { status?: string }) => d.status === "verified");
+  } catch {
+    return false;
+  }
+}
+
+/** Magic sign-in link through Supabase Auth's built-in mailer (custom SMTP),
+ * using the dashboard-branded template. The user must already exist. */
 async function sendFallbackAuthEmail(supabaseUrl: string, anonKey: string, email: string, redirectTo: string) {
   const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
     method: "POST",
@@ -179,23 +198,27 @@ Deno.serve(async (req) => {
       }
 
       let emailSent = true;
-      try {
-        await sendResendEmail(
-          email,
-          `New booking request from ${sourceName}`,
-          emailShell(
-            `${sourceName} sent you a booking request`,
-            `<p>You've been requested as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>${requestCreated ? "Open your dashboard to accept or decline the request." : "Log in to SimchaSync to view the details."}</p>`,
-            "Open Your Dashboard",
-            `${appOrigin}/app/bookings`,
-          ),
-        );
-      } catch (emailErr) {
-        console.error("Resend failed, trying built-in mailer:", emailErr);
+      if (await resendCanDeliver()) {
+        try {
+          await sendResendEmail(
+            email,
+            `New booking request from ${sourceName}`,
+            emailShell(
+              `${sourceName} sent you a booking request`,
+              `<p>You've been requested as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>${requestCreated ? "Open your dashboard to accept or decline the request." : "Log in to SimchaSync to view the details."}</p>`,
+              "Open Your Dashboard",
+              `${appOrigin}/app/bookings`,
+            ),
+          );
+        } catch (emailErr) {
+          console.error("Resend booking-request email failed:", emailErr);
+          emailSent = false;
+        }
+      } else {
         try {
           await sendFallbackAuthEmail(supabaseUrl, anonKey, email, `${appOrigin}/app/bookings`);
         } catch (fallbackErr) {
-          console.error("Fallback email also failed:", fallbackErr);
+          console.error("Booking-request email failed:", fallbackErr);
           emailSent = false;
         }
       }
@@ -208,35 +231,43 @@ Deno.serve(async (req) => {
       });
     }
 
-    // No platform account — create one via invite link (no Supabase email) and send a branded join invite
-    const { data: inviteLinkData, error: inviteErr } = await admin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: {
+    // No platform account — invite them to join
+    let emailSent = true;
+    if (await resendCanDeliver()) {
+      // Branded path: create the user + link silently, send via Resend
+      const { data: inviteLinkData, error: inviteErr } = await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: {
+          redirectTo: `${appOrigin}/reset-password`,
+          data: { invited_as_colleague_by: sourceName, full_name: ec.name || undefined },
+        },
+      });
+      if (inviteErr) throw inviteErr;
+      try {
+        await sendResendEmail(
+          email,
+          `${sourceName} wants to work with you on SimchaSync`,
+          emailShell(
+            `${sourceName} wants to book you${ec.name ? `, ${ec.name}` : ""}!`,
+            `<p>They'd like you as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>SimchaSync is the event management platform for music professionals. Create your free account to receive and manage booking requests like this one.</p>`,
+            "Join SimchaSync",
+            inviteLinkData.properties.action_link,
+          ),
+        );
+      } catch (emailErr) {
+        console.error("Resend join-invite email failed:", emailErr);
+        emailSent = false;
+      }
+    } else {
+      // No verified Resend domain: let Supabase Auth create the user AND
+      // send the (dashboard-branded) invite email through the custom SMTP.
+      const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${appOrigin}/reset-password`,
         data: { invited_as_colleague_by: sourceName, full_name: ec.name || undefined },
-      },
-    });
-    if (inviteErr) throw inviteErr;
-
-    let emailSent = true;
-    try {
-      await sendResendEmail(
-        email,
-        `${sourceName} wants to work with you on SimchaSync`,
-        emailShell(
-          `${sourceName} wants to book you${ec.name ? `, ${ec.name}` : ""}!`,
-          `<p>They'd like you as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>SimchaSync is the event management platform for music professionals. Create your free account to receive and manage booking requests like this one.</p>`,
-          "Join SimchaSync",
-          inviteLinkData.properties.action_link,
-        ),
-      );
-    } catch (emailErr) {
-      console.error("Resend failed, trying built-in mailer:", emailErr);
-      try {
-        await sendFallbackAuthEmail(supabaseUrl, anonKey, email, `${appOrigin}/reset-password`);
-      } catch (fallbackErr) {
-        console.error("Fallback email also failed:", fallbackErr);
+      });
+      if (inviteErr) {
+        console.error("Join-invite email failed:", inviteErr);
         emailSent = false;
       }
     }
