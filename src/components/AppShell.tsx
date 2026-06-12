@@ -38,13 +38,17 @@ export default function AppShell() {
   const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const { role } = useUserRole();
-  const { trialExpired, subscribed, loading: subLoading, workspaceActive, plan } = useSubscription();
+  const { trialExpired, subscribed, loading: subLoading, workspaceActive, plan, canAccess } = useSubscription();
 
+  // Finance reports are a Pro/Premium feature — hidden on the Lite plan
+  const canSeeFinance = canAccess("expenses_profit");
   const filteredNavItems = useMemo(
     () => allNavItems.filter(
-      (item) => !role || (item.roles as readonly string[]).includes(role)
+      (item) =>
+        (!role || (item.roles as readonly string[]).includes(role)) &&
+        (item.key !== "finance" || canSeeFinance)
     ),
-    [role]
+    [role, canSeeFinance]
   );
   const navItems = useMemo(
     () => workspaceActive ? filteredNavItems : [],

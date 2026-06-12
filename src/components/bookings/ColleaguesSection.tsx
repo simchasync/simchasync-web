@@ -14,6 +14,9 @@ import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
+import type { TablesUpdate } from "@/integrations/supabase/types";
+
+type EditableColleagueField = "name" | "role_instrument" | "phone" | "email" | "price" | "payment_responsibility" | "notes";
 
 interface ColleaguesSectionProps {
   eventId: string;
@@ -153,127 +156,22 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
           throw ecError;
         }
 
-        console.log("[EXTERNAL_FLOW] event_colleagues row created (tracking only)", { ecId: ecRow.id });
-
-        // GUARD: Verify no workspace_created event fired
-        console.log("[EXTERNAL_FLOW] workspace_created = false (blocked)");
-
-        // Step 2: Find external user's EXISTING workspace — NEVER create a new one
+        // Server-side: looks up whether the email belongs to a platform user.
+        // If yes → booking request in their dashboard + notification + email.
+        // If no → branded email invite to join the platform.
+        let externalOutcome: { existing_user?: boolean; request_created?: boolean; platform_invite?: boolean; email_sent?: boolean } | null = null;
         if (values.email) {
-          const normalizedEmail = values.email.trim().toLowerCase();
-          const { data: extProfile } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .ilike("email", normalizedEmail)
-            .maybeSingle();
-
-          if (extProfile?.user_id) {
-            console.log("[EXTERNAL_FLOW] external user lookup", {
-              found: true,
-              user_id: extProfile.user_id,
-              workspace_created: false,
-            });
-
-            if (values.colleague_id) {
-              await supabase
-                .from("colleagues")
-                .update({ user_id: null } as any)
-                .eq("id", values.colleague_id)
-                .eq("tenant_id", tenantId);
-            }
-
-            // Find their EXISTING tenant — do NOT create one
-            const { data: extTenantId } = await supabase.rpc("get_user_tenant_id", {
-              _user_id: extProfile.user_id,
-            });
-
-            if (extTenantId) {
-              // Get source event details
-              const { data: sourceEvent } = await supabase
-                .from("events")
-                .select("event_date, event_type, venue, location, notes, tenant_id")
-                .eq("id", eventId)
-                .single();
-
-              const { data: sourceTenant } = await supabase
-                .from("tenants")
-                .select("name")
-                .eq("id", tenantId)
-                .single();
-
-              // Step 3: Create booking_request (NOT assignment, NOT team membership)
-              // Generate ID client-side since RLS prevents reading back from external workspace
-              const bookingRequestId = crypto.randomUUID();
-              const { error: brError } = await supabase
-                .from("booking_requests")
-                .insert({
-                  id: bookingRequestId,
-                  tenant_id: extTenantId,
-                  name: sourceTenant?.name || "External Booking",
-                  email: values.email,
-                  phone: values.phone || null,
-                  event_date: sourceEvent?.event_date || null,
-                  event_type: sourceEvent?.event_type || "wedding",
-                  message: `Incoming booking request from ${sourceTenant?.name || "another workspace"} — Role: ${values.role_instrument || "Colleague"}${sourceEvent?.venue ? `, Venue: ${sourceEvent.venue}` : ""}${sourceEvent?.notes ? `\n\nNotes: ${sourceEvent.notes}` : ""}`,
-                  status: "new",
-                  source_event_id: eventId,
-                  source_tenant_id: tenantId,
-                  source_colleague_id: ecRow.id,
-                  price: values.price || null,
-                } as any);
-
-              console.log("[EXTERNAL_FLOW] booking_request created", {
-                success: !brError,
-                error: brError?.message,
-                booking_request_id: brError ? null : bookingRequestId,
-                target_workspace: extTenantId,
-              });
-
-              if (!brError) {
-                await supabase
-                  .from("event_colleagues")
-                  .update({ booking_request_id: bookingRequestId } as any)
-                  .eq("id", ecRow.id);
-              }
-
-              // In-app notification
-              await supabase.from("notifications").insert({
-                tenant_id: extTenantId,
-                user_id: extProfile.user_id,
-                title: "Incoming Booking Request",
-                message: `${sourceTenant?.name || "A workspace"} has sent you a booking request as ${values.role_instrument || "colleague"} for ${sourceEvent?.event_type || "an event"} on ${sourceEvent?.event_date || "TBD"}`,
-                type: "booking",
-                link: "/app/bookings",
-              });
-
-              // Email notification (fire & forget)
-              supabase.functions.invoke("send-notification-email", {
-                body: {
-                  type: "external_booking_request",
-                  tenant_id: extTenantId,
-                  recipient_email: values.email,
-                  subject: `Incoming Booking Request from ${sourceTenant?.name || "a workspace"}`,
-                  body_html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                      <h2 style="color: #1a1a2e;">Incoming Booking Request</h2>
-                      <p>You've received a booking request from <strong>${sourceTenant?.name || "another workspace"}</strong>.</p>
-                      <p>Role: <strong>${values.role_instrument || "Colleague"}</strong></p>
-                      ${sourceEvent?.event_type ? `<p>Event: <strong>${sourceEvent.event_type}</strong></p>` : ""}
-                      ${sourceEvent?.event_date ? `<p>Date: <strong>${sourceEvent.event_date}</strong></p>` : ""}
-                      ${sourceEvent?.venue ? `<p>Venue: <strong>${sourceEvent.venue}</strong></p>` : ""}
-                      <p>Log in to your workspace to accept or decline this request.</p>
-                    </div>`,
-                },
-              }).catch(console.warn);
-            } else {
-              console.warn("[EXTERNAL_FLOW] External user has no workspace — request not sent. User must register first.");
-            }
+          const { data: reqData, error: reqError } = await supabase.functions.invoke("colleague-booking-request", {
+            body: { event_colleague_id: ecRow.id },
+          });
+          if (reqError) {
+            console.error("colleague-booking-request failed:", reqError);
           } else {
-            console.warn("[EXTERNAL_FLOW] No user found with email:", values.email, "— booking request not sent.");
+            externalOutcome = reqData;
           }
         }
 
-        return { status: "pending", isInternal: false };
+        return { status: "pending", isInternal: false, externalOutcome };
       }
 
       // INTERNAL: Only invite to workspace for internal colleagues who aren't auto-assigned
@@ -348,10 +246,26 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
 
     if (!result?.isInternal) {
-        toast({
-          title: "Booking request sent",
-          description: "An external booking request has been created in the colleague's workspace.",
-        });
+        const outcome = (result as any)?.externalOutcome;
+        if (outcome?.existing_user && outcome?.request_created) {
+          toast({
+            title: "Booking request sent",
+            description: "The colleague will see it in their booking dashboard" + (outcome.email_sent ? " and was emailed." : "."),
+          });
+        } else if (outcome?.platform_invite) {
+          toast({
+            title: "Invite sent",
+            description: "The colleague isn't on SimchaSync yet — they were emailed an invite to join.",
+          });
+        } else if (outcome) {
+          toast({ title: "Colleague added", description: "They were notified by email." });
+        } else {
+          toast({
+            title: "Colleague added",
+            description: "Couldn't send the notification — you may need to contact them directly.",
+            variant: "warning",
+          });
+        }
       } else if (result?.status === "pending") {
         toast({
           title: "Invitation sent",
@@ -389,8 +303,11 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, field, value }: { id: string; field: string; value: string | number }) => {
-      const { error } = await supabase.from("event_colleagues").update({ [field]: value }).eq("id", id);
+    mutationFn: async ({ id, field, value }: { id: string; field: EditableColleagueField; value: string | number }) => {
+      const { error } = await supabase
+        .from("event_colleagues")
+        .update({ [field]: value } as TablesUpdate<"event_colleagues">)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -622,7 +539,7 @@ function ColleagueCard({
   canWrite: boolean;
   currentUserId?: string;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, field: string, value: string | number) => void;
+  onUpdate: (id: string, field: EditableColleagueField, value: string | number) => void;
   onRespond: (id: string, status: "accepted" | "rejected") => void;
 }) {
   const status = ec.invite_status ?? "auto_assigned";

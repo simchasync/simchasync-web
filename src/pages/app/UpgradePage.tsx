@@ -2,14 +2,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { SUBSCRIPTION_TIERS, type SubscriptionTier, getTrialDays } from "@/lib/subscription-tiers";
+import { SUBSCRIPTION_TIERS, getTrialDays } from "@/lib/subscription-tiers";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Check, Crown, Zap, ExternalLink, ArrowLeft,
+  Check, Crown, Zap, Gem, ExternalLink, ArrowLeft,
   Clock, AlertCircle, Loader2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -285,12 +285,16 @@ function PlanCard({
   const { t } = useLanguage();
   const Icon = tier.icon;
   const busy = loadingTier || loadingPortal;
+  // No Stripe price yet (e.g. Premium until its Stripe product is created)
+  const notPurchasable = !tier.price_id && !isCurrentPlan;
 
   const ctaLabel = isCurrentPlan
     ? t.app.upgrade.currentPlan
-    : tier.key === "full"
-      ? t.app.upgrade.subscribe.replace("{name}", tier.name)
-      : t.app.upgrade.switchTo.replace("{name}", tier.name);
+    : notPurchasable
+      ? "Coming Soon"
+      : tier.key === "lite"
+        ? t.app.upgrade.switchTo.replace("{name}", tier.name)
+        : t.app.upgrade.subscribe.replace("{name}", tier.name);
 
   return (
     <motion.div
@@ -305,8 +309,10 @@ function PlanCard({
           isCurrentPlan
             ? "border-primary/50 shadow-sm ring-1 ring-primary/15"
             : tier.popular
-              ? "border-border/60 hover:border-primary/30 hover:shadow-sm"
-              : "border-border/60 hover:shadow-sm",
+              ? "border-primary/40 shadow-md hover:border-primary/60 hover:shadow-lg"
+              : tier.key === "premium"
+                ? "border-violet-300/50 bg-gradient-to-b from-violet-500/[0.05] to-transparent hover:border-violet-400/60 hover:shadow-md dark:border-violet-700/50"
+                : "border-border/60 hover:shadow-sm",
         ].join(" ")}
       >
         {/* Top badge */}
@@ -357,8 +363,8 @@ function PlanCard({
 
           {/* CTA */}
           <Button
-            onClick={isCurrentPlan ? undefined : onAction}
-            disabled={isCurrentPlan || busy}
+            onClick={isCurrentPlan || notPurchasable ? undefined : onAction}
+            disabled={isCurrentPlan || busy || notPurchasable}
             variant={isCurrentPlan ? "outline" : "default"}
             className={[
               "w-full gap-2 font-semibold",
@@ -431,11 +437,12 @@ export default function UpgradePage() {
   const { loadingPortal, handleManageOnStripe } = useCustomerPortal();
 
   const tiers: TierCard[] = [
-    { key: "lite", icon: Zap,   popular: false, ...SUBSCRIPTION_TIERS.lite },
-    { key: "full", icon: Crown, popular: true,  ...SUBSCRIPTION_TIERS.full },
+    { ...SUBSCRIPTION_TIERS.lite,    key: "lite",    icon: Zap,   popular: false },
+    { ...SUBSCRIPTION_TIERS.full,    key: "full",    icon: Crown, popular: true },
+    { ...SUBSCRIPTION_TIERS.premium, key: "premium", icon: Gem,   popular: false },
   ];
 
-  const currentTierData = tier ? SUBSCRIPTION_TIERS[tier] : null;
+  const currentTierData = tier && tier !== "trial" ? SUBSCRIPTION_TIERS[tier] : null;
   const trialDays = getTrialDays();
 
   if (loading) return <PlansSkeleton />;
@@ -445,7 +452,7 @@ export default function UpgradePage() {
       initial="hidden"
       animate="visible"
       variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
-      className="mx-auto max-w-3xl space-y-6 p-4 md:p-8"
+      className="mx-auto max-w-5xl space-y-6 p-4 md:p-8"
     >
       {/* Back button */}
       <motion.div variants={fadeUp} custom={0}>
@@ -501,7 +508,7 @@ export default function UpgradePage() {
       )}
 
       {/* Plan cards */}
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-3">
         {tiers.map((tierCard) => (
           <PlanCard
             key={tierCard.key}

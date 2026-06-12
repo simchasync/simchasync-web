@@ -23,6 +23,9 @@ import {
 import { computeBalanceDue, getEffectiveTotal } from "@/lib/bookingFinancials";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 import { StatCard } from "@/components/ui/stat-card";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useNavigate } from "react-router-dom";
+import { Crown } from "lucide-react";
 
 const EXPENSE_CATEGORIES = [
   "fuel", "marketing", "salaries", "equipment", "rent", "insurance",
@@ -47,6 +50,8 @@ function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string
 
 export default function Finance() {
   const { tenantId } = useTenantId();
+  const { canAccess, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -287,6 +292,31 @@ export default function Finance() {
 
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dateLabel = `${format(dateRange.from, "MMM d, yyyy")} — ${format(dateRange.to, "MMM d, yyyy")}`;
+
+  // Financial reports are a Pro/Premium feature
+  if (!subLoading && !canAccess("expenses_profit")) {
+    return (
+      <div className="p-4 md:p-8 max-w-2xl mx-auto">
+        <Card className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Crown className="h-7 w-7 text-primary" />
+            </div>
+            <p className="font-display text-lg font-semibold">Financial Reports is a Pro feature</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Upgrade to unlock P&L reports, expense tracking, commissions, and profitability analytics.
+            </p>
+            <Button
+              className="mt-5 bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
+              onClick={() => navigate("/app/upgrade")}
+            >
+              <Crown className="mr-2 h-4 w-4" /> Upgrade to Pro
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">

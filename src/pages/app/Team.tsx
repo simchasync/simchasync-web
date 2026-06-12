@@ -16,9 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle, MailOpen } from "lucide-react";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 type TenantRole = "owner" | "booking_manager" | "social_media_manager" | "member";
 type InvitationStatus = "invited" | "accepted";
@@ -40,7 +40,6 @@ export default function Team() {
   const { user } = useAuth();
   const { tenantId, userTenants, switchTenant } = useTenantId();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const tm = t.app.team;
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -384,20 +383,34 @@ export default function Team() {
 
   const teammateRoles: TenantRole[] = ["owner", "booking_manager", "social_media_manager"];
   const canLeave = !isOwner && currentUserRole;
-  const ownerCount = members.filter((m) => m.role === "owner").length;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl">{tm.title}</h1>
-        <div className="flex items-center gap-2">
-          {canLeave && (
-            <Button variant="outline" size="sm" onClick={() => setLeaveDialogOpen(true)} className="text-destructive border-destructive/30 hover:bg-destructive/10">
-              <LogOut className="mr-1.5 h-3.5 w-3.5" /> Leave Workspace
-            </Button>
-          )}
-        </div>
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{tm.title}</h1>
+        {canLeave && (
+          <Button variant="outline" size="sm" onClick={() => setLeaveDialogOpen(true)} className="w-full sm:w-auto text-destructive border-destructive/30 hover:bg-destructive/10">
+            <LogOut className="mr-1.5 h-3.5 w-3.5" /> Leave Workspace
+          </Button>
+        )}
       </div>
+
+      {/* Stats */}
+      {members.length > 0 && (
+        <section>
+          <SectionHeader title={t.app.dashboard.overview} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+            <StatCard label="Teammates" value={`${teammates.length}`} icon={UsersRound} accent="violet" />
+            <StatCard
+              label="Pending Invites"
+              value={`${teammates.filter((m) => m.invitation_status === "invited").length}`}
+              icon={MailOpen}
+              accent={teammates.some((m) => m.invitation_status === "invited") ? "amber" : "emerald"}
+            />
+            <StatCard label="Colleagues" value={`${colleagues.length}`} icon={Users} accent="cyan" />
+          </div>
+        </section>
+      )}
 
       <Tabs defaultValue="teammates" className="space-y-4">
         <TabsList>
@@ -411,12 +424,12 @@ export default function Team() {
 
         {/* ─── TEAMMATES TAB ─── */}
         <TabsContent value="teammates" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Internal staff who manage the platform. <strong>Admin</strong> = full access. <strong>Booking Manager</strong> = bookings &amp; clients only.
             </p>
             {isOwner && (
-              <Button onClick={() => setInviteOpen(true)} className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
+              <Button onClick={() => setInviteOpen(true)} className="w-full sm:w-auto shrink-0 bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
                 <Plus className="mr-2 h-4 w-4" /> {tm.invite}
               </Button>
             )}

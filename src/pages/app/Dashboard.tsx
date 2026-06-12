@@ -333,7 +333,49 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* Revenue Trend */}
+          {/* Upcoming + Invoices */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <section>
+              <SectionHeader title={d.upcoming} count={upcoming.length} />
+              <Card variant="outlined" className="animate-card-in">
+                <CardContent className="p-4 md:p-5">
+                  <UpcomingEvents
+                    events={upcoming.slice(0, LIST_PREVIEW_COUNT)}
+                    onView={(ev) => { setViewing(ev); setViewingMode("view"); }}
+                    onEdit={(ev) => { setViewing(ev); setViewingMode("edit"); }}
+                  />
+                  {upcoming.length > LIST_PREVIEW_COUNT && (
+                    <>
+                      <Divider className="my-3" />
+                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/bookings")}>
+                        {d.viewAllEvents.replace("{count}", String(upcoming.length))}
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+
+            <section>
+              <SectionHeader title={d.recentInvoices} count={invoices.length} />
+              <Card variant="outlined" className="animate-card-in">
+                <CardContent className="p-4 md:p-5">
+                  <RecentInvoices invoices={invoices.slice(0, LIST_PREVIEW_COUNT)} />
+                  {invoices.length > LIST_PREVIEW_COUNT && (
+                    <>
+                      <Divider className="my-3" />
+                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/invoices")}>
+                        {d.viewAllInvoices.replace("{count}", String(invoices.length))}
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          </div>
+
+          {/* Revenue Trend — Pro/Premium only */}
+          {showProfitAnalytics && (
           <section>
             <SectionHeader title={d.revenueTrend} />
             <Card variant="outlined" className="animate-card-in">
@@ -386,47 +428,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </section>
-
-          {/* Upcoming + Invoices */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <section>
-              <SectionHeader title={d.upcoming} count={upcoming.length} />
-              <Card variant="outlined" className="animate-card-in">
-                <CardContent className="p-4 md:p-5">
-                  <UpcomingEvents
-                    events={upcoming.slice(0, LIST_PREVIEW_COUNT)}
-                    onView={(ev) => { setViewing(ev); setViewingMode("view"); }}
-                    onEdit={(ev) => { setViewing(ev); setViewingMode("edit"); }}
-                  />
-                  {upcoming.length > LIST_PREVIEW_COUNT && (
-                    <>
-                      <Divider className="my-3" />
-                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/bookings")}>
-                        {d.viewAllEvents.replace("{count}", String(upcoming.length))}
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </section>
-
-            <section>
-              <SectionHeader title={d.recentInvoices} count={invoices.length} />
-              <Card variant="outlined" className="animate-card-in">
-                <CardContent className="p-4 md:p-5">
-                  <RecentInvoices invoices={invoices.slice(0, LIST_PREVIEW_COUNT)} />
-                  {invoices.length > LIST_PREVIEW_COUNT && (
-                    <>
-                      <Divider className="my-3" />
-                      <Button variant="text" size="small" fullWidth className="text-xs text-muted-foreground hover:text-foreground" endIcon={<ArrowUpRight className="h-3 w-3" />} onClick={() => navigate("/app/invoices")}>
-                        {d.viewAllInvoices.replace("{count}", String(invoices.length))}
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </section>
-          </div>
+          )}
 
           {/* Profit Analytics — Full Plan Only */}
           {showProfitAnalytics && (

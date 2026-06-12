@@ -1,5 +1,37 @@
 project_id = "qxcatdirkfbqitvkuvbu"
 
+# Remote auth settings — MUST mirror production values: `supabase config push`
+# compares the WHOLE [auth] section, so unset fields get reset to CLI defaults.
+[auth]
+site_url = "https://simchasync-web.vercel.app"
+additional_redirect_urls = ["https://simchasync-web.vercel.app/auth/phone", "http://localhost:8080/auth/phone"]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+# Branded auth email templates (pushed to the remote project via `supabase config push`)
+[auth.email.template.magic_link]
+subject = "Your SimchaSync sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your SimchaSync account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your SimchaSync password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to SimchaSync"
+content_path = "./supabase/templates/invite.html"
+
 [functions.ensure-user-onboarding]
 verify_jwt = false
 
@@ -10,6 +42,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.invite-team-member]
+verify_jwt = false
+
+# Verifies the caller's JWT internally (must be owner/booking_manager of the event's tenant)
+[functions.colleague-booking-request]
 verify_jwt = false
 
 # Stripe webhook: called by Stripe with webhook signature, no Supabase JWT
