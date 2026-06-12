@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { supabase } from "@/integrations/supabase/client";
-import { getTierFromProductId, SubscriptionTier, canAccessFeature, SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
+import { getTierFromProductId, SubscriptionTier, canAccessFeature } from "@/lib/subscription-tiers";
 
 interface SubscriptionContextType {
   plan: string; // 'trial' | 'lite' | 'full' | 'none'

@@ -23,6 +23,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Type check
+        run: npx tsc --noEmit -p tsconfig.app.json
+
       - name: Tests
         run: npm test
 
@@ -34,6 +37,3 @@ jobs:
           VITE_SUPABASE_URL: https://qxcatdirkfbqitvkuvbu.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_HNgqLFiTy9P1Ji5h5wBx0w_Sov5mfaP
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_HNgqLFiTy9P1Ji5h5wBx0w_Sov5mfaP
-
-      # TODO: add "npx tsc --noEmit" once the ~60 pre-existing unused-variable
-      # errors in legacy pages are cleaned up.

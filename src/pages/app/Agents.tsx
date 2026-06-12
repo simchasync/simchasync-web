@@ -1,30 +1,32 @@
 import { useState } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, UserCheck, DollarSign, TrendingUp, CheckCircle2, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCheck, DollarSign, CheckCircle2, Clock, ChevronDown, ChevronUp, Crown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 
 export default function Agents() {
-  const { t } = useLanguage();
   const { tenantId } = useTenantId();
   const { isOwner } = useUserRole();
+  const { canAccess, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -144,56 +146,52 @@ export default function Agents() {
   const totalPending = agentStats.reduce((s, a) => s + a.pendingCommission, 0);
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // Agent commissions are a Pro/Premium feature
+  if (!subLoading && !canAccess("expenses_profit")) {
+    return (
+      <div className="p-4 md:p-8 max-w-2xl mx-auto">
+        <Card className="animate-card-in">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Crown className="h-7 w-7 text-primary" />
+            </div>
+            <p className="font-display text-lg font-semibold">Agents & Commissions is a Pro feature</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Upgrade to track referral agents, commission rates, and payouts per booking.
+            </p>
+            <Button
+              className="mt-5 bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
+              onClick={() => navigate("/app/upgrade")}
+            >
+              <Crown className="mr-2 h-4 w-4" /> Upgrade to Pro
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl">Agents & Commissions</h1>
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">Agents & Commissions</h1>
         {isOwner && (
-          <Button onClick={openNew} className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
+          <Button onClick={openNew} className="w-full sm:w-auto bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
             <Plus className="mr-2 h-4 w-4" /> Add Agent
           </Button>
         )}
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        <Card className="animate-card-in">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Total Agents</p>
-              <UserCheck className="h-4 w-4 text-primary" />
-            </div>
-            <p className="mt-1 text-xl font-bold">{agents.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-card-in">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Total Commissions</p>
-              <DollarSign className="h-4 w-4 text-emerald-500" />
-            </div>
-            <p className="mt-1 text-xl font-bold">{fmt(totalCommissions)}</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-card-in">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Paid Out</p>
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            </div>
-            <p className="mt-1 text-xl font-bold text-emerald-600">{fmt(totalPaid)}</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-card-in">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Pending</p>
-              <Clock className="h-4 w-4 text-amber-500" />
-            </div>
-            <p className="mt-1 text-xl font-bold text-amber-600">{fmt(totalPending)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <section>
+        <SectionHeader title="Overview" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <StatCard label="Total Agents" value={`${agents.length}`} icon={UserCheck} accent="violet" />
+          <StatCard label="Total Commissions" value={fmt(totalCommissions)} icon={DollarSign} accent="cyan" />
+          <StatCard label="Paid Out" value={fmt(totalPaid)} icon={CheckCircle2} accent="emerald" />
+          <StatCard label="Pending" value={fmt(totalPending)} icon={Clock} accent={totalPending > 0 ? "amber" : "emerald"} />
+        </div>
+      </section>
 
       {/* Agents List */}
       {isLoading ? (

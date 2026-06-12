@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import PageTransition from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useUserRole, TenantRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { TrialBanner } from "@/components/TrialBanner";
 import {
@@ -38,15 +38,15 @@ export default function AppShell() {
   const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const { role } = useUserRole();
-  const { trialExpired, subscribed, loading: subLoading, workspaceActive, plan, canAccess } = useSubscription();
+  const { loading: subLoading, workspaceActive, canAccess } = useSubscription();
 
-  // Finance reports are a Pro/Premium feature — hidden on the Lite plan
+  // Finance reports + agent commissions are Pro/Premium features — hidden on the Lite plan
   const canSeeFinance = canAccess("expenses_profit");
   const filteredNavItems = useMemo(
     () => allNavItems.filter(
       (item) =>
         (!role || (item.roles as readonly string[]).includes(role)) &&
-        (item.key !== "finance" || canSeeFinance)
+        ((item.key !== "finance" && item.key !== "agents") || canSeeFinance)
     ),
     [role, canSeeFinance]
   );

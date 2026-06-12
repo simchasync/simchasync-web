@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,9 +62,6 @@ export default function AdminBilling() {
   const activeTrial = tenants.filter((t: any) => t.plan === "trial" && !isBefore(new Date(t.trial_ends_at), now)).length;
   const expiringSoon = tenants.filter(
     (t: any) => t.plan === "trial" && isBefore(new Date(t.trial_ends_at), addDays(now, 7)) && !isBefore(new Date(t.trial_ends_at), now)
-  ).length;
-  const expired = tenants.filter(
-    (t: any) => t.plan === "trial" && isBefore(new Date(t.trial_ends_at), now)
   ).length;
 
   return (

@@ -17,17 +17,14 @@ import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptio
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { useTenantId as useTenantIdHook } from "@/hooks/useTenantId";
-import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
+import { useSearchParams, Link } from "react-router-dom";
 
 export default function SettingsPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { tenantId, userTenants, switchTenant } = useTenantId();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const { plan, tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, refreshSubscription, pollUntilSubscribed } = useSubscription();
+  const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, refreshSubscription, pollUntilSubscribed } = useSubscription();
   const [syncingSubscription, setSyncingSubscription] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -127,17 +124,6 @@ export default function SettingsPage() {
     }
   }, [tenantId, refetchTenant, s]);
 
-  const handleManageSubscription = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: { tenant_id: tenantId },
-      });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
 
   // Check Stripe Connect status on return from onboarding
   useEffect(() => {
@@ -339,8 +325,8 @@ export default function SettingsPage() {
     name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <h1 className="font-display text-2xl font-bold md:text-3xl">{s.title}</h1>
+    <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
+      <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{s.title}</h1>
 
       {/* Profile Section */}
       <Card className="animate-card-in">

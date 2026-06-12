@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -155,7 +155,7 @@ export default function Support() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-display font-bold text-foreground">
+      <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight text-foreground">
         {t.app.support?.title ?? "Support"}
       </h1>
 
@@ -175,7 +175,7 @@ export default function Support() {
           <div className="flex justify-end">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />{t.app.support?.newTicket ?? "New Ticket"}</Button>
+                <Button className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold"><Plus className="mr-2 h-4 w-4" />{t.app.support?.newTicket ?? "New Ticket"}</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -255,7 +255,7 @@ export default function Support() {
           <div className="flex justify-end">
             <Dialog open={featureDialogOpen} onOpenChange={setFeatureDialogOpen}>
               <DialogTrigger asChild>
-                <Button><Lightbulb className="mr-2 h-4 w-4" /> Request a Feature</Button>
+                <Button className="bg-gradient-gold text-primary-foreground font-semibold shadow-gold"><Lightbulb className="mr-2 h-4 w-4" /> Request a Feature</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>

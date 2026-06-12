@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,8 +43,7 @@ export default function AdminImpersonate() {
     );
   }
 
-  const { tenant, members, eventsCount, recentEvents, invoicesCount, recentInvoices, clientsCount } = data;
-  const owner = members.find((m: any) => m.role === "owner");
+  const { tenant, members, eventsCount, recentEvents, invoicesCount, recentInvoices } = data;
 
   return (
     <div>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
@@ -16,7 +16,7 @@ interface PublicChatSectionProps {
   context: string;
 }
 
-export default function PublicChatSection({ tenantId, tenantName, context }: PublicChatSectionProps) {
+export default function PublicChatSection({ tenantName, context }: PublicChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

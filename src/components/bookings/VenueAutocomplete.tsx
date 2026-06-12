@@ -22,7 +22,6 @@ export default function VenueAutocomplete({ value, onChange, placeholder = "Sear
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const seqRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync external value

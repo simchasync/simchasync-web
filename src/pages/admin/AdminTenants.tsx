@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -387,15 +386,15 @@ export default function AdminTenants() {
                                     {/* Extend Trial */}
                                     <div className="space-y-2">
                                       <Label className="text-xs font-medium flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Extend Trial</Label>
-                                      <Input type="date" value={editingTrial?.id === t.id ? editingTrial.value : t.trial_ends_at?.slice(0, 10) || ""} onChange={(e) => setEditingTrial({ id: t.id, value: e.target.value })} />
+                                      <Input type="date" value={editingTrial?.id === t.id ? editingTrial!.value : t.trial_ends_at?.slice(0, 10) || ""} onChange={(e) => setEditingTrial({ id: t.id, value: e.target.value })} />
                                       {editingTrial?.id === t.id && (
-                                        <Button size="sm" onClick={() => { actionMutation.mutate({ action: "extend_trial", tenant_id: t.id, new_trial_end: editingTrial.value }); setEditingTrial(null); }} disabled={actionMutation.isPending}>Save</Button>
+                                        <Button size="sm" onClick={() => { actionMutation.mutate({ action: "extend_trial", tenant_id: t.id, new_trial_end: editingTrial!.value }); setEditingTrial(null); }} disabled={actionMutation.isPending}>Save</Button>
                                       )}
                                     </div>
                                     {/* Change Plan */}
                                     <div className="space-y-2">
                                       <Label className="text-xs font-medium flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> Plan</Label>
-                                      <Select value={editingPlan?.id === t.id ? editingPlan.value : t.plan} onValueChange={(val) => { setEditingPlan({ id: t.id, value: val }); actionMutation.mutate({ action: "change_plan", tenant_id: t.id, plan: val }); }}>
+                                      <Select value={editingPlan?.id === t.id ? editingPlan!.value : t.plan} onValueChange={(val) => { setEditingPlan({ id: t.id, value: val }); actionMutation.mutate({ action: "change_plan", tenant_id: t.id, plan: val }); }}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="trial">Trial</SelectItem>
@@ -407,9 +406,9 @@ export default function AdminTenants() {
                                     {/* Custom Price */}
                                     <div className="space-y-2">
                                       <Label className="text-xs font-medium flex items-center gap-1"><CreditCard className="h-3.5 w-3.5" /> Custom Price (¢)</Label>
-                                      <Input type="number" placeholder="e.g. 2999" value={editingPrice?.id === t.id ? editingPrice.value : (t.custom_price_cents ?? "")} onChange={(e) => setEditingPrice({ id: t.id, value: e.target.value })} />
+                                      <Input type="number" placeholder="e.g. 2999" value={editingPrice?.id === t.id ? editingPrice!.value : (t.custom_price_cents ?? "")} onChange={(e) => setEditingPrice({ id: t.id, value: e.target.value })} />
                                       {editingPrice?.id === t.id && (
-                                        <Button size="sm" onClick={() => { actionMutation.mutate({ action: "set_custom_price", tenant_id: t.id, custom_price_cents: editingPrice.value ? parseInt(editingPrice.value) : null }); setEditingPrice(null); }} disabled={actionMutation.isPending}>Save</Button>
+                                        <Button size="sm" onClick={() => { actionMutation.mutate({ action: "set_custom_price", tenant_id: t.id, custom_price_cents: editingPrice!.value ? parseInt(editingPrice!.value) : null }); setEditingPrice(null); }} disabled={actionMutation.isPending}>Save</Button>
                                       )}
                                     </div>
                                     {/* Resync Stripe */}
@@ -431,9 +430,9 @@ export default function AdminTenants() {
                                 {canManageBilling && (
                                   <div className="space-y-2">
                                     <Label className="text-xs font-medium">Admin Notes</Label>
-                                    <Textarea value={editingNotes?.id === t.id ? editingNotes.value : (t.notes ?? "")} onChange={(e) => setEditingNotes({ id: t.id, value: e.target.value })} placeholder="Internal notes…" rows={2} />
+                                    <Textarea value={editingNotes?.id === t.id ? editingNotes!.value : (t.notes ?? "")} onChange={(e) => setEditingNotes({ id: t.id, value: e.target.value })} placeholder="Internal notes…" rows={2} />
                                     {editingNotes?.id === t.id && (
-                                      <Button size="sm" onClick={() => { actionMutation.mutate({ action: "update_tenant_notes", tenant_id: t.id, notes: editingNotes.value }); setEditingNotes(null); }} disabled={actionMutation.isPending}>Save Notes</Button>
+                                      <Button size="sm" onClick={() => { actionMutation.mutate({ action: "update_tenant_notes", tenant_id: t.id, notes: editingNotes!.value }); setEditingNotes(null); }} disabled={actionMutation.isPending}>Save Notes</Button>
                                     )}
                                   </div>
                                 )}

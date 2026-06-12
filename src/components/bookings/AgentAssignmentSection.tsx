@@ -81,16 +81,6 @@ export default function AgentAssignmentSection({ eventId, canWrite, totalPrice }
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const updateCommission = useMutation({
-    mutationFn: async ({ id, rate }: { id: string; rate: number }) => {
-      const amount = totalPrice > 0 ? Math.round((totalPrice * rate) / 100 * 100) / 100 : 0;
-      const { error } = await supabase.from("booking_agents").update({ commission_rate: rate, commission_amount: amount }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["booking-agents", eventId] });
-    },
-  });
 
   const togglePaid = useMutation({
     mutationFn: async ({ id, paid }: { id: string; paid: boolean }) => {

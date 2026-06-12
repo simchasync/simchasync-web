@@ -3,7 +3,7 @@
 
 export const lovable = {
   auth: {
-    signInWithOAuth: async (provider: "google" | "apple", opts?: { redirect_uri?: string; extraParams?: Record<string, string> }) => {
+    signInWithOAuth: async (_provider: "google" | "apple", _opts?: { redirect_uri?: string; extraParams?: Record<string, string> }) => {
       console.warn("lovable.auth.signInWithOAuth is not available with external Supabase. Use supabase.auth.signInWithOAuth() directly.");
       return { error: new Error("Use supabase.auth.signInWithOAuth() directly with external Supabase projects.") };
     },

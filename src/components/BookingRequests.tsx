@@ -12,13 +12,12 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { Inbox, CheckCircle, XCircle, Phone, ArrowRight, MessageSquare, ExternalLink } from "lucide-react";
+import { Inbox, CheckCircle, XCircle, Phone, MessageSquare, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getOrCreateClient } from "@/lib/clientDedup";
 
-const REQUEST_STATUSES = ["new", "contacted", "booked", "declined"] as const;
 
 export default function BookingRequests() {
   const { t } = useLanguage();
@@ -187,7 +186,6 @@ export default function BookingRequests() {
   };
 
   const visibleRequests = requests.filter((r: any) => !(r.source_event_id && (r.status === "booked" || r.status === "declined")));
-  const pendingCount = visibleRequests.filter((r: any) => r.status === "new" || r.status === "contacted").length;
 
   if (isLoading) {
     return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
