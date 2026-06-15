@@ -201,7 +201,12 @@ export default function Team() {
       return data;
     },
     onSuccess: (data) => {
-      if (data.email_sent === false) {
+      if (data.already_sent) {
+        toast({
+          title: "Invitation already sent",
+          description: "An invite email went out moments ago — wait a couple of minutes before resending.",
+        });
+      } else if (data.email_sent === false) {
         toast({
           title: "Member added — invite email pending",
           description: data.email_error || "The invite email could not be sent. You can re-invite later to resend it.",

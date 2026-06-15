@@ -247,7 +247,12 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
 
     if (!result?.isInternal) {
         const outcome = (result as any)?.externalOutcome;
-        if (outcome?.existing_user && outcome?.request_created) {
+        if (outcome?.already_sent) {
+          toast({
+            title: "Request already sent",
+            description: "This colleague already received a booking request for this booking.",
+          });
+        } else if (outcome?.existing_user && outcome?.request_created) {
           toast({
             title: "Booking request sent",
             description: "The colleague will see it in their booking dashboard" + (outcome.email_sent ? " and was emailed." : "."),

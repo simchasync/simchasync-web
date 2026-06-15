@@ -2,6 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { sendSmtpEmail } from "../_shared/smtp.ts";
 
 const bodySchema = z.object({
   event_colleague_id: z.string().uuid("event_colleague_id must be a valid UUID"),
@@ -84,15 +85,14 @@ async function resendCanDeliver(): Promise<boolean> {
   }
 }
 
-/** Magic sign-in link through Supabase Auth's built-in mailer (custom SMTP),
- * using the dashboard-branded template. The user must already exist. */
-async function sendFallbackAuthEmail(supabaseUrl: string, anonKey: string, email: string, redirectTo: string) {
-  const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
-    method: "POST",
-    headers: { apikey: anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, create_user: false, email_redirect_to: redirectTo }),
-  });
-  if (!response.ok) throw new Error(`Fallback auth email failed: ${await response.text()}`);
+/** Branded email via Resend (verified domain) or nodemailer/Gmail SMTP —
+ * never the auth mailer, so no cooldowns or hourly caps. */
+async function sendBrandedEmail(to: string, subject: string, html: string): Promise<void> {
+  if (await resendCanDeliver()) {
+    await sendResendEmail(to, subject, html);
+  } else {
+    await sendSmtpEmail({ to, subject, html });
+  }
 }
 
 Deno.serve(async (req) => {
@@ -138,6 +138,19 @@ Deno.serve(async (req) => {
     if (!membership) return jsonResponse({ error: "Forbidden" }, 403);
 
     if (!ec.email) return jsonResponse({ success: true, skipped: "no_email" });
+
+    // Idempotency: this assignment already produced a booking request —
+    // don't create a duplicate in the colleague's dashboard or re-email them.
+    if (ec.booking_request_id) {
+      return jsonResponse({
+        success: true,
+        already_sent: true,
+        existing_user: true,
+        request_created: false,
+        email_sent: false,
+      });
+    }
+
     const email = String(ec.email).trim().toLowerCase();
 
     const { data: sourceTenant } = await admin.from("tenants").select("name").eq("id", sourceTenantId).single();
@@ -198,29 +211,20 @@ Deno.serve(async (req) => {
       }
 
       let emailSent = true;
-      if (await resendCanDeliver()) {
-        try {
-          await sendResendEmail(
-            email,
-            `New booking request from ${sourceName}`,
-            emailShell(
-              `${sourceName} sent you a booking request`,
-              `<p>You've been requested as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>${requestCreated ? "Open your dashboard to accept or decline the request." : "Log in to SimchaSync to view the details."}</p>`,
-              "Open Your Dashboard",
-              `${appOrigin}/app/bookings`,
-            ),
-          );
-        } catch (emailErr) {
-          console.error("Resend booking-request email failed:", emailErr);
-          emailSent = false;
-        }
-      } else {
-        try {
-          await sendFallbackAuthEmail(supabaseUrl, anonKey, email, `${appOrigin}/app/bookings`);
-        } catch (fallbackErr) {
-          console.error("Booking-request email failed:", fallbackErr);
-          emailSent = false;
-        }
+      try {
+        await sendBrandedEmail(
+          email,
+          `New booking request from ${sourceName}`,
+          emailShell(
+            `${sourceName} sent you a booking request`,
+            `<p>You've been requested as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>${requestCreated ? "Open your dashboard to accept or decline the request." : "Log in to SimchaSync to view the details."}</p>`,
+            "Open Your Dashboard",
+            `${appOrigin}/app/bookings`,
+          ),
+        );
+      } catch (emailErr) {
+        console.error("Booking-request email failed:", emailErr);
+        emailSent = false;
       }
 
       return jsonResponse({
@@ -231,45 +235,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    // No platform account — invite them to join
-    let emailSent = true;
-    if (await resendCanDeliver()) {
-      // Branded path: create the user + link silently, send via Resend
-      const { data: inviteLinkData, error: inviteErr } = await admin.auth.admin.generateLink({
-        type: "invite",
-        email,
-        options: {
-          redirectTo: `${appOrigin}/reset-password`,
-          data: { invited_as_colleague_by: sourceName, full_name: ec.name || undefined },
-        },
-      });
-      if (inviteErr) throw inviteErr;
-      try {
-        await sendResendEmail(
-          email,
-          `${sourceName} wants to work with you on SimchaSync`,
-          emailShell(
-            `${sourceName} wants to book you${ec.name ? `, ${ec.name}` : ""}!`,
-            `<p>They'd like you as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>SimchaSync is the event management platform for music professionals. Create your free account to receive and manage booking requests like this one.</p>`,
-            "Join SimchaSync",
-            inviteLinkData.properties.action_link,
-          ),
-        );
-      } catch (emailErr) {
-        console.error("Resend join-invite email failed:", emailErr);
-        emailSent = false;
-      }
-    } else {
-      // No verified Resend domain: let Supabase Auth create the user AND
-      // send the (dashboard-branded) invite email through the custom SMTP.
-      const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
+    // No platform account — create one via invite link (no Supabase email)
+    // and send a branded join invite via Resend or nodemailer/Gmail SMTP
+    const { data: inviteLinkData, error: inviteErr } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
         redirectTo: `${appOrigin}/reset-password`,
         data: { invited_as_colleague_by: sourceName, full_name: ec.name || undefined },
-      });
-      if (inviteErr) {
-        console.error("Join-invite email failed:", inviteErr);
-        emailSent = false;
-      }
+      },
+    });
+    if (inviteErr) throw inviteErr;
+
+    let emailSent = true;
+    try {
+      await sendBrandedEmail(
+        email,
+        `${sourceName} wants to work with you on SimchaSync`,
+        emailShell(
+          `${sourceName} wants to book you${ec.name ? `, ${ec.name}` : ""}!`,
+          `<p>They'd like you as <strong>${roleLabel}</strong>.</p><p>${eventLine}</p><p>SimchaSync is the event management platform for music professionals. Create your free account to receive and manage booking requests like this one.</p>`,
+          "Join SimchaSync",
+          inviteLinkData.properties.action_link,
+        ),
+      );
+    } catch (emailErr) {
+      console.error("Join-invite email failed:", emailErr);
+      emailSent = false;
     }
 
     return jsonResponse({

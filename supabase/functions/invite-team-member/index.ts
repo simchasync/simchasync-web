@@ -6,6 +6,7 @@ import * as React from "npm:react@18.3.1";
 // @ts-expect-error - External module
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { sendSmtpEmail } from "../_shared/smtp.ts";
 import { InviteEmail } from "../_shared/email-templates/invite.tsx";
 
 const inviteSchema = z.object({
@@ -50,32 +51,6 @@ function friendlyEmailError(err: unknown): string {
     return "Email rate limit reached — wait a few minutes and re-invite to resend the email.";
   }
   return msg;
-}
-
-/** Fallback when Resend can't deliver (e.g. unverified domain): send a magic
- * sign-in link through Supabase Auth's built-in mailer, which delivers to any
- * address. The user always exists by the time this is called. */
-async function sendFallbackAuthEmail({
-  supabaseUrl,
-  anonKey,
-  email,
-  redirectTo,
-  data,
-}: {
-  supabaseUrl: string;
-  anonKey: string;
-  email: string;
-  redirectTo: string;
-  data: Record<string, unknown>;
-}) {
-  const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
-    method: "POST",
-    headers: { apikey: anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, create_user: false, data, email_redirect_to: redirectTo }),
-  });
-  if (!response.ok) {
-    throw new Error(`Fallback auth email failed: ${await response.text()}`);
-  }
 }
 
 /** True only when Resend can actually deliver to arbitrary recipients
@@ -132,11 +107,7 @@ async function sendInviteEmail({
   appOrigin: string;
   existingUser: boolean;
 }) {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  if (!resendKey) throw new Error("RESEND_API_KEY is not set");
-
   const siteName = Deno.env.get("SITE_NAME") ?? "SimchaSync";
-  const from = Deno.env.get("RESEND_FROM") ?? `${siteName} <onboarding@resend.dev>`;
 
   const props = {
     siteName,
@@ -150,6 +121,19 @@ async function sendInviteEmail({
   };
   const html = await renderAsync(React.createElement(InviteEmail, props));
   const text = await renderAsync(React.createElement(InviteEmail, props), { plainText: true });
+  const subject = `You've been invited to join ${tenantName} on ${siteName}`;
+
+  // Branded email via Resend when a verified domain exists; otherwise the
+  // same branded HTML over SMTP (nodemailer + Gmail) — no auth-mailer
+  // cooldowns or hourly caps either way.
+  if (!(await resendCanDeliver())) {
+    await sendSmtpEmail({ to: recipientEmail, subject, html });
+    return;
+  }
+
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) throw new Error("RESEND_API_KEY is not set");
+  const from = Deno.env.get("RESEND_FROM") ?? `${siteName} <onboarding@resend.dev>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -252,13 +236,33 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "You cannot invite yourself — you are already a member of this workspace." }, 400);
     }
 
+    // Don't fire a duplicate email if one just went out for this membership
+    const EMAIL_RESEND_COOLDOWN_MS = 2 * 60 * 1000;
+
     if (existingUser) {
       const { data: existingMembership } = await supabase
         .from("tenant_members")
-        .select("id, role, invitation_status")
+        .select("id, role, invitation_status, invited_at")
         .eq("tenant_id", tenant_id)
         .eq("user_id", existingUser.id)
         .maybeSingle();
+
+      if (
+        existingMembership?.invitation_status === "invited" &&
+        existingMembership.role === requestedRole &&
+        existingMembership.invited_at &&
+        Date.now() - new Date(existingMembership.invited_at).getTime() < EMAIL_RESEND_COOLDOWN_MS
+      ) {
+        return jsonResponse({
+          success: true,
+          invited: true,
+          added: false,
+          already_member: false,
+          already_sent: true,
+          email_sent: false,
+          user_id: existingUser.id,
+        });
+      }
 
       if (!existingMembership) {
         const { error: insertErr } = await supabase.from("tenant_members").insert({
@@ -268,7 +272,8 @@ Deno.serve(async (req) => {
           invitation_status: "invited",
           invitation_email: email,
           invited_by: caller.id,
-        });
+          invited_at: new Date().toISOString(),
+        } as never);
         if (insertErr) throw insertErr;
       } else if (existingMembership.role !== requestedRole || existingMembership.invitation_status !== "invited") {
         const { error: updateErr } = await supabase
@@ -284,49 +289,42 @@ Deno.serve(async (req) => {
         if (updateErr) throw updateErr;
       }
 
+      // generateLink sends nothing itself; the branded email goes out via
+      // Resend (verified domain) or nodemailer/Gmail SMTP — never the
+      // auth mailer, so no cooldown/rate-limit collisions.
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${appOrigin}/app/bookings?tenant=${tenant_id}` },
+      });
+      if (linkError) throw linkError;
+
       let emailSent = true;
       let emailError: string | null = null;
-      if (await resendCanDeliver()) {
-        // Branded path: generate the link ourselves, send via Resend
-        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-          type: "magiclink",
-          email,
-          options: { redirectTo: `${appOrigin}/app/bookings?tenant=${tenant_id}` },
+      try {
+        await sendInviteEmail({
+          recipientEmail: email,
+          recipientName: (existingUser.user_metadata?.full_name as string) || undefined,
+          tenantName,
+          inviterName,
+          requestedRole,
+          actionLink: linkData.properties.action_link,
+          appOrigin,
+          existingUser: true,
         });
-        if (linkError) throw linkError;
-        try {
-          await sendInviteEmail({
-            recipientEmail: email,
-            recipientName: (existingUser.user_metadata?.full_name as string) || undefined,
-            tenantName,
-            inviterName,
-            requestedRole,
-            actionLink: linkData.properties.action_link,
-            appOrigin,
-            existingUser: true,
-          });
-        } catch (emailErr) {
-          console.error("Branded invite email failed:", emailErr);
-          emailSent = false;
-          emailError = friendlyEmailError(emailErr);
-        }
-      } else {
-        // No verified Resend domain: send directly through Supabase Auth
-        // (custom SMTP + branded dashboard template). Do NOT generateLink
-        // first — it would start the per-address cooldown and 429 this send.
-        try {
-          await sendFallbackAuthEmail({
-            supabaseUrl,
-            anonKey,
-            email,
-            redirectTo: `${appOrigin}/app/bookings?tenant=${tenant_id}`,
-            data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
-          });
-        } catch (fallbackErr) {
-          console.error("Invite email failed:", fallbackErr);
-          emailSent = false;
-          emailError = friendlyEmailError(fallbackErr);
-        }
+      } catch (emailErr) {
+        console.error("Invite email failed:", emailErr);
+        emailSent = false;
+        emailError = friendlyEmailError(emailErr);
+      }
+
+      // Stamp the send time so rapid re-invites are throttled
+      if (emailSent) {
+        await supabase
+          .from("tenant_members")
+          .update({ invited_at: new Date().toISOString() } as never)
+          .eq("tenant_id", tenant_id)
+          .eq("user_id", existingUser.id);
       }
 
       return jsonResponse({
@@ -340,50 +338,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // New user
-    let invitedUserId: string;
-    let emailSent = true;
-    let emailError: string | null = null;
-
-    if (await resendCanDeliver()) {
-      // Branded path: create the user + link silently, send via Resend
-      const { data: inviteLinkData, error: inviteErr } = await supabase.auth.admin.generateLink({
-        type: "invite",
-        email,
-        options: {
-          redirectTo: `${appOrigin}/reset-password?tenant=${tenant_id}`,
-          data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
-        },
-      });
-      if (inviteErr) throw inviteErr;
-      invitedUserId = inviteLinkData.user.id;
-      try {
-        await sendInviteEmail({
-          recipientEmail: email,
-          tenantName,
-          inviterName,
-          requestedRole,
-          actionLink: inviteLinkData.properties.action_link,
-          appOrigin,
-          existingUser: false,
-        });
-      } catch (emailErr) {
-        console.error("Branded invite email failed:", emailErr);
-        emailSent = false;
-        emailError = friendlyEmailError(emailErr);
-      }
-    } else {
-      // No verified Resend domain: let Supabase Auth create the user AND
-      // send the (dashboard-branded) invite email through the custom SMTP.
-      const { data: inviteData, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
+    // New user: create the account + link silently, then send the branded email
+    const { data: inviteLinkData, error: inviteErr } = await supabase.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
         redirectTo: `${appOrigin}/reset-password?tenant=${tenant_id}`,
         data: { invited_to_tenant: tenant_id, invited_to_tenant_name: tenantName, role: requestedRole },
-      });
-      if (inviteErr) {
-        throw new Error(friendlyEmailError(inviteErr));
-      }
-      invitedUserId = inviteData.user.id;
-    }
+      },
+    });
+    if (inviteErr) throw inviteErr;
+    const invitedUserId = inviteLinkData.user.id;
 
     const { error: membershipInsertError } = await supabase.from("tenant_members").insert({
       tenant_id,
@@ -392,8 +357,27 @@ Deno.serve(async (req) => {
       invitation_status: "invited",
       invitation_email: email,
       invited_by: caller.id,
-    });
+      invited_at: new Date().toISOString(),
+    } as never);
     if (membershipInsertError) throw membershipInsertError;
+
+    let emailSent = true;
+    let emailError: string | null = null;
+    try {
+      await sendInviteEmail({
+        recipientEmail: email,
+        tenantName,
+        inviterName,
+        requestedRole,
+        actionLink: inviteLinkData.properties.action_link,
+        appOrigin,
+        existingUser: false,
+      });
+    } catch (emailErr) {
+      console.error("Invite email failed:", emailErr);
+      emailSent = false;
+      emailError = friendlyEmailError(emailErr);
+    }
 
     return jsonResponse({
       success: true,
