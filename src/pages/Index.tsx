@@ -2,8 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link, Navigate } from "react-router-dom";
-import { useInView } from "framer-motion";
-import { motion } from "motion/react";
+import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import BlurText from "@/components/landing/BlurText";
 import {
