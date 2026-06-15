@@ -308,7 +308,7 @@ export default function Index() {
             </motion.p>
           </AnimatedSection>
 
-          <AnimatedSection className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-2">
+          <AnimatedSection className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3">
             {l.pricing.plans.map((plan, i) => (
               <motion.div key={i} variants={fadeUp} custom={i} className="relative group">
                 {plan.popular && (

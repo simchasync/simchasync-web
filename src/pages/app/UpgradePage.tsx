@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Check, Crown, Zap, Gem, ExternalLink, ArrowLeft,
-  Clock, AlertCircle, Loader2,
+  Clock, AlertCircle, Loader2, ShieldCheck,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ interface TierCard {
   popular: boolean;
   name: string;
   price: string;
+  tagline: string;
   price_id: string;
   features: readonly string[];
 }
@@ -336,12 +337,13 @@ function PlanCard({
         </AnimatePresence>
 
         <CardContent className="flex flex-1 flex-col p-6">
-          {/* Icon + name */}
+          {/* Icon + name + tagline */}
           <div className="mb-5">
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted/60 transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
               <Icon className="h-5 w-5 text-primary" />
             </div>
             <h3 className="font-display text-base font-semibold">{tier.name}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{tier.tagline}</p>
           </div>
 
           {/* Price */}
@@ -352,6 +354,7 @@ function PlanCard({
               </span>
               <span className="text-sm text-muted-foreground">{t.app.upgrade.perMonth}</span>
             </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground/70">{t.app.upgrade.billedMonthly}</p>
           </div>
 
           {/* Features */}
@@ -524,6 +527,24 @@ export default function UpgradePage() {
           />
         ))}
       </div>
+
+      {/* Trust bar */}
+      <motion.div
+        variants={fadeUp}
+        className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-xl border border-border/50 bg-muted/30 px-4 py-3 text-xs text-muted-foreground"
+      >
+        {[
+          t.app.upgrade.trustTrial.replace("{days}", String(trialDays)),
+          t.app.upgrade.trustNoFees,
+          t.app.upgrade.trustCancel,
+          t.app.upgrade.trustSecure,
+        ].map((item) => (
+          <span key={item} className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+            {item}
+          </span>
+        ))}
+      </motion.div>
 
       {/* Footer note */}
       <motion.p

@@ -7,6 +7,7 @@ export const SUBSCRIPTION_TIERS = {
   lite: {
     name: "Lite",
     price: "$29.99",
+    tagline: "Everything you need to run your bookings.",
     price_id: "price_1TAb41GgnW7qov4TpKHgrKOO",
     product_id: "prod_U8spCJqXtpChBf",
     features: [
@@ -22,6 +23,7 @@ export const SUBSCRIPTION_TIERS = {
   full: {
     name: "Pro",
     price: "$49.99",
+    tagline: "Get paid online and track your profit.",
     price_id: "price_1T7OlrRfOygaToU0wmN7SP2j",
     product_id: "prod_U5ZvhJFTk8TKNu",
     features: [
@@ -38,6 +40,7 @@ export const SUBSCRIPTION_TIERS = {
   premium: {
     name: "Premium",
     price: "$99.99",
+    tagline: "Scale with social tools and priority support.",
     price_id: "",
     product_id: "",
     features: [
