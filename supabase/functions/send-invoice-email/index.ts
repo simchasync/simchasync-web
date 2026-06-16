@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("APP_SECRET_API_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const userClient = createClient(supabaseUrl, (Deno.env.get("APP_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY"))!, {
       global: { headers: { Authorization: authHeader } },
     });
     const token = authHeader.replace("Bearer ", "");

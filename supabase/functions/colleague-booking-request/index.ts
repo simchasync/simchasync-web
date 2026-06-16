@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonKey = (Deno.env.get("APP_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY"))!;
     const admin = createClient(supabaseUrl, Deno.env.get("APP_SECRET_API_KEY")!);
 
     const authHeader = req.headers.get("Authorization");
