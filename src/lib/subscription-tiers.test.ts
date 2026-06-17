@@ -17,9 +17,9 @@ describe("getTierFromProductId", () => {
     expect(getTierFromProductId(null, null)).toBe(null);
   });
 
-  it("never matches Premium while its Stripe ids are unset (empty strings)", () => {
-    // Premium has price_id/product_id "" until the Stripe product exists;
-    // an empty/missing incoming id must NOT classify as premium.
+  it("never classifies an empty/missing incoming id as a tier", () => {
+    // A blank product/price id from Stripe must not match any tier — even
+    // though every tier (incl. Premium) now has non-empty configured ids.
     expect(getTierFromProductId("", "")).toBe(null);
     expect(getTierFromProductId(null, "")).toBe(null);
   });

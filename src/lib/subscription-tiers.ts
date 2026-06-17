@@ -1,15 +1,14 @@
-// NOTE: displayed prices were updated 2026-06-12 (Lite $29.99 / Pro $49.99 /
-// Premium $99.99). The Stripe price_ids below still point at the OLD Stripe
-// prices until new prices are created in the Stripe dashboard — see the
-// session log's Pending Action. Premium has no Stripe ids yet (checkout
-// disabled until they exist).
+// Stripe TEST-mode products + recurring monthly prices, created 2026-06-17 to
+// match the displayed prices (Lite $29.99 / Pro $49.99 / Premium $99.99). The
+// deployed edge STRIPE_SECRET_KEY must be in TEST mode for these to resolve;
+// checkout uses Stripe test cards. Replace with live IDs when going live.
 export const SUBSCRIPTION_TIERS = {
   lite: {
     name: "Lite",
     price: "$29.99",
     tagline: "Everything you need to run your bookings.",
-    price_id: "price_1TAb41GgnW7qov4TpKHgrKOO",
-    product_id: "prod_U8spCJqXtpChBf",
+    price_id: "price_1TjGbKKlO2rKFnfNvih8m46r",
+    product_id: "prod_Uii1r3VBlbkrRf",
     features: [
       "Booking management",
       "Client CRM",
@@ -24,8 +23,8 @@ export const SUBSCRIPTION_TIERS = {
     name: "Pro",
     price: "$49.99",
     tagline: "Get paid online and track your profit.",
-    price_id: "price_1T7OlrRfOygaToU0wmN7SP2j",
-    product_id: "prod_U5ZvhJFTk8TKNu",
+    price_id: "price_1TjGbLKlO2rKFnfNuZTwE1n2",
+    product_id: "prod_Uii1ZvEY5zNx38",
     features: [
       "Everything in Lite",
       "Accept credit card payments (Stripe)",
@@ -41,8 +40,8 @@ export const SUBSCRIPTION_TIERS = {
     name: "Premium",
     price: "$99.99",
     tagline: "Scale with social tools and priority support.",
-    price_id: "",
-    product_id: "",
+    price_id: "price_1TjGbNKlO2rKFnfNQUg83H0a",
+    product_id: "prod_Uii1ZCGj6zyTiZ",
     features: [
       "Everything in Pro",
       "Social media management — Coming Soon",
