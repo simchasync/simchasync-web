@@ -17,6 +17,7 @@ import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptio
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { friendlyUploadError } from "@/lib/uploadErrors";
 import { useSearchParams, Link } from "react-router-dom";
 
 export default function SettingsPage() {
@@ -226,8 +227,9 @@ export default function SettingsPage() {
       await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast({ title: "Avatar updated!" });
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      toast({ title: "Upload failed", description: friendlyUploadError(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }

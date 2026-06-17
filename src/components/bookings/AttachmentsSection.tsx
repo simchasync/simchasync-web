@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, Trash2, FileText, Image, File, Mic, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { friendlyUploadError } from "@/lib/uploadErrors";
 import VoiceNoteRecorder from "./VoiceNoteRecorder";
 
 interface Props {
@@ -51,8 +52,9 @@ export default function AttachmentsSection({ eventId, canWrite }: Props) {
       }
       qc.invalidateQueries({ queryKey: ["event_attachments", eventId] });
       toast({ title: `${files.length} file(s) uploaded` });
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      console.error("Attachment upload failed:", err);
+      toast({ title: "Upload failed", description: friendlyUploadError(err), variant: "destructive" });
     } finally {
       setUploading(false);
       e.target.value = "";

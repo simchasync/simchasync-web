@@ -3,6 +3,7 @@ import { Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { friendlyUploadError } from "@/lib/uploadErrors";
 
 interface Props {
   eventId: string;
@@ -19,14 +20,14 @@ export default function VoiceNoteRecorder({ eventId, onUploaded }: Props) {
   const upload = useCallback(async (blob: Blob) => {
     const path = `${eventId}/${crypto.randomUUID()}.webm`;
     const { error: upErr } = await supabase.storage.from("event-files").upload(path, blob, { contentType: "audio/webm" });
-    if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); return; }
+    if (upErr) { console.error("Voice note upload failed:", upErr); toast({ title: "Upload failed", description: friendlyUploadError(upErr), variant: "destructive" }); return; }
     const { data: { publicUrl } } = supabase.storage.from("event-files").getPublicUrl(path);
     const now = new Date();
     const name = `Voice Note - ${now.toLocaleString()}`;
     const { error: dbErr } = await supabase.from("event_attachments").insert({
       event_id: eventId, file_url: publicUrl, name, file_type: "voice_note",
     });
-    if (dbErr) { toast({ title: "Save failed", description: dbErr.message, variant: "destructive" }); return; }
+    if (dbErr) { console.error("Voice note save failed:", dbErr); toast({ title: "Save failed", description: friendlyUploadError(dbErr), variant: "destructive" }); return; }
     toast({ title: "Voice note saved" });
     onUploaded();
   }, [eventId, onUploaded]);
