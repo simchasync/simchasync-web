@@ -73,8 +73,10 @@ export const en = {
     theme: {
       light: "Light",
       dark: "Dark",
+      auto: "Auto",
       switchToLight: "Switch to light mode",
       switchToDark: "Switch to dark mode",
+      switchToAuto: "Switch to automatic mode (follows your local time)",
     },
     dashboard: {
       title: "Dashboard",

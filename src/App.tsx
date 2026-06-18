@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GradientBackground } from "@/components/ui/gradient-background";
 import { ThemeProvider } from "next-themes";
+import { ThemeModeProvider } from "@/contexts/ThemeModeContext";
 import MuiThemeBridge from "@/theme/MuiThemeBridge";
 import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -79,6 +80,7 @@ const App = () => (
         enableSystem={false}
         storageKey="simchasync-theme"
       >
+        <ThemeModeProvider>
         <MuiThemeBridge>
           <LanguageProvider>
             <AuthProvider>
@@ -135,6 +137,7 @@ const App = () => (
             </AuthProvider>
           </LanguageProvider>
         </MuiThemeBridge>
+        </ThemeModeProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>

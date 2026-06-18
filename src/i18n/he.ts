@@ -58,8 +58,10 @@ export const he = {
     theme: {
       light: "בהיר",
       dark: "כהה",
+      auto: "אוטומטי",
       switchToLight: "מעבר למצב בהיר",
       switchToDark: "מעבר למצב כהה",
+      switchToAuto: "מעבר למצב אוטומטי (לפי השעה המקומית)",
     },
     dashboard: { title: "לוח בקרה", upcoming: "אירועים קרובים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "ממתין", paid: "שולם", recentActivity: "פעילות אחרונה", noEvents: "אין אירועים קרובים", noEventsHint: "צור את ההזמנה הראשונה שלך כדי להתחיל", overview: "סקירה כללית", totalRevenue: "סך הכנסות", received: "התקבל", unpaidBookings: "{count} הזמנות לא שולמו", thisMonth: "החודש", eventsCount: "{count} אירוע(ים)", totalBookings: "סך הזמנות", paidCount: "{count} שולמו", newBooking: "הזמנה חדשה", recentInvoices: "חשבוניות אחרונות", noInvoices: "אין חשבוניות עדיין", noInvoicesHint: "צור הזמנה עם מקדמה כדי ליצור חשבוניות אוטומטית", viewAllEvents: "הצג את כל {count} האירועים", viewAllInvoices: "הצג את כל {count} החשבוניות", noClient: "ללא לקוח", profitAnalytics: "ניתוח רווחים", totalExpenses: "סך הוצאות", netProfit: "רווח נקי", avgProfitPerBooking: "רווח ממוצע להזמנה", invoicesPaid: "חשבוניות ששולמו", invoicesCount: "{count} חשבוניות", socialTitle: "לוח מדיה חברתית", socialHint: "ניתוחים ומדדי ביצועים יופיעו כאן כשיהיו זמינים.", goodMorning: "בוקר טוב", goodAfternoon: "צהריים טובים", goodEvening: "ערב טוב", revenueTrend: "מגמת הכנסות", lastSixMonths: "הכנסות מהזמנות, 6 החודשים האחרונים" },
     bookings: {

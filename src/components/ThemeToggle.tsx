@@ -1,8 +1,8 @@
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, SunMoon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useThemeMode, THEME_MODES, type ThemeMode } from "@/contexts/ThemeModeContext";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -11,17 +11,21 @@ interface ThemeToggleProps {
   className?: string;
 }
 
+const MODE_ICON = { light: Sun, dark: Moon, auto: SunMoon } as const;
+
 export default function ThemeToggle({ variant = "default", className }: ThemeToggleProps) {
   const { t } = useLanguage();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { mode, setMode } = useThemeMode();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const isDark = resolvedTheme === "dark";
-  const label = isDark ? t.app.theme.switchToLight : t.app.theme.switchToDark;
+  const nextMode: ThemeMode = THEME_MODES[(THEME_MODES.indexOf(mode) + 1) % THEME_MODES.length];
+  const Icon = MODE_ICON[mode];
+  const modeLabel = t.app.theme[mode];
+  const switchLabel = { light: t.app.theme.switchToLight, dark: t.app.theme.switchToDark, auto: t.app.theme.switchToAuto }[nextMode];
 
   const button = (
     <Button
@@ -33,20 +37,12 @@ export default function ThemeToggle({ variant = "default", className }: ThemeTog
         variant === "default" && "h-auto w-full justify-start gap-3 px-3 py-2 font-normal",
         className
       )}
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label={label}
+      onClick={() => setMode(nextMode)}
+      aria-label={switchLabel}
     >
-      {isDark ? (
-        <Moon className="h-[18px] w-[18px] shrink-0" aria-hidden />
-      ) : (
-        <Sun className="h-[18px] w-[18px] shrink-0" aria-hidden />
-      )}
-      {variant === "default" && (
-        <span className="text-[13px]">{isDark ? t.app.theme.dark : t.app.theme.light}</span>
-      )}
-      {variant === "icon" && (
-        <span className="sr-only">{label}</span>
-      )}
+      <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden />
+      {variant === "default" && <span className="text-[13px]">{modeLabel}</span>}
+      {variant === "icon" && <span className="sr-only">{switchLabel}</span>}
     </Button>
   );
 
@@ -68,7 +64,7 @@ export default function ThemeToggle({ variant = "default", className }: ThemeTog
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs">
-          {label}
+          {switchLabel}
         </TooltipContent>
       </Tooltip>
     );

@@ -58,8 +58,10 @@ export const yi = {
     theme: {
       light: "הײל",
       dark: "טונקל",
+      auto: "אויטאָמאַטיש",
       switchToLight: "צו העל־מאָד",
       switchToDark: "צו טונקל־מאָד",
+      switchToAuto: "צו אויטאָמאַטישן מאָד (לויט דער אָרטיקער צײַט)",
     },
     dashboard: { title: "דעשבאָרד", upcoming: "קומענדיקע אירועים", revenue: "הכנסות", expenses: "הוצאות", profit: "רווח", outstanding: "אויסשטייענדיק", paid: "באַצאָלט", recentActivity: "לעצטע אַקטיוויטעט", noEvents: "קיין קומענדיקע אירועים", noEventsHint: "שאַפֿט אײַער ערשטע באָקינג צו אָנהייבן", overview: "איבערבליק", totalRevenue: "גאַנצע הכנסה", received: "באקומען", unpaidBookings: "{count} ניט-באַצאָלטע באָקינגס", thisMonth: "דעם חודש", eventsCount: "{count} אירוע(ס)", totalBookings: "גאַנצע באָקינגס", paidCount: "{count} באַצאָלט", newBooking: "נײַע באָקינג", recentInvoices: "לעצטע חשבונות", noInvoices: "נאָך קיין חשבונות", noInvoicesHint: "שאַפֿט אַ באָקינג מיט אַ מקדמה צו שאַפֿן חשבונות אויטאָמאַטיש", viewAllEvents: "זען אַלע {count} אירועים", viewAllInvoices: "זען אַלע {count} חשבונות", noClient: "קיין קליענט", profitAnalytics: "רווח אַנאַליז", totalExpenses: "גאַנצע הוצאות", netProfit: "נעטא רווח", avgProfitPerBooking: "דורכשניטלעכער רווח פֿאַר באָקינג", invoicesPaid: "באַצאָלטע חשבונות", invoicesCount: "{count} חשבונות", socialTitle: "סאָציאַלע מעדיאַ דעשבאָרד", socialHint: "אַנאַליטיק און פּערפֿאָרמאַנס מעטריקס וועלן ערשײַנען דאָ אַז זיי זענען צוטריטלעך.", goodMorning: "גוט מאָרגן", goodAfternoon: "גוטן נאָכמיטאָג", goodEvening: "גוטן אָוונט", revenueTrend: "הכנסה טרענד", lastSixMonths: "באָקינג הכנסה, לעצטע 6 חדשים" },
     bookings: {
