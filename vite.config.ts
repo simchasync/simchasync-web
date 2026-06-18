@@ -46,4 +46,24 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
+  build: {
+    // hls.js (~509 kB) is intentionally large and lazy-loaded on demand for the
+    // background video, so it never blocks initial load — keep the warning off
+    // the noise floor while still flagging any new oversized eager chunk.
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // Group the heaviest third-party libs into stable, named vendor chunks
+        // so they stay cached across deploys (app code changes far more often).
+        // React itself is left to the default chunking + `dedupe` above.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("recharts") || id.includes("/d3-") || id.includes("victory-vendor")) return "charts";
+          if (id.includes("@mui") || id.includes("@emotion")) return "mui";
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("/motion") || id.includes("framer-motion")) return "motion";
+        },
+      },
+    },
+  },
 }));
