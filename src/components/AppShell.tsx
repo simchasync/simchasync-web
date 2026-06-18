@@ -189,10 +189,7 @@ export default function AppShell() {
               />
             </div>
           ) : (
-            <ThemeToggle
-              variant="default"
-              className="text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            />
+            <ThemeToggle variant="default" className="text-sidebar-foreground/60" />
           )}
           <Button
             variant="ghost"
