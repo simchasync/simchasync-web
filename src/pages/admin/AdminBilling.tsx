@@ -18,17 +18,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, CreditCard, AlertTriangle, TrendingUp, Loader2 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import {
+  Users, CreditCard, AlertTriangle, TrendingUp, Loader2,
+  MoreHorizontal, RefreshCw, DollarSign, ShieldOff,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, addDays, isBefore } from "date-fns";
 import { useState } from "react";
 
 import { adminAction } from "@/lib/admin-functions";
+import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
+
+// Plan options derived from the shared tier source (auto-includes Premium and
+// keeps labels in sync), plus the non-Stripe "trial" plan.
+const PLAN_OPTIONS: { value: string; label: string }[] = [
+  { value: "trial", label: "Trial" },
+  ...Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => ({ value: key, label: tier.name })),
+];
 
 export default function AdminBilling() {
   const queryClient = useQueryClient();
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [trialDate, setTrialDate] = useState("");
+  const [priceTenant, setPriceTenant] = useState<any | null>(null);
+  const [priceInput, setPriceInput] = useState("");
 
   const { data: tenantsData, isLoading } = useQuery({
     queryKey: ["admin-tenants"],
@@ -155,21 +175,28 @@ export default function AdminBilling() {
                         <div className="text-xs text-muted-foreground">{t.slug}</div>
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={t.plan}
-                          onValueChange={(val) =>
-                            actionMutation.mutate({ action: "change_plan", tenant_id: t.id, plan: val })
-                          }
-                        >
-                          <SelectTrigger className="w-24 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="trial">Trial</SelectItem>
-                            <SelectItem value="lite">Lite</SelectItem>
-                            <SelectItem value="full">Full</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={t.plan}
+                            onValueChange={(val) =>
+                              actionMutation.mutate({ action: "change_plan", tenant_id: t.id, plan: val })
+                            }
+                          >
+                            <SelectTrigger className="w-24 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PLAN_OPTIONS.map((p) => (
+                                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {t.is_manual_override && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-300/40 text-[10px]">
+                              Override
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -214,11 +241,55 @@ export default function AdminBilling() {
                         {t.custom_price_cents != null ? `$${(t.custom_price_cents / 100).toFixed(2)}` : "—"}
                       </TableCell>
                       <TableCell>
-                        {trialExpired && (
-                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-xs">
-                            Expired
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {trialExpired && (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-xs">
+                              Expired
+                            </Badge>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Billing actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setPriceTenant(t);
+                                  setPriceInput(t.custom_price_cents != null ? (t.custom_price_cents / 100).toString() : "");
+                                }}
+                              >
+                                <DollarSign className="h-4 w-4 mr-2" /> Set custom price…
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (window.confirm(`Resync ${t.name} from Stripe? This pulls the live subscription state.`)) {
+                                    actionMutation.mutate({ action: "resync_stripe", tenant_id: t.id });
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" /> Resync from Stripe
+                              </DropdownMenuItem>
+                              {t.is_manual_override && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      if (window.confirm(`Remove the manual override for ${t.name}? Its plan will follow Stripe again.`)) {
+                                        actionMutation.mutate({ action: "remove_override", tenant_id: t.id });
+                                      }
+                                    }}
+                                  >
+                                    <ShieldOff className="h-4 w-4 mr-2" /> Remove override
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -228,6 +299,63 @@ export default function AdminBilling() {
           </Card>
         </>
       )}
+
+      {/* Set / edit custom price */}
+      <Dialog open={!!priceTenant} onOpenChange={(o) => { if (!o) setPriceTenant(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Custom price</DialogTitle>
+            <DialogDescription>{priceTenant?.name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="custom-price">Monthly price (USD)</Label>
+            <div className="relative">
+              <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="custom-price"
+                type="number"
+                min="0"
+                step="0.01"
+                className="pl-8"
+                placeholder="0.00"
+                value={priceInput}
+                onChange={(e) => setPriceInput(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Leave the field and click Clear to remove the custom price.</p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                actionMutation.mutate({ action: "set_custom_price", tenant_id: priceTenant.id, custom_price_cents: null });
+                setPriceTenant(null);
+              }}
+              disabled={actionMutation.isPending}
+            >
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                const dollars = Number(priceInput);
+                if (!Number.isFinite(dollars) || dollars < 0) {
+                  toast({ title: "Enter a valid amount", variant: "destructive" });
+                  return;
+                }
+                actionMutation.mutate({
+                  action: "set_custom_price",
+                  tenant_id: priceTenant.id,
+                  custom_price_cents: Math.round(dollars * 100),
+                });
+                setPriceTenant(null);
+              }}
+              disabled={!priceInput || actionMutation.isPending}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
