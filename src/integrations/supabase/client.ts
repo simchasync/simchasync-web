@@ -3,7 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://qxcatdirkfbqitvkuvbu.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_HNgqLFiTy9P1Ji5h5wBx0w_Sov5mfaP";
+// Prefer the new publishable key. VITE_SUPABASE_ANON_KEY is kept only as a
+// fallback for older environments — but if it still holds a legacy `eyJ…` JWT
+// (now disabled), ignore it so we don't ship a dead key. Final fallback is the
+// current publishable key (safe to expose — it's a browser key).
+const RAW_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const LEGACY_ANON = typeof RAW_ANON === "string" && RAW_ANON.startsWith("eyJ");
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  (LEGACY_ANON ? undefined : RAW_ANON) ||
+  "sb_publishable_GUQucbnSKq-Ol-LD5PFlFg_Pwah_CHa";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
