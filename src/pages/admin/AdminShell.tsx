@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
-import { Shield, Users, CreditCard, UserCog, LogOut, Loader2, TrendingUp, FileText, UserSearch, MessageSquare } from "lucide-react";
+import { Shield, Users, CreditCard, UserCog, LogOut, Loader2, TrendingUp, FileText, UserSearch, MessageSquare, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { path: "/admin/overview", label: "Overview", icon: LayoutDashboard, requiredPermission: "hasAnyAdminRole" as const },
   { path: "/admin/tenants", label: "Tenants", icon: Users, requiredPermission: "hasAnyAdminRole" as const },
   { path: "/admin/users", label: "Users", icon: UserSearch, requiredPermission: "hasAnyAdminRole" as const },
   { path: "/admin/billing", label: "Billing", icon: CreditCard, requiredPermission: "canManageBilling" as const },

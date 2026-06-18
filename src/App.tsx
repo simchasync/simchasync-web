@@ -39,6 +39,7 @@ const Agents = lazy(() => import("./pages/app/Agents"));
 const Finance = lazy(() => import("./pages/app/Finance"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminShell = lazy(() => import("./pages/admin/AdminShell"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
 const AdminBilling = lazy(() => import("./pages/admin/AdminBilling"));
 const AdminManageAdmins = lazy(() => import("./pages/admin/AdminManageAdmins"));
@@ -119,6 +120,7 @@ const App = () => (
                       </Route>
                       <Route path="/admin" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminShell />}>
+                        <Route path="overview" element={<AdminOverview />} />
                         <Route path="tenants" element={<AdminTenants />} />
                         <Route path="users" element={<AdminUsers />} />
                         <Route path="billing" element={<AdminBilling />} />

@@ -24,7 +24,7 @@ export default function AdminLogin() {
   useEffect(() => {
     if (!authLoading && !roleLoading && user) {
       if (hasAnyAdminRole) {
-        navigate("/admin/tenants", { replace: true });
+        navigate("/admin/overview", { replace: true });
       } else {
         setAccessDenied(true);
       }
