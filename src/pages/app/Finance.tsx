@@ -21,6 +21,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { computeBalanceDue, getEffectiveTotal } from "@/lib/bookingFinancials";
+import { buildPnLLines, type ReportTotals } from "@/lib/financialReport";
+import FinancialReportPrint, {
+  type ReportExpenseRow, type ReportIncomeRow, type ReportAgentRow,
+} from "@/components/finance/FinancialReportPrint";
 import { StatCardsSkeleton } from "@/components/ui/page-skeletons";
 import { StatCard } from "@/components/ui/stat-card";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -49,7 +53,7 @@ function getDateRange(preset: DatePreset, customFrom?: string, customTo?: string
 }
 
 export default function Finance() {
-  const { tenantId } = useTenantId();
+  const { tenantId, userTenants } = useTenantId();
   const { canAccess, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -293,6 +297,43 @@ export default function Finance() {
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dateLabel = `${format(dateRange.from, "MMM d, yyyy")} — ${format(dateRange.to, "MMM d, yyyy")}`;
 
+  // Workspace branding for the printable report header.
+  const workspaceName = userTenants.find((t: any) => t.tenant_id === tenantId)?.tenant_name || "Workspace";
+  const { data: branding } = useQuery({
+    queryKey: ["finance-branding", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenant_landing_pages" as any)
+        .select("logo_url")
+        .eq("tenant_id", tenantId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { logo_url?: string } | null;
+    },
+  });
+
+  // Report model — single source shared by the printable template.
+  const reportTotals: ReportTotals = {
+    totalRevenue, totalWorkspaceExpenses, totalEventExpenses,
+    totalTravelFees, totalColleagueCosts, totalCommissions,
+  };
+  const pnlLines = buildPnLLines(reportTotals);
+  const reportExpenses: ReportExpenseRow[] = filteredWorkspaceExpenses.map((e: any) => ({
+    id: e.id, title: e.title, category: e.category,
+    date: format(parseISO(e.expense_date), "MMM d, yyyy"),
+    amount: Number(e.amount) || 0, notes: e.notes,
+  }));
+  const reportIncome: ReportIncomeRow[] = filteredEvents.map((e: any) => ({
+    id: e.id, client: (e.clients as any)?.name || "—", type: e.event_type,
+    date: format(parseISO(e.event_date), "MMM d, yyyy"),
+    status: e.payment_status, amount: Number(e.total_price) || 0,
+  }));
+  const reportAgents: ReportAgentRow[] = agentCommissionBreakdown.map((a) => ({
+    name: a.name, bookings: a.bookings.length, total: a.total, paid: a.paid, pending: a.pending,
+  }));
+  const generatedAt = format(new Date(), "MMM d, yyyy 'at' h:mm a");
+
   // Financial reports are a Pro/Premium feature
   if (!subLoading && !canAccess("expenses_profit")) {
     return (
@@ -364,14 +405,9 @@ export default function Finance() {
         </CardContent>
       </Card>
 
-      {/* Printable Report Area */}
-      <div ref={printRef} className="print-report space-y-6">
-        {/* Print-only header */}
-        <div className="hidden print:block mb-6">
-          <h1 className="text-2xl font-bold">Profit & Loss Report</h1>
-          <p className="text-sm text-muted-foreground">{dateLabel}</p>
-        </div>
-
+      {/* On-screen report area (the printable PDF is rendered by
+          <FinancialReportPrint/> below, portaled to <body>). */}
+      <div ref={printRef} className="space-y-6">
         {/* Summary Cards */}
         {isLoading ? (
           <StatCardsSkeleton count={5} />
@@ -666,75 +702,22 @@ export default function Finance() {
           </TabsContent>
         </Tabs>
 
-        {/* Print-only P&L table */}
-        <div className="hidden print:block">
-          <h2 className="text-lg font-bold mb-2">Profit & Loss Details</h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b-2">
-                <th className="text-left py-2">Category</th>
-                <th className="text-right py-2">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td className="py-1.5">Booking Revenue</td><td className="text-right">{fmt(totalRevenue)}</td></tr>
-              <tr><td className="py-1.5">General Expenses</td><td className="text-right">-{fmt(totalWorkspaceExpenses)}</td></tr>
-              <tr><td className="py-1.5">Per-Event Expenses</td><td className="text-right">-{fmt(totalEventExpenses)}</td></tr>
-              <tr><td className="py-1.5">Travel Fees</td><td className="text-right">-{fmt(totalTravelFees)}</td></tr>
-              <tr><td className="py-1.5">Musician Costs</td><td className="text-right">-{fmt(totalColleagueCosts)}</td></tr>
-              <tr><td className="py-1.5">Agent Commissions</td><td className="text-right">-{fmt(totalCommissions)}</td></tr>
-              <tr className="border-t-2 font-bold text-lg">
-                <td className="py-2">Net Profit</td>
-                <td className="text-right">{fmt(netProfit)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h2 className="text-lg font-bold mt-6 mb-2">Expense Details</h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-1">Title</th>
-                <th className="text-left py-1">Category</th>
-                <th className="text-left py-1">Date</th>
-                <th className="text-right py-1">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredWorkspaceExpenses.map((exp: any) => (
-                <tr key={exp.id} className="border-b border-muted">
-                  <td className="py-1">{exp.title}</td>
-                  <td className="py-1 capitalize">{exp.category}</td>
-                  <td className="py-1">{exp.expense_date}</td>
-                  <td className="text-right py-1">{fmt(Number(exp.amount))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h2 className="text-lg font-bold mt-6 mb-2">Booking Income</h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-1">Client</th>
-                <th className="text-left py-1">Type</th>
-                <th className="text-left py-1">Date</th>
-                <th className="text-right py-1">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEvents.map((e: any) => (
-                <tr key={e.id} className="border-b border-muted">
-                  <td className="py-1">{(e.clients as any)?.name || "—"}</td>
-                  <td className="py-1 capitalize">{e.event_type}</td>
-                  <td className="py-1">{e.event_date}</td>
-                  <td className="text-right py-1">{fmt(Number(e.total_price) || 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
+
+      {/* Professional printable PDF report (portaled to <body>, print-only) */}
+      <FinancialReportPrint
+        meta={{
+          workspaceName,
+          logoUrl: branding?.logo_url || undefined,
+          periodLabel: dateLabel,
+          generatedAt,
+        }}
+        totals={reportTotals}
+        pnlLines={pnlLines}
+        expenses={reportExpenses}
+        income={reportIncome}
+        agents={reportAgents}
+      />
 
       {/* Expense Add/Edit Dialog */}
       <Dialog open={expenseDialog} onOpenChange={setExpenseDialog}>
