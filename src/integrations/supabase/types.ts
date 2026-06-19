@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_calendar_connections: {
+        Row: {
+          id: string
+          user_id: string
+          tenant_id: string
+          provider: string
+          google_email: string | null
+          refresh_token: string | null
+          access_token: string | null
+          token_expiry: string | null
+          status: string
+          sync_enabled: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tenant_id: string
+          provider?: string
+          google_email?: string | null
+          refresh_token?: string | null
+          access_token?: string | null
+          token_expiry?: string | null
+          status?: string
+          sync_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tenant_id?: string
+          provider?: string
+          google_email?: string | null
+          refresh_token?: string | null
+          access_token?: string | null
+          token_expiry?: string | null
+          status?: string
+          sync_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_calendar_sync: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          tenant_id: string
+          google_event_id: string
+          last_synced: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          tenant_id: string
+          google_event_id: string
+          last_synced?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          tenant_id?: string
+          google_event_id?: string
+          last_synced?: string
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
@@ -1360,6 +1432,14 @@ export type Database = {
         Returns: string
       }
       delete_workspace: { Args: { _tenant_id: string }; Returns: undefined }
+      get_my_calendar_connection: {
+        Args: { _tenant_id: string }
+        Returns: {
+          connected: boolean
+          google_email: string
+          status: string
+        }[]
+      }
       get_member_bookings: {
         Args: { _tenant_id: string }
         Returns: {

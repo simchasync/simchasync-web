@@ -3,6 +3,7 @@ import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons"
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
+import { syncEventToCalendar } from "@/hooks/useGoogleCalendar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toHebrewDate } from "@/lib/hebrewDate";
@@ -210,6 +211,7 @@ export default function Bookings() {
     onSuccess: async (result) => {
       const { data, isNew } = result;
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
+      if (tenantId && data?.id) void syncEventToCalendar(tenantId, "upsert", data.id);
 
       const totalPrice = Number(data.total_price) || 0;
       const deposit = Number(data.deposit) || 0;
@@ -360,8 +362,9 @@ export default function Bookings() {
       const { error } = await supabase.from("events").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
+      if (tenantId) void syncEventToCalendar(tenantId, "delete", id);
       toast({ title: "Event deleted" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
