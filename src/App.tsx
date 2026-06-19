@@ -16,6 +16,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AuthRedirect from "./components/AuthRedirect";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import Maintenance from "./pages/Maintenance";
+import { APP_KILL_SWITCH_ENABLED } from "@/lib/appKillSwitch";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -74,6 +76,9 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
+    {APP_KILL_SWITCH_ENABLED ? (
+      <Maintenance />
+    ) : (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
@@ -141,7 +146,8 @@ const App = () => (
         </MuiThemeBridge>
         </ThemeModeProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+      )}
   </ErrorBoundary>
 );
 

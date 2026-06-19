@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
 
     if (userError || !user) {
       console.log("[ensure-user-onboarding] Auth failed:", userError?.message);
-      return new Response(JSON.stringify({ ok: true, skipped: "auth-failed" }), {
-        status: 200,
+      return new Response(JSON.stringify({ ok: false, error: "auth-failed" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -66,13 +66,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!existingProfile) {
-      await admin.from("profiles").insert({
+      const { error: profileInsertError } = await admin.from("profiles").insert({
         user_id: user.id,
         full_name: displayName,
         email: safeEmail,
         phone: user.user_metadata?.phone || null,
         has_used_trial: false,
       });
+      if (profileInsertError) throw profileInsertError;
     }
 
     const { data: acceptedCount, error: acceptError } = await admin.rpc(
@@ -166,7 +167,7 @@ Deno.serve(async (req) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[ensure-user-onboarding] Error:", message);
     return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 200,
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

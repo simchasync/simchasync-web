@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Activate caveman skill at ULTRA intensity for this whole session (see .agents/skills/caveman/SKILL.md): ultra-terse caveman prose every turn, technical terms/code/errors verbatim. Stay active until user says stop caveman or normal mode.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}
