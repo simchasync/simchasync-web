@@ -53,6 +53,8 @@ const AdminSupportTickets = lazy(() => import("./pages/admin/AdminSupportTickets
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 function RouteLoader() {
   return (
@@ -106,6 +108,8 @@ const App = () => (
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/auth/phone" element={<PhoneNumber />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/terms" element={<Terms />} />
                       <Route path="/book/:slug" element={<PublicBooking />} />
                       <Route path="/payment-success" element={<PaymentSuccess />} />
                       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
