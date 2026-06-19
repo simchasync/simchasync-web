@@ -34,4 +34,4 @@ documentation
 *.njsproj
 *.sln
 *.sw?
-.claude\
+.claude\.claude/settings.local.json

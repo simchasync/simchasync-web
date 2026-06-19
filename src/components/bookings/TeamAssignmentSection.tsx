@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,23 +72,13 @@ export default function TeamAssignmentSection({ eventId, canWrite }: Props) {
     enabled: !!tenantId,
   });
 
-  useEffect(() => {
-    if (!eventId) return;
-    const channel = supabase
-      .channel(`event-team-live-${eventId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "event_team_members", filter: `event_id=eq.${eventId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["event-team", eventId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [eventId, qc]);
+  useRealtimeInvalidate({
+    channel: `event-team-live-${eventId}`,
+    table: "event_team_members",
+    filter: `event_id=eq.${eventId}`,
+    queryKey: ["event-team", eventId],
+    enabled: !!eventId,
+  });
 
   const addMutation = useMutation({
     mutationFn: async (values: typeof form) => {

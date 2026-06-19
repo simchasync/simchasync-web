@@ -11,6 +11,8 @@ export const EVENT_TYPES = [
 
 export type EventType = (typeof EVENT_TYPES)[number];
 
+export const DEFAULT_EVENT_TYPE: EventType = "wedding";
+
 export function isKnownEventType(value: string | null | undefined): value is EventType {
   return !!value && (EVENT_TYPES as readonly string[]).includes(value);
 }

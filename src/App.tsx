@@ -16,6 +16,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AuthRedirect from "./components/AuthRedirect";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import Maintenance from "./pages/Maintenance";
+import { APP_KILL_SWITCH_ENABLED } from "@/lib/appKillSwitch";
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -51,6 +53,8 @@ const AdminSupportTickets = lazy(() => import("./pages/admin/AdminSupportTickets
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 function RouteLoader() {
   return (
@@ -74,6 +78,9 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
+    {APP_KILL_SWITCH_ENABLED ? (
+      <Maintenance />
+    ) : (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
@@ -101,6 +108,8 @@ const App = () => (
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/auth/phone" element={<PhoneNumber />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/terms" element={<Terms />} />
                       <Route path="/book/:slug" element={<PublicBooking />} />
                       <Route path="/payment-success" element={<PaymentSuccess />} />
                       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
@@ -141,7 +150,8 @@ const App = () => (
         </MuiThemeBridge>
         </ThemeModeProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+      )}
   </ErrorBoundary>
 );
 

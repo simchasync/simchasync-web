@@ -12,21 +12,35 @@ interface Prediction {
   full_description: string;
 }
 
+const MAX_QUERY_LENGTH = 200;
+const MAX_TYPES = 10;
+// Google Places primary types are lowercase snake_case tokens. Accept only
+// well-formed tokens (and cap the count) rather than forwarding arbitrary input.
+const TYPE_TOKEN = /^[a-z][a-z_]{0,39}$/;
+
+function sanitizeTypes(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter((t): t is string => typeof t === "string" && TYPE_TOKEN.test(t))
+    .slice(0, MAX_TYPES);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    const { query, types } = body;
+    const body = await req.json().catch(() => ({}));
+    const rawQuery = typeof body?.query === "string" ? body.query.trim() : "";
 
     // ── Text autocomplete (query → predictions) ─────────────────────────
-    if (!query || query.length < 2) {
+    if (rawQuery.length < 2) {
       return new Response(JSON.stringify({ predictions: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const query = rawQuery.slice(0, MAX_QUERY_LENGTH);
 
     const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!apiKey) {
@@ -34,9 +48,13 @@ Deno.serve(async (req) => {
     }
 
     const gBody: Record<string, unknown> = { input: query };
-    const includedTypes = types && Array.isArray(types) ? types : ['establishment'];
-    if (includedTypes.length > 0 && !(includedTypes.length === 1 && includedTypes[0] === '')) {
-      gBody.includedPrimaryTypes = includedTypes;
+    // `types` omitted → default to establishments (venue search). An explicit
+    // (empty) array → leave unrestricted so address/region lookups still work.
+    if (body?.types === undefined) {
+      gBody.includedPrimaryTypes = ['establishment'];
+    } else {
+      const includedTypes = sanitizeTypes(body.types);
+      if (includedTypes.length > 0) gBody.includedPrimaryTypes = includedTypes;
     }
 
     const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {

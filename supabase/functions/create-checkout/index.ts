@@ -3,17 +3,12 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const checkoutSchema = z.object({
   price_id: z.string().min(1, "price_id is required"),
   tenant_id: z.string().uuid("tenant_id must be a valid UUID"),
 });
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
@@ -21,6 +16,7 @@ const logStep = (step: string, details?: any) => {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

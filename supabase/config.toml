@@ -63,6 +63,20 @@ verify_jwt = false
 [functions.calendar-export]
 verify_jwt = false
 
+# Google Calendar OAuth: each validates the caller's Bearer token internally
+# (oauth-callback is hit by Google's browser redirect, no Supabase JWT).
+[functions.gcal-oauth-start]
+verify_jwt = false
+
+[functions.gcal-oauth-callback]
+verify_jwt = false
+
+[functions.gcal-sync]
+verify_jwt = false
+
+[functions.gcal-disconnect]
+verify_jwt = false
+
 
 # Admin split functions — each verifies auth internally via Bearer token
 [functions.admin-tenants]

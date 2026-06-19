@@ -1,12 +1,6 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const slugify = (input: string) =>
   input
@@ -28,6 +22,7 @@ function getWorkspaceLimits() {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -55,8 +50,8 @@ Deno.serve(async (req) => {
 
     if (userError || !user) {
       console.log("[ensure-user-onboarding] Auth failed:", userError?.message);
-      return new Response(JSON.stringify({ ok: true, skipped: "auth-failed" }), {
-        status: 200,
+      return new Response(JSON.stringify({ ok: false, error: "auth-failed" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -71,13 +66,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!existingProfile) {
-      await admin.from("profiles").insert({
+      const { error: profileInsertError } = await admin.from("profiles").insert({
         user_id: user.id,
         full_name: displayName,
         email: safeEmail,
         phone: user.user_metadata?.phone || null,
         has_used_trial: false,
       });
+      if (profileInsertError) throw profileInsertError;
     }
 
     const { data: acceptedCount, error: acceptError } = await admin.rpc(
@@ -171,7 +167,7 @@ Deno.serve(async (req) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[ensure-user-onboarding] Error:", message);
     return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 200,
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

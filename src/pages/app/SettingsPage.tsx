@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "@/hooks/use-toast";
 import { friendlyUploadError } from "@/lib/uploadErrors";
 import { useSearchParams, Link } from "react-router-dom";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 
 export default function SettingsPage() {
   const { t } = useLanguage();
@@ -31,6 +32,22 @@ export default function SettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const s = t.app.settings;
   const [searchParams, setSearchParams] = useSearchParams();
+  const gcal = useGoogleCalendar();
+
+  // Surface the result of the Google OAuth redirect, then clear the params.
+  useEffect(() => {
+    const status = searchParams.get("gcal");
+    if (!status) return;
+    if (status === "connected") {
+      toast({ title: s.gcalConnected });
+    } else if (status === "error") {
+      toast({ title: s.gcalConnectError, variant: "destructive" });
+    }
+    searchParams.delete("gcal");
+    searchParams.delete("gcal_detail");
+    setSearchParams(searchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Profile state
   const [fullName, setFullName] = useState("");
@@ -47,6 +64,7 @@ export default function SettingsPage() {
   const [calendarCopied, setCalendarCopied] = useState(false);
   const [bookingCopied, setBookingCopied] = useState(false);
   const [showCalendarHelp, setShowCalendarHelp] = useState(false);
+  const [showGcalHelp, setShowGcalHelp] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -290,6 +308,9 @@ export default function SettingsPage() {
     }
   };
 
+  // Token lives in the URL by design: this is an ICS subscription feed and
+  // calendar clients can only GET a plain URL. The token is a revocable random
+  // UUID (regenerate above to invalidate old links).
   const calendarUrl = tenant?.calendar_token
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-export?tenant_id=${tenantId}&token=${tenant.calendar_token}`
     : null;
@@ -502,13 +523,86 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {/* Calendar Sync Section */}
+      {/* Google Calendar (OAuth connect) — available to every member */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-display text-lg">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            {s.gcalTitle}
+          </CardTitle>
+          <CardDescription>{s.gcalDesc}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {gcal.isConnected ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
+                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="flex-1 text-sm truncate">
+                  {gcal.connection?.google_email
+                    ? `${s.gcalConnectedAs} ${gcal.connection.google_email}`
+                    : s.gcalConnected}
+                </span>
+              </div>
+              {gcal.needsReauth && (
+                <p className="text-sm text-destructive">{s.gcalNeedsReauth}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {gcal.needsReauth ? (
+                  <Button size="sm" onClick={gcal.connect} className="bg-gradient-gold text-primary-foreground">
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    {s.gcalReconnect}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => gcal.syncNow()} disabled={gcal.isSyncing}>
+                    {gcal.isSyncing ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
+                    {s.gcalSyncNow}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => gcal.disconnect()} disabled={gcal.isDisconnecting}>
+                  <XCircle className="mr-2 h-3.5 w-3.5" />
+                  {s.gcalDisconnect}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Button onClick={gcal.connect} disabled={gcal.isLoading} className="bg-gradient-gold text-primary-foreground">
+                <CalendarDays className="mr-2 h-4 w-4" />
+                {s.gcalConnect}
+              </Button>
+              <Collapsible open={showGcalHelp} onOpenChange={setShowGcalHelp}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    <Info className="mr-1.5 h-3.5 w-3.5" />
+                    {s.gcalHelpTrigger}
+                    <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${showGcalHelp ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm mt-2">
+                    <p className="text-muted-foreground">{s.gcalHelpIntro}</p>
+                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                      <li>{s.gcalHelpStep1}</li>
+                      <li>{s.gcalHelpStep2}</li>
+                      <li>{s.gcalHelpStep3}</li>
+                      <li>{s.gcalHelpStep4}</li>
+                    </ol>
+                    <p className="text-xs text-muted-foreground pt-1">{s.gcalHelpSafe}</p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Calendar Sync Section — ICS subscription link (other calendar apps) */}
       {isOwner && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
               <CalendarDays className="h-5 w-5 text-primary" />
-              {s.calendarSync}
+              {s.calendarOtherApps}
             </CardTitle>
             <CardDescription>{s.calendarSyncDesc}</CardDescription>
           </CardHeader>

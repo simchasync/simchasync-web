@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TimingFields {
   chuppah_time: string;
@@ -18,28 +19,34 @@ interface EventTimingSectionProps {
   canWrite: boolean;
 }
 
-const WEDDING_FIELDS: { key: keyof TimingFields; label: string }[] = [
-  { key: "chuppah_time", label: "Chuppah Time" },
-  { key: "meal_time", label: "Meal Time" },
-  { key: "first_dance_time", label: "First Dance Time" },
-  { key: "second_dance_time", label: "Second Dance Time" },
-  { key: "mitzvah_tanz_time", label: "Mitzvah Tanz" },
+type TimingLabelKey = "chuppah" | "meal" | "firstDance" | "secondDance" | "mitzvahTanz" | "eventStart";
+
+const WEDDING_FIELDS: { key: keyof TimingFields; labelKey: TimingLabelKey }[] = [
+  { key: "chuppah_time", labelKey: "chuppah" },
+  { key: "meal_time", labelKey: "meal" },
+  { key: "first_dance_time", labelKey: "firstDance" },
+  { key: "second_dance_time", labelKey: "secondDance" },
+  { key: "mitzvah_tanz_time", labelKey: "mitzvahTanz" },
 ];
 
 export default function EventTimingSection({ eventType, timing, onChange, canWrite }: EventTimingSectionProps) {
+  const { t } = useLanguage();
+  const labels = t.app.bookings.timing;
   const isWedding = eventType === "wedding";
-  const fields = isWedding ? WEDDING_FIELDS : [{ key: "event_start_time" as keyof TimingFields, label: "Event Start Time" }];
+  const fields = isWedding
+    ? WEDDING_FIELDS
+    : [{ key: "event_start_time" as keyof TimingFields, labelKey: "eventStart" as const }];
 
   return (
     <div className="space-y-3">
       <h4 className="flex items-center gap-2 font-semibold text-sm">
         <Clock className="h-4 w-4 text-primary" />
-        Event Timing
+        {labels.title}
       </h4>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {fields.map((f) => (
           <div key={f.key} className="space-y-1.5">
-            <Label className="text-xs">{f.label}</Label>
+            <Label className="text-xs">{labels[f.labelKey]}</Label>
             <Input
               type="time"
               value={timing[f.key] || ""}

@@ -8,19 +8,13 @@ import { renderAsync } from "npm:@react-email/components@0.0.22";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
 import { sendSmtpEmail } from "../_shared/smtp.ts";
 import { InviteEmail } from "../_shared/email-templates/invite.tsx";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const inviteSchema = z.object({
   email: z.string().email("email must be a valid email address"),
   tenant_id: z.string().uuid("tenant_id must be a valid UUID"),
   role: z.enum(["owner", "booking_manager", "social_media_manager", "member"]).optional(),
 });
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 function getFallbackAppOrigin(): string {
   return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
@@ -153,6 +147,7 @@ async function sendInviteEmail({
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

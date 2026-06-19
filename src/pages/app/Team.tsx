@@ -4,6 +4,7 @@ import { TeamGridSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle, MailOpen } from "lucide-react";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { toast } from "@/hooks/use-toast";
+import type { TenantRole } from "@/hooks/useUserRole";
 
-type TenantRole = "owner" | "booking_manager" | "social_media_manager" | "member";
 type InvitationStatus = "invited" | "accepted";
 
 interface TeamMember {
@@ -81,20 +82,13 @@ export default function Team() {
   });
 
   // Realtime subscription for tenant_members changes
-  useEffect(() => {
-    if (!tenantId) return;
-    const channel = supabase
-      .channel(`team-members-${tenantId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tenant_members", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["team-members", tenantId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [tenantId, queryClient]);
+  useRealtimeInvalidate({
+    channel: `team-members-${tenantId}`,
+    table: "tenant_members",
+    filter: `tenant_id=eq.${tenantId}`,
+    queryKey: ["team-members", tenantId],
+    enabled: !!tenantId,
+  });
 
   // Fetch colleagues (external performers)
   const { data: colleagues = [], isLoading: colleaguesLoading } = useQuery({
@@ -471,7 +465,7 @@ export default function Team() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {(["owner", "booking_manager", "social_media_manager"] as TenantRole[]).map((r) => (
+                              {teammateRoles.map((r) => (
                                 <SelectItem key={r} value={r}>
                                   {tm.roles[r]}
                                 </SelectItem>

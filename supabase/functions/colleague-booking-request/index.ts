@@ -3,17 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
 import { sendSmtpEmail } from "../_shared/smtp.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const bodySchema = z.object({
   event_colleague_id: z.string().uuid("event_colleague_id must be a valid UUID"),
 });
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -96,6 +90,7 @@ async function sendBrandedEmail(to: string, subject: string, html: string): Prom
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
