@@ -13,11 +13,12 @@ import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Link } from "react-router-dom";
+import { INVOICE_STATUSES } from "@/lib/invoiceStatuses";
 
 
 const METHODS_ALL = ["cash", "check", "credit_card", "transfer", "zelle", "other"] as const;
 const METHODS_NO_CC = ["cash", "check", "transfer", "zelle", "other"] as const;
-const STATUSES = ["draft", "sent", "paid", "overdue"] as const;
+const STATUSES = INVOICE_STATUSES;
 
 interface EditInvoiceDialogProps {
   open: boolean;

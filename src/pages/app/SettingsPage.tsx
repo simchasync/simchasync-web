@@ -290,6 +290,9 @@ export default function SettingsPage() {
     }
   };
 
+  // Token lives in the URL by design: this is an ICS subscription feed and
+  // calendar clients can only GET a plain URL. The token is a revocable random
+  // UUID (regenerate above to invalidate old links).
   const calendarUrl = tenant?.calendar_token
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-export?tenant_id=${tenantId}&token=${tenant.calendar_token}`
     : null;

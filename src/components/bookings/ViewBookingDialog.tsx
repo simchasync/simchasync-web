@@ -448,17 +448,17 @@ export default function ViewBookingDialog({
         {(event.chuppah_time || event.meal_time || event.first_dance_time || event.second_dance_time || event.mitzvah_tanz_time || event.event_start_time) && (
           <>
             <Separator />
-            <ViewSection title="Event Timing" icon={Clock}>
+            <ViewSection title={b.timing.title} icon={Clock}>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
                 {(event.event_type === "wedding"
                   ? [
-                      { label: "Chuppah", value: event.chuppah_time },
-                      { label: "Meal", value: event.meal_time },
-                      { label: "First Dance", value: event.first_dance_time },
-                      { label: "Second Dance", value: event.second_dance_time },
-                      { label: "Mitzvah Tanz", value: event.mitzvah_tanz_time },
+                      { label: b.timing.chuppah, value: event.chuppah_time },
+                      { label: b.timing.meal, value: event.meal_time },
+                      { label: b.timing.firstDance, value: event.first_dance_time },
+                      { label: b.timing.secondDance, value: event.second_dance_time },
+                      { label: b.timing.mitzvahTanz, value: event.mitzvah_tanz_time },
                     ]
-                  : [{ label: "Event Start", value: event.event_start_time }]
+                  : [{ label: b.timing.eventStart, value: event.event_start_time }]
                 ).filter(f => f.value).map(f => (
                   <Field key={f.label} label={f.label}>
                     <span className="font-medium text-sm">{f.value}</span>

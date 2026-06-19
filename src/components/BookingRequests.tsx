@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { toHebrewDate } from "@/lib/hebrewDate";
 import { getOrCreateClient } from "@/lib/clientDedup";
+import type { BookingRequestStatus } from "@/lib/bookingRequestStatuses";
 
 
 export default function BookingRequests() {
@@ -57,7 +58,7 @@ export default function BookingRequests() {
   }, [tenantId, qc]);
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: BookingRequestStatus }) => {
       const { error } = await supabase.from("booking_requests").update({ status }).eq("id", id);
       if (error) throw error;
     },

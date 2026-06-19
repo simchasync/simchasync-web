@@ -3,13 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useCallback, useEffect } from "react";
 
-interface UserTenant {
-  tenant_id: string;
-  tenant_name: string;
-  tenant_slug: string;
-  role: string;
-}
-
 const STORAGE_KEY = "simchasync_active_tenant";
 
 export function useTenantId() {
@@ -42,11 +35,11 @@ export function useTenantId() {
     queryKey: ["user-tenants", user?.id],
     queryFn: async () => {
       try {
-        const { data, error } = await (supabase.rpc as any)("get_user_tenants", {
+        const { data, error } = await supabase.rpc("get_user_tenants", {
           _user_id: user!.id,
         });
         if (error) return [];
-        return (data as UserTenant[]) || [];
+        return data ?? [];
       } catch {
         return [];
       }

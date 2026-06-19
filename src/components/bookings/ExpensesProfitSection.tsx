@@ -9,8 +9,8 @@ import { Plus, Trash2, DollarSign, TrendingUp, TrendingDown, Car } from "lucide-
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
+import type { TravelFeeType } from "@/lib/travelFeeTypes";
 
-type TravelFeeType = "charge_customer" | "expense";
 type EventExpenseRow = Database["public"]["Tables"]["event_expenses"]["Row"];
 type EventDetailRow = Pick<Database["public"]["Tables"]["events"]["Row"], "travel_fee" | "travel_fee_type" | "payment_status" | "total_price">;
 type EventColleagueCostRow = Pick<Database["public"]["Tables"]["event_colleagues"]["Row"], "name" | "price" | "payment_responsibility">;

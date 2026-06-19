@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import { useUserRole } from "@/hooks/useUserRole";
+import { INVOICE_STATUSES } from "@/lib/invoiceStatuses";
 import InvoicePreview from "@/components/invoices/InvoicePreview";
 import SendInvoiceDialog from "@/components/invoices/SendInvoiceDialog";
 import RecordPaymentDialog from "@/components/invoices/RecordPaymentDialog";
@@ -33,7 +34,7 @@ import { useSearchParams } from "react-router-dom";
 
 type Invoice = Tables<"invoices">;
 
-const STATUSES = ["draft", "sent", "paid", "overdue"] as const;
+const STATUSES = INVOICE_STATUSES;
 
 const emptyForm = { client_id: "", event_id: "", amount: "", status: "draft" as string };
 

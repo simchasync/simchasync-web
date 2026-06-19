@@ -56,11 +56,11 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     queryKey: ["event-colleagues", eventId, role, canWrite],
     queryFn: async () => {
       if (!canWrite && role === "member") {
-        const { data, error } = await (supabase.rpc as any)("get_member_event_colleagues", {
+        const { data, error } = await supabase.rpc("get_member_event_colleagues", {
           _event_id: eventId,
         });
         if (error) throw error;
-        return data ?? [];
+        return (data ?? []) as any[];
       }
 
       const { data, error } = await supabase

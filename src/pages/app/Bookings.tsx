@@ -8,6 +8,8 @@ import { toHebrewDate } from "@/lib/hebrewDate";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { computeBalanceDue } from "@/lib/bookingFinancials";
 import { buildNavigationAddress } from "@/lib/utils";
+import { DEFAULT_EVENT_TYPE } from "@/lib/eventTypes";
+import { DEFAULT_TRAVEL_FEE_TYPE } from "@/lib/travelFeeTypes";
 import { Button } from "@/components/ui/button";
 import { Card as MuiCard, CardContent as MuiCardContent, Chip } from "@mui/material";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
@@ -59,10 +61,10 @@ const emptyTiming: TimingFields = {
 };
 
 const emptyForm = {
-  client_id: "", event_date: "", event_type: "wedding" as string, venue: "", location: "",
+  client_id: "", event_date: "", event_type: DEFAULT_EVENT_TYPE as string, venue: "", location: "",
   total_price: "", deposit: "", balance_due: "", payment_status: "unpaid" as string,
   deposit_status: "unpaid" as string,
-  due_date: "", notes: "", travel_fee: "", travel_fee_type: "expense",
+  due_date: "", notes: "", travel_fee: "", travel_fee_type: DEFAULT_TRAVEL_FEE_TYPE as string,
 };
 
 export default function Bookings() {
@@ -94,11 +96,11 @@ export default function Bookings() {
     queryKey: ["events", tenantId, role],
     queryFn: async () => {
       if (role === "member") {
-        const { data, error } = await (supabase.rpc as any)("get_member_bookings", {
+        const { data, error } = await supabase.rpc("get_member_bookings", {
           _tenant_id: tenantId!,
         });
         if (error) throw error;
-        return data ?? [];
+        return (data ?? []) as any[];
       }
 
       const { data, error } = await supabase

@@ -28,6 +28,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // The token is intentionally read from the query string: this endpoint is
+    // an ICS calendar-subscription feed and external calendar clients (Google,
+    // Apple, Outlook) can only issue a plain GET on the URL — they cannot send
+    // auth headers or a request body. The token is a random UUID, scoped only
+    // to read this tenant's calendar, and is revocable: regenerating it in
+    // Settings invalidates any previously shared URL.
     const url = new URL(req.url);
     const tenantId = url.searchParams.get("tenant_id");
     const token = url.searchParams.get("token");

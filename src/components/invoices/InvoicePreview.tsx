@@ -23,6 +23,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ invoice, artistName, artistLogo, workspaceName, paymentInstructions, payments = [] }, ref) => {
     const { t } = useLanguage();
     const inv = t.app.invoices;
+    const p = inv.preview;
 
     const statusLabel = (inv.statuses as any)[invoice.status] || invoice.status;
 
@@ -60,12 +61,12 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         {/* Invoice details */}
         <div className="grid grid-cols-2 gap-6 mb-8">
           <div>
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Bill To</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{p.billTo}</p>
             <p className="font-semibold text-gray-900">{invoice.clients?.name || "—"}</p>
             {invoice.clients?.email && <p className="text-sm text-gray-500">{invoice.clients.email}</p>}
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Invoice Date</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{p.invoiceDate}</p>
             <p className="text-sm text-gray-700">{format(new Date(invoice.created_at), "MMMM d, yyyy")}</p>
             {invoice.sent_at && (
               <>
@@ -79,7 +80,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         {/* Event info */}
         {invoice.events && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Event</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{p.event}</p>
             <p className="font-medium text-gray-800">
               {invoice.events.event_type} — {format(new Date(invoice.events.event_date), "MMMM d, yyyy")}
             </p>
@@ -91,7 +92,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50">
-                <th className="text-left text-xs uppercase tracking-wide text-gray-500 py-3 px-4">Description</th>
+                <th className="text-left text-xs uppercase tracking-wide text-gray-500 py-3 px-4">{p.description}</th>
                 <th className="text-right text-xs uppercase tracking-wide text-gray-500 py-3 px-4">{inv.amount}</th>
               </tr>
             </thead>
@@ -100,13 +101,13 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 <td className="py-4 px-4 text-gray-700">
                   {invoice.events
                     ? `${invoice.events.event_type} — ${format(new Date(invoice.events.event_date), "MMM d, yyyy")}`
-                    : "Services"}
+                    : p.services}
                 </td>
                 <td className="py-4 px-4 text-right font-semibold text-gray-900">${Number(invoice.amount).toFixed(2)}</td>
               </tr>
               {Number(invoice.overtime) > 0 && (
                 <tr className="border-t border-gray-100">
-                  <td className="py-4 px-4 text-gray-700">Overtime</td>
+                  <td className="py-4 px-4 text-gray-700">{p.overtime}</td>
                   <td className="py-4 px-4 text-right font-semibold text-gray-900">${Number(invoice.overtime).toFixed(2)}</td>
                 </tr>
               )}
@@ -115,7 +116,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               <tbody>
                 <tr>
                   <td colSpan={2} className="pt-2 px-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Payments Received</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold">{p.paymentsReceived}</p>
                   </td>
                 </tr>
                 {payments.map((p) => (
@@ -136,11 +137,11 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 return (
                   <>
                     <tr className="border-t border-gray-200 bg-gray-50">
-                      <td className="py-3 px-4 text-sm text-gray-600">Total Paid</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{p.totalPaid}</td>
                       <td className="py-3 px-4 text-right text-sm font-medium text-emerald-700">${totalPaid.toFixed(2)}</td>
                     </tr>
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
-                      <td className="py-4 px-4 font-bold text-gray-900">Balance Due</td>
+                      <td className="py-4 px-4 font-bold text-gray-900">{p.balanceDue}</td>
                       <td className="py-4 px-4 text-right font-bold text-xl text-gray-900">${balanceDue.toFixed(2)}</td>
                     </tr>
                   </>
@@ -148,7 +149,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               })()}
               {payments.length === 0 && (
                 <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td className="py-4 px-4 font-bold text-gray-900">Total</td>
+                  <td className="py-4 px-4 font-bold text-gray-900">{p.total}</td>
                   <td className="py-4 px-4 text-right font-bold text-xl text-gray-900">${(Number(invoice.amount) + Number(invoice.overtime || 0)).toFixed(2)}</td>
                 </tr>
               )}
@@ -159,17 +160,17 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         {/* Payment Instructions */}
         {paymentInstructions && (
           <div className="mb-8 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-            <p className="text-xs uppercase tracking-wide text-amber-600 font-semibold mb-2">Payment Instructions</p>
+            <p className="text-xs uppercase tracking-wide text-amber-600 font-semibold mb-2">{p.paymentInstructions}</p>
             <p className="text-sm text-gray-700 whitespace-pre-line">{paymentInstructions}</p>
           </div>
         )}
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-400 pt-4 border-t border-gray-100">
-          <p>Thank you for your business!</p>
+          <p>{p.thankYou}</p>
           {invoice.stripe_payment_url && (
             <p className="mt-2">
-              Pay online: <a href={invoice.stripe_payment_url} className="text-blue-500 underline">{invoice.stripe_payment_url}</a>
+              {p.payOnline} <a href={invoice.stripe_payment_url} className="text-blue-500 underline">{invoice.stripe_payment_url}</a>
             </p>
           )}
         </div>

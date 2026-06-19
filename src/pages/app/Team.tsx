@@ -19,8 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle, MailOpen } from "lucide-react";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { toast } from "@/hooks/use-toast";
+import type { TenantRole } from "@/hooks/useUserRole";
 
-type TenantRole = "owner" | "booking_manager" | "social_media_manager" | "member";
 type InvitationStatus = "invited" | "accepted";
 
 interface TeamMember {
@@ -471,7 +471,7 @@ export default function Team() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {(["owner", "booking_manager", "social_media_manager"] as TenantRole[]).map((r) => (
+                              {teammateRoles.map((r) => (
                                 <SelectItem key={r} value={r}>
                                   {tm.roles[r]}
                                 </SelectItem>

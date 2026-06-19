@@ -17,8 +17,10 @@ import {
 import { toast } from "@/hooks/use-toast";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import PublicChatWidget from "@/components/public/PublicChatWidget";
+import { EVENT_TYPES } from "@/lib/eventTypes";
 
-const EVENT_TYPES = ["wedding", "bar_mitzvah", "bat_mitzvah", "corporate", "concert", "other"] as const;
+// "other" is a UI-only sentinel (free-text); it is not part of the persisted enum.
+const EVENT_TYPE_OPTIONS = [...EVENT_TYPES, "other"] as const;
 
 const scrollToId = (id: string) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -50,12 +52,12 @@ export default function PublicBooking() {
     queryKey: ["public-landing", tenant?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tenant_landing_pages" as any)
+        .from("tenant_landing_pages")
         .select("*")
         .eq("tenant_id", tenant!.id)
         .maybeSingle();
       if (error) throw error;
-      return data as any;
+      return data;
     },
     enabled: !!tenant?.id,
   });
@@ -64,12 +66,12 @@ export default function PublicBooking() {
     queryKey: ["public-packages", tenant?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tenant_packages" as any)
+        .from("tenant_packages")
         .select("*")
         .eq("tenant_id", tenant!.id)
         .order("sort_order");
       if (error) throw error;
-      return data as any[];
+      return data;
     },
     enabled: !!tenant?.id,
   });
@@ -385,7 +387,7 @@ export default function PublicBooking() {
                     <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {EVENT_TYPES.map((et) => (
+                        {EVENT_TYPE_OPTIONS.map((et) => (
                           <SelectItem key={et} value={et}>{(t.app.bookings.types as any)[et]}</SelectItem>
                         ))}
                       </SelectContent>

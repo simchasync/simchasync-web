@@ -6,13 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Music } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const SEGMENTS = [
-  { value: "chuppah", label: "Chuppah" },
-  { value: "meal", label: "Meal" },
-  { value: "dance_one", label: "Dance 1" },
-  { value: "dance_two", label: "Dance 2" },
-] as const;
+type SegmentLabelKey = "chuppah" | "meal" | "danceOne" | "danceTwo";
+
+const SEGMENTS: { value: string; labelKey: SegmentLabelKey }[] = [
+  { value: "chuppah", labelKey: "chuppah" },
+  { value: "meal", labelKey: "meal" },
+  { value: "dance_one", labelKey: "danceOne" },
+  { value: "dance_two", labelKey: "danceTwo" },
+];
 
 interface Props {
   eventId: string;
@@ -20,6 +23,8 @@ interface Props {
 }
 
 export default function SongsSection({ eventId, canWrite }: Props) {
+  const { t } = useLanguage();
+  const sg = t.app.bookings.songs;
   const qc = useQueryClient();
   const [newSong, setNewSong] = useState({ title: "", artist: "", segment: "chuppah" });
 
@@ -69,7 +74,7 @@ export default function SongsSection({ eventId, canWrite }: Props) {
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-semibold flex items-center gap-1.5">
-        <Music className="h-4 w-4" /> Requested Songs
+        <Music className="h-4 w-4" /> {sg.title}
       </h4>
       <Tabs defaultValue="chuppah" className="w-full">
         <TabsList className="w-full grid grid-cols-4">
@@ -77,7 +82,7 @@ export default function SongsSection({ eventId, canWrite }: Props) {
             const count = songs.filter((s: any) => s.segment === seg.value).length;
             return (
               <TabsTrigger key={seg.value} value={seg.value} className="text-xs">
-                {seg.label} {count > 0 && `(${count})`}
+                {sg[seg.labelKey]} {count > 0 && `(${count})`}
               </TabsTrigger>
             );
           })}
@@ -102,13 +107,13 @@ export default function SongsSection({ eventId, canWrite }: Props) {
             {canWrite && (
               <div className="flex gap-2">
                 <Input
-                  placeholder="Song title"
+                  placeholder={sg.songTitle}
                   value={newSong.title}
                   onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
                   className="text-sm"
                 />
                 <Input
-                  placeholder="Artist"
+                  placeholder={sg.artist}
                   value={newSong.artist}
                   onChange={(e) => setNewSong({ ...newSong, artist: e.target.value })}
                   className="text-sm w-32"

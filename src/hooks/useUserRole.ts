@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-export type TenantRole = "owner" | "booking_manager" | "social_media_manager" | "member";
+import type { UserRole } from "@/lib/userRoles";
+
+export type TenantRole = UserRole;
 
 export function useUserRole() {
   const { user } = useAuth();
