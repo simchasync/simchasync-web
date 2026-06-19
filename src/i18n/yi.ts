@@ -109,6 +109,13 @@ export const yi = {
         songTitle: "ליד נאָמען",
         artist: "אַרטיסט",
       },
+      financials: {
+        travelFeeTreat: "נסיעה אפצאל — ווי באהאנדלען?",
+        travelChargeCustomer: "באלאסטן דעם קונה (לייגט צו חשבון ליניע)",
+        travelExpense: "מיין הוצאה (אראפגערעכנט פון פראפיט)",
+        depositStatus: "אוועקלייג סטאטוס",
+        bookingStatus: "באוקינג סטאטוס",
+      },
       expenses: {
         title: "הוצאות & רווח",
         revenue: "הכנסות",

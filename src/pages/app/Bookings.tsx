@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toHebrewDate } from "@/lib/hebrewDate";
@@ -10,6 +11,7 @@ import { computeBalanceDue } from "@/lib/bookingFinancials";
 import { buildNavigationAddress } from "@/lib/utils";
 import { DEFAULT_EVENT_TYPE } from "@/lib/eventTypes";
 import { DEFAULT_TRAVEL_FEE_TYPE } from "@/lib/travelFeeTypes";
+import { PAYMENT_STATUSES, DEFAULT_PAYMENT_STATUS } from "@/lib/paymentStatuses";
 import { Button } from "@/components/ui/button";
 import { Card as MuiCard, CardContent as MuiCardContent, Chip } from "@mui/material";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
@@ -53,7 +55,6 @@ import BookingCalendar from "@/components/bookings/BookingCalendar";
 
 type Event = Tables<"events">;
 type Client = Tables<"clients">;
-const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
 const BOOKINGS_PAGE_SIZE = 10;
 
 const emptyTiming: TimingFields = {
@@ -62,8 +63,8 @@ const emptyTiming: TimingFields = {
 
 const emptyForm = {
   client_id: "", event_date: "", event_type: DEFAULT_EVENT_TYPE as string, venue: "", location: "",
-  total_price: "", deposit: "", balance_due: "", payment_status: "unpaid" as string,
-  deposit_status: "unpaid" as string,
+  total_price: "", deposit: "", balance_due: "", payment_status: DEFAULT_PAYMENT_STATUS as string,
+  deposit_status: DEFAULT_PAYMENT_STATUS as string,
   due_date: "", notes: "", travel_fee: "", travel_fee_type: DEFAULT_TRAVEL_FEE_TYPE as string,
 };
 
@@ -115,20 +116,13 @@ export default function Bookings() {
   });
 
   // Realtime sync for events changes
-  useEffect(() => {
-    if (!tenantId) return;
-    const channel = supabase
-      .channel(`events-realtime-${tenantId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "events", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["events", tenantId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [tenantId, qc]);
+  useRealtimeInvalidate({
+    channel: `events-realtime-${tenantId}`,
+    table: "events",
+    filter: `tenant_id=eq.${tenantId}`,
+    queryKey: ["events", tenantId],
+    enabled: !!tenantId,
+  });
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients", tenantId],
@@ -945,12 +939,12 @@ export default function Bookings() {
                     </div>
                     {Number(form.travel_fee) > 0 && (
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label className="text-sm">Travel Fee — How to treat it?</Label>
+                        <Label className="text-sm">{b.financials.travelFeeTreat}</Label>
                         <Select value={form.travel_fee_type} onValueChange={(v) => updateFinancials("travel_fee_type", v)}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
-                            <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
+                            <SelectItem value="charge_customer">{b.financials.travelChargeCustomer}</SelectItem>
+                            <SelectItem value="expense">{b.financials.travelExpense}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -961,12 +955,12 @@ export default function Bookings() {
                     </div>
                     {Number(form.deposit) > 0 && (
                       <div className="space-y-1.5">
-                        <Label className="text-sm">Deposit Status</Label>
+                        <Label className="text-sm">{b.financials.depositStatus}</Label>
                         <Select value={form.deposit_status} onValueChange={(v) => setForm({ ...form, deposit_status: v })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="unpaid">Unpaid</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="unpaid">{b.paymentStatus.unpaid}</SelectItem>
+                            <SelectItem value="paid">{b.paymentStatus.paid}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -981,7 +975,7 @@ export default function Bookings() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Booking Status</Label>
+                      <Label className="text-sm">{b.financials.bookingStatus}</Label>
                       <Select value={form.payment_status} onValueChange={(v) => {
                         const total = Number(form.total_price) || 0;
                         const dep = Number(form.deposit) || 0;

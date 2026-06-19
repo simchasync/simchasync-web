@@ -4,6 +4,7 @@ import { TeamGridSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -81,20 +82,13 @@ export default function Team() {
   });
 
   // Realtime subscription for tenant_members changes
-  useEffect(() => {
-    if (!tenantId) return;
-    const channel = supabase
-      .channel(`team-members-${tenantId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tenant_members", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["team-members", tenantId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [tenantId, queryClient]);
+  useRealtimeInvalidate({
+    channel: `team-members-${tenantId}`,
+    table: "tenant_members",
+    filter: `tenant_id=eq.${tenantId}`,
+    queryKey: ["team-members", tenantId],
+    enabled: !!tenantId,
+  });
 
   // Fetch colleagues (external performers)
   const { data: colleagues = [], isLoading: colleaguesLoading } = useQuery({

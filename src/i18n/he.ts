@@ -109,6 +109,13 @@ export const he = {
         songTitle: "שם השיר",
         artist: "אמן",
       },
+      financials: {
+        travelFeeTreat: "דמי נסיעה — איך לטפל?",
+        travelChargeCustomer: "חיוב הלקוח (מוסיף שורת חשבונית)",
+        travelExpense: "ההוצאה שלי (מנוכה מהרווח)",
+        depositStatus: "סטטוס מקדמה",
+        bookingStatus: "סטטוס הזמנה",
+      },
       expenses: {
         title: "הוצאות ורווח",
         revenue: "הכנסות",

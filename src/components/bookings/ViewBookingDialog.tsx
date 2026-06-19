@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { PAYMENT_STATUSES } from "@/lib/paymentStatuses";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -41,7 +42,6 @@ import {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
 
 const emptyTiming: TimingFields = {
   chuppah_time: "", meal_time: "", first_dance_time: "",
@@ -597,12 +597,12 @@ export default function ViewBookingDialog({
                 </div>
                 {Number(form.travel_fee) > 0 && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-sm">Travel Fee — How to treat it?</Label>
+                    <Label className="text-sm">{b.financials.travelFeeTreat}</Label>
                     <Select value={form.travel_fee_type} onValueChange={(v) => updateFinancials("travel_fee_type", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="charge_customer">Charge to customer (adds invoice line)</SelectItem>
-                        <SelectItem value="expense">My expense (deducted from profit)</SelectItem>
+                        <SelectItem value="charge_customer">{b.financials.travelChargeCustomer}</SelectItem>
+                        <SelectItem value="expense">{b.financials.travelExpense}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -613,12 +613,12 @@ export default function ViewBookingDialog({
                 </div>
                 {Number(form.deposit) > 0 && (
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Deposit Status</Label>
+                    <Label className="text-sm">{b.financials.depositStatus}</Label>
                     <Select value={form.deposit_status} onValueChange={(v) => setForm(prev => ({ ...prev, deposit_status: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="unpaid">Unpaid</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="unpaid">{b.paymentStatus.unpaid}</SelectItem>
+                        <SelectItem value="paid">{b.paymentStatus.paid}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -633,7 +633,7 @@ export default function ViewBookingDialog({
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Booking Status</Label>
+                  <Label className="text-sm">{b.financials.bookingStatus}</Label>
                   <Select value={form.payment_status} onValueChange={(v) => {
                     const total = Number(form.total_price) || 0;
                     const dep = Number(form.deposit) || 0;

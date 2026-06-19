@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,20 +43,13 @@ export default function BookingRequests() {
   });
 
   // Realtime sync for booking requests
-  useEffect(() => {
-    if (!tenantId) return;
-    const channel = supabase
-      .channel(`booking-requests-rt-${tenantId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "booking_requests", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["booking-requests", tenantId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [tenantId, qc]);
+  useRealtimeInvalidate({
+    channel: `booking-requests-rt-${tenantId}`,
+    table: "booking_requests",
+    filter: `tenant_id=eq.${tenantId}`,
+    queryKey: ["booking-requests", tenantId],
+    enabled: !!tenantId,
+  });
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: BookingRequestStatus }) => {

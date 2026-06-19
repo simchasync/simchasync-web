@@ -4,6 +4,7 @@ import { CardListSkeleton, TableSkeleton } from "@/components/ui/page-skeletons"
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -97,18 +98,13 @@ export default function Clients() {
   });
 
   // Realtime sync for clients
-  useEffect(() => {
-    if (!tenantId) return;
-    const channel = supabase
-      .channel(`clients-realtime-${tenantId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "clients", filter: `tenant_id=eq.${tenantId}` },
-        () => { qc.invalidateQueries({ queryKey: ["clients", tenantId] }); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [tenantId, qc]);
+  useRealtimeInvalidate({
+    channel: `clients-realtime-${tenantId}`,
+    table: "clients",
+    filter: `tenant_id=eq.${tenantId}`,
+    queryKey: ["clients", tenantId],
+    enabled: !!tenantId,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof form) => {

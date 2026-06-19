@@ -13,6 +13,7 @@ import { Plus, Trash2, Users, UserPlus, Check, X, Clock, Zap, ExternalLink } fro
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useAuth } from "@/contexts/AuthContext";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
@@ -74,20 +75,12 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
   });
 
   // Realtime subscription for live status updates
-  useEffect(() => {
-    const channel = supabase
-      .channel(`event-colleagues-${eventId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "event_colleagues", filter: `event_id=eq.${eventId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["event-colleagues", eventId] });
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [eventId, qc]);
+  useRealtimeInvalidate({
+    channel: `event-colleagues-${eventId}`,
+    table: "event_colleagues",
+    filter: `event_id=eq.${eventId}`,
+    queryKey: ["event-colleagues", eventId],
+  });
 
   const { data: savedColleagues = [] } = useQuery({
     queryKey: ["colleagues", tenantId],

@@ -177,6 +177,13 @@ export const en = {
         songTitle: "Song title",
         artist: "Artist",
       },
+      financials: {
+        travelFeeTreat: "Travel Fee — How to treat it?",
+        travelChargeCustomer: "Charge to customer (adds invoice line)",
+        travelExpense: "My expense (deducted from profit)",
+        depositStatus: "Deposit Status",
+        bookingStatus: "Booking Status",
+      },
       expenses: {
         title: "Expenses & Profit",
         revenue: "Revenue",
