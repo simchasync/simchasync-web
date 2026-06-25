@@ -1,5 +1,3 @@
-/// <reference path="./deno-runtime.d.ts" />
-
 // Shared helpers for the Google Calendar one-way push integration.
 // No Supabase import here — pure Google API + state-signing utilities.
 
