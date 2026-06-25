@@ -1,4 +1,3 @@
-import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
@@ -42,8 +41,13 @@ export default function BrandLogo({
       {showIcon && <BrandIcon className={cn(s.icon, iconClassName)} />}
       {showWordmark && (
         <div className={cn("font-display font-semibold leading-none tracking-tight", s.wordmark, wordmarkClassName)}>
-          <span style={{ color: BRAND.simcha }}>Simcha</span>
-          <span style={{ color: BRAND.sync }}>Sync</span>
+          {/* Every BrandLogo placement sits on a background that tracks the light/dark
+              theme (bg-card, bg-gradient-navy, bg-gradient-sidebar all flip with it), so
+              dark: variants here always match the real rendered background. Both brand
+              colors fail WCAG AA contrast against the *other* mode's background if not
+              swapped — navy is unreadable on dark surfaces, gold fails on light ones. */}
+          <span className="text-[#112A4D] dark:text-white">Simcha</span>
+          <span className="text-[#8A6A24] dark:text-[#C7A155]">Sync</span>
         </div>
       )}
     </div>

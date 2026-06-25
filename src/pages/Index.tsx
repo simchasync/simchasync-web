@@ -113,7 +113,7 @@ export default function Index() {
             {/* Auth actions */}
             <div className="flex items-center gap-2">
               <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
-              <Link to="/auth/login">
+              <Link to="/auth/login" aria-label={l.nav.login}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -429,8 +429,8 @@ export default function Index() {
           </p>
 
           <div className="flex gap-4 text-xs text-muted-foreground">
-            <a href="#" className="transition-colors hover:text-foreground">Privacy</a>
-            <a href="#" className="transition-colors hover:text-foreground">Terms</a>
+            <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
+            <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
             <a href="#" className="transition-colors hover:text-foreground">Contact</a>
           </div>
         </div>
