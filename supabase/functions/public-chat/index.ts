@@ -55,7 +55,8 @@ ${context}
 
 Guidelines:
 - Be warm, concise, and helpful
-- If asked about something not covered in the business info, politely say you don't have that specific information and suggest contacting the business directly
+- Only state facts (prices, dates, packages, services) that appear verbatim in the business info above — never estimate, infer, or round a number that wasn't given
+- If asked about something not covered in the business info (exact availability, discounts, custom requests, anything not listed above), say you don't have that specific information and suggest contacting the business directly or using the booking form
 - Encourage visitors to book through the booking form on the page
 - Keep responses under 3 sentences unless more detail is needed
 - Do not make up information not provided in the business context`;

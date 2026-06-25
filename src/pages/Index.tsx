@@ -7,12 +7,13 @@ import { useRef } from "react";
 import BlurText from "@/components/landing/BlurText";
 import {
   Calendar, Users, FileText, CreditCard, Share2, Globe,
-  Check, Star, ArrowRight, Music, Sparkles, ChevronRight,
+  Check, Star, ArrowRight, Sparkles, ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import BackgroundVideo from "@/components/landing/BackgroundVideo";
+import BrandLogo from "@/components/BrandLogo";
 
 // ─── Animation helpers ────────────────────────────────────────────────────────
 
@@ -94,15 +95,7 @@ export default function Index() {
         {/* ── Navigation ─────────────────────────────────────────────────────── */}
         <header className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between gap-4">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 transition-colors group-hover:bg-primary/30 shadow-lg shadow-primary/10">
-                <Music className="h-4 w-4 text-primary" />
-              </div>
-              <span className="font-display text-[17px] font-semibold tracking-tight text-white/90">
-                SimchaSync
-              </span>
-            </Link>
+            {/* Logo - removed per user request */}
 
             {/* Desktop nav */}
             <nav className="hidden items-center gap-1 md:flex">
@@ -427,11 +420,8 @@ export default function Index() {
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="border-t border-border/60 bg-background py-10">
         <div className="container flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <Music className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <span className="font-display text-sm font-semibold">SimchaSync</span>
+          <Link to="/" className="transition-opacity hover:opacity-90">
+            <BrandLogo size="sm" showIcon={false} wordmarkClassName="text-sm font-semibold" />
           </Link>
 
           <p className="text-xs text-muted-foreground">

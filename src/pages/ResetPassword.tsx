@@ -1,3 +1,4 @@
+import { Loader2, Eye, EyeOff, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -87,9 +88,8 @@ export default function ResetPassword() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-navy p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <Music className="h-8 w-8 text-primary" />
-          <span className="font-display text-2xl font-bold text-primary">SimchaSync</span>
+        <div className="mb-8 flex justify-center">
+          <BrandLogo size="lg" />
         </div>
         <Card className="border-secondary/20 bg-secondary/40 backdrop-blur-sm">
           <CardHeader className="text-center">

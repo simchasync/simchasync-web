@@ -26,9 +26,8 @@ export default function NotFound() {
 
       <header className="relative z-10 border-b border-secondary/30 bg-navy/60 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
-            <Music className="h-7 w-7 text-primary" />
-            <span className="font-display text-xl font-bold text-primary">SimchaSync</span>
+          <Link to="/" className="transition-opacity hover:opacity-90">
+            <BrandLogo size="md" />
           </Link>
         </div>
       </header>

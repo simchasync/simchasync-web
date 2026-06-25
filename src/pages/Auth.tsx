@@ -1,12 +1,13 @@
+import { MailCheck, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, Send } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/lib/supabase";
-import { Music, ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, Send, MailCheck } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -291,17 +292,6 @@ export default function Auth() {
         <ThemeToggle variant="icon" />
       </div>
 
-      {/* Logo */}
-      <Link
-        to="/"
-        className="mb-8 flex items-center gap-2.5 transition-opacity hover:opacity-80"
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <Music className="h-4 w-4 text-primary" />
-        </div>
-        <span className="font-display text-lg font-semibold tracking-tight">SimchaSync</span>
-      </Link>
-
       {/* Card */}
       <Card className="w-full max-w-sm border-border/60 shadow-sm">
         <CardContent className="p-7">
@@ -345,6 +335,13 @@ export default function Auth() {
             </div>
           ) : (
             <>
+              {/* Logo for login/signup forms */}
+              {mode !== "reset" && (
+                <div className="mb-6 flex justify-center">
+                  <BrandLogo size="sm" />
+                </div>
+              )}
+
               {/* Mode tabs (login / signup only) */}
               {mode !== "reset" && (
                 <ModeTabs mode={mode} onLogin={goLogin} onSignup={goSignup} />
