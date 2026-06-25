@@ -19,6 +19,7 @@ import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import BrandLogo from "@/components/BrandLogo";
 
 const allNavItems = [
   { key: "dashboard", path: "/app", icon: LayoutDashboard, roles: ["owner", "social_media_manager", "booking_manager"] },

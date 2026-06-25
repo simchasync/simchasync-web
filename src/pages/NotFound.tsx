@@ -5,6 +5,7 @@ import { Home, LayoutDashboard, Music, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function NotFound() {
   const location = useLocation();

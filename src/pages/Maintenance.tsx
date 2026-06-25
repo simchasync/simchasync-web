@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { GradientBackground } from "@/components/ui/gradient-background";
 import { APP_KILL_SWITCH_MESSAGE } from "@/lib/appKillSwitch";
 import { Music, ShieldAlert } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Maintenance() {
   return (
