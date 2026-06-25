@@ -377,9 +377,9 @@ export default function Finance() {
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
-              <Label className="text-xs flex items-center gap-1.5"><CalendarIcon className="h-3 w-3 text-muted-foreground" /> Period</Label>
+              <Label htmlFor="finance-period" className="text-xs flex items-center gap-1.5"><CalendarIcon className="h-3 w-3 text-muted-foreground" /> Period</Label>
               <Select value={datePreset} onValueChange={(v) => setDatePreset(v as DatePreset)}>
-                <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
+                <SelectTrigger id="finance-period" className="w-[160px] h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="this_month">This Month</SelectItem>
                   <SelectItem value="last_month">Last Month</SelectItem>
@@ -392,12 +392,12 @@ export default function Finance() {
             {datePreset === "custom" && (
               <>
                 <div className="space-y-1">
-                  <Label className="text-xs">From</Label>
-                  <Input type="date" className="h-9 w-[150px]" value={customFrom} onChange={e => setCustomFrom(e.target.value)} />
+                  <Label htmlFor="finance-from" className="text-xs">From</Label>
+                  <Input id="finance-from" type="date" className="h-9 w-[150px]" value={customFrom} onChange={e => setCustomFrom(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">To</Label>
-                  <Input type="date" className="h-9 w-[150px]" value={customTo} onChange={e => setCustomTo(e.target.value)} />
+                  <Label htmlFor="finance-to" className="text-xs">To</Label>
+                  <Input id="finance-to" type="date" className="h-9 w-[150px]" value={customTo} onChange={e => setCustomTo(e.target.value)} />
                 </div>
               </>
             )}
@@ -727,18 +727,18 @@ export default function Finance() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label>Title *</Label>
-              <Input value={expenseForm.title} onChange={e => setExpenseForm({ ...expenseForm, title: e.target.value })} />
+              <Label htmlFor="expense-title">Title *</Label>
+              <Input id="expense-title" value={expenseForm.title} onChange={e => setExpenseForm({ ...expenseForm, title: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Amount ($) *</Label>
-                <Input type="number" min="0" step="0.01" value={expenseForm.amount} onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
+                <Label htmlFor="expense-amount">Amount ($) *</Label>
+                <Input id="expense-amount" type="number" min="0" step="0.01" value={expenseForm.amount} onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <Label>Category</Label>
+                <Label htmlFor="expense-category">Category</Label>
                 <Select value={expenseForm.category} onValueChange={v => setExpenseForm({ ...expenseForm, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="expense-category"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {EXPENSE_CATEGORIES.map(c => (
                       <SelectItem key={c} value={c}><span className="capitalize">{c}</span></SelectItem>
@@ -748,12 +748,12 @@ export default function Finance() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label>Date *</Label>
-              <Input type="date" value={expenseForm.expense_date} onChange={e => setExpenseForm({ ...expenseForm, expense_date: e.target.value })} />
+              <Label htmlFor="expense-date">Date *</Label>
+              <Input id="expense-date" type="date" value={expenseForm.expense_date} onChange={e => setExpenseForm({ ...expenseForm, expense_date: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label>Notes</Label>
-              <Textarea value={expenseForm.notes} onChange={e => setExpenseForm({ ...expenseForm, notes: e.target.value })} rows={2} />
+              <Label htmlFor="expense-notes">Notes</Label>
+              <Textarea id="expense-notes" value={expenseForm.notes} onChange={e => setExpenseForm({ ...expenseForm, notes: e.target.value })} rows={2} />
             </div>
           </div>
           <DialogFooter>
