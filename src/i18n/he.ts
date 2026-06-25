@@ -180,7 +180,6 @@ export const he = {
       linkCopied: "קישור תשלום הועתק!",
       noStripe: "חבר חשבון Stripe בהגדרות תחילה",
       generatingLink: "מייצר קישור...",
-      preview: "תצוגה מקדימה",
       send: "שלח",
       recordPayment: "רשום תשלום",
       printPdf: "הדפס / שמור PDF",

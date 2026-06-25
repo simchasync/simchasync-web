@@ -257,7 +257,6 @@ export const en = {
       linkCopied: "Payment link copied!",
       noStripe: "Connect Stripe in Settings first",
       generatingLink: "Generating link...",
-      preview: "Preview",
       send: "Send",
       recordPayment: "Record Payment",
       printPdf: "Print / Save PDF",
