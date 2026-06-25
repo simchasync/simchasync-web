@@ -155,8 +155,14 @@ export default function Auth() {
     []
   );
 
-  const goLogin = () => navigate("/auth/login");
-  const goSignup = () => navigate("/auth/register");
+  const goLogin = () => {
+    navigate("/auth/login");
+    setMode("login");
+  };
+  const goSignup = () => {
+    navigate("/auth/register");
+    setMode("signup");
+  };
   const goReset = () => setMode("reset");
 
   // ── Resend confirmation ────────────────────────────────────────────────────
