@@ -620,8 +620,9 @@ export default function Team() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>{t.auth.email}</Label>
+              <Label htmlFor="invite-email">{t.auth.email}</Label>
               <Input
+                id="invite-email"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
@@ -717,30 +718,30 @@ export default function Team() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Full Name *</Label>
-              <Input value={colleagueForm.full_name} onChange={(e) => setColleagueForm({ ...colleagueForm, full_name: e.target.value })} />
+              <Label htmlFor="colleague-name">Full Name *</Label>
+              <Input id="colleague-name" value={colleagueForm.full_name} onChange={(e) => setColleagueForm({ ...colleagueForm, full_name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Role / Instrument</Label>
-                <Input value={colleagueForm.role_instrument} onChange={(e) => setColleagueForm({ ...colleagueForm, role_instrument: e.target.value })} placeholder="e.g. Pianist, DJ" />
+                <Label htmlFor="colleague-role">Role / Instrument</Label>
+                <Input id="colleague-role" value={colleagueForm.role_instrument} onChange={(e) => setColleagueForm({ ...colleagueForm, role_instrument: e.target.value })} placeholder="e.g. Pianist, DJ" />
               </div>
               <div className="space-y-1.5">
-                <Label>Default Price ($)</Label>
-                <Input type="number" min="0" value={colleagueForm.default_price} onChange={(e) => setColleagueForm({ ...colleagueForm, default_price: e.target.value })} />
+                <Label htmlFor="colleague-price">Default Price ($)</Label>
+                <Input id="colleague-price" type="number" min="0" value={colleagueForm.default_price} onChange={(e) => setColleagueForm({ ...colleagueForm, default_price: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Phone</Label>
-                <Input value={colleagueForm.phone} onChange={(e) => setColleagueForm({ ...colleagueForm, phone: e.target.value })} />
+                <Label htmlFor="colleague-phone">Phone</Label>
+                <Input id="colleague-phone" value={colleagueForm.phone} onChange={(e) => setColleagueForm({ ...colleagueForm, phone: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input value={colleagueForm.email} onChange={(e) => setColleagueForm({ ...colleagueForm, email: e.target.value })} />
+                <Label htmlFor="colleague-email">Email</Label>
+                <Input id="colleague-email" value={colleagueForm.email} onChange={(e) => setColleagueForm({ ...colleagueForm, email: e.target.value })} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Notes</Label>
-              <Input value={colleagueForm.notes} onChange={(e) => setColleagueForm({ ...colleagueForm, notes: e.target.value })} />
+              <Label htmlFor="colleague-notes">Notes</Label>
+              <Input id="colleague-notes" value={colleagueForm.notes} onChange={(e) => setColleagueForm({ ...colleagueForm, notes: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
