@@ -180,7 +180,6 @@ export const yi = {
       linkCopied: "באַצאָלונג לינק קאָפּירט!",
       noStripe: "פֿאַרבינדט Stripe אין אײַנשטעלונגען",
       generatingLink: "מאַכט לינק...",
-      preview: "פֿאָראויסבליק",
       send: "שיקן",
       recordPayment: "פֿאַרשרײַבן באַצאָלונג",
       printPdf: "דרוקן / אויפֿהיטן PDF",
