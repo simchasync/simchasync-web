@@ -33,7 +33,7 @@ const ACTION_ROUTING: Record<string, string> = {
   list_audit_logs: "admin-audit",
 };
 
-function getFunctionName(action: string): string {
+export function getFunctionName(action: string): string {
   return ACTION_ROUTING[action] || "admin-manage-tenant";
 }
 
