@@ -385,27 +385,27 @@ export default function Agents() {
           </DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
             <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Label htmlFor="agent-name">Name *</Label>
+              <Input id="agent-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="agent-email">Email</Label>
+                <Input id="agent-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Label htmlFor="agent-phone">Phone</Label>
+                <Input id="agent-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Default Commission Rate (%)</Label>
-              <Input type="number" min="0" max="100" value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: e.target.value })} />
+              <Label htmlFor="agent-commission-rate">Default Commission Rate (%)</Label>
+              <Input id="agent-commission-rate" type="number" min="0" max="100" value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: e.target.value })} />
               <p className="text-xs text-muted-foreground">This is pre-filled when assigning to bookings. Can be overridden per booking.</p>
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <Label htmlFor="agent-notes">Notes</Label>
+              <Textarea id="agent-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
