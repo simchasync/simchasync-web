@@ -379,12 +379,12 @@ export default function SettingsPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>{t.auth.name}</Label>
-              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Label htmlFor="settings-name">{t.auth.name}</Label>
+              <Input id="settings-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div>
-              <Label>{t.app.clients.phone}</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Label htmlFor="settings-phone">{t.app.clients.phone}</Label>
+              <Input id="settings-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
           <Button
@@ -408,8 +408,8 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>{s.tenant}</Label>
-              <Input value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} />
+              <Label htmlFor="settings-workspace-name">{s.tenant}</Label>
+              <Input id="settings-workspace-name" value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} />
             </div>
             <Button
               onClick={() => workspaceMutation.mutate()}
@@ -769,8 +769,9 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Payment Instructions</Label>
+              <Label htmlFor="settings-payment-instructions">Payment Instructions</Label>
               <Textarea
+                id="settings-payment-instructions"
                 value={paymentInstructions}
                 onChange={(e) => setPaymentInstructions(e.target.value)}
                 placeholder={"e.g. Pay by check to: John Smith, 123 Main St...\nZelle: john@email.com\nVenmo: @john"}
