@@ -25,6 +25,16 @@ if (typeof window.PointerEvent === "undefined") {
   window.PointerEvent = PointerEventPolyfill;
 }
 
+// jsdom has no ResizeObserver; recharts' ResponsiveContainer needs one to
+// measure its container and render its chart.
+if (typeof window.ResizeObserver === "undefined") {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
