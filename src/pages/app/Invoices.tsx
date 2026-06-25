@@ -473,8 +473,8 @@ export default function Invoices() {
           </DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
             <div className="space-y-2">
-              <Label>{inv.amount} *</Label>
-              <Input type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              <Label htmlFor="invoice-amount">{inv.amount} *</Label>
+              <Input id="invoice-amount" type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>{t.app.bookings.client}</Label>

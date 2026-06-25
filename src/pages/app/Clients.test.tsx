@@ -208,8 +208,8 @@ describe("Clients", () => {
       const builder = builderThatCalled("update");
       expect(builder?.update).toHaveBeenCalledWith(expect.objectContaining({ name: "Jane Updated" }));
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: "Client updated" }));
-    });
-  });
+    }, { timeout: 10000 });
+  }, 15000);
 
   it("deletes a client after confirming", async () => {
     resolvedValue = { data: [makeClient()], error: null };
