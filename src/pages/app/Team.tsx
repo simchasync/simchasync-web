@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TeamGridSkeleton } from "@/components/ui/page-skeletons";
 import { useLanguage } from "@/contexts/LanguageContext";
