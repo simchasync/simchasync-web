@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { GradientBackground } from "@/components/ui/gradient-background";
 import { APP_KILL_SWITCH_MESSAGE } from "@/lib/appKillSwitch";
 import { Music, ShieldAlert } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Maintenance() {
   return (
@@ -12,10 +13,7 @@ export default function Maintenance() {
 
       <header className="relative z-10 border-b border-secondary/30 bg-navy/60 backdrop-blur-xl">
         <div className="container flex h-16 items-center gap-2">
-          <div className="flex items-center gap-2 transition-opacity hover:opacity-90">
-            <Music className="h-7 w-7 text-primary" />
-            <span className="font-display text-xl font-bold text-primary">SimchaSync</span>
-          </div>
+          <BrandLogo size="md" />
         </div>
       </header>
 

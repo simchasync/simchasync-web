@@ -17,17 +17,17 @@ interface ClientResolution {
   wasCreated: boolean;
 }
 
-const normalizeText = (value?: string | null) => {
+export const normalizeText = (value?: string | null) => {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
 };
 
-const normalizeEmail = (value?: string | null) => {
+export const normalizeEmail = (value?: string | null) => {
   const trimmed = normalizeText(value);
   return trimmed ? trimmed.toLowerCase() : null;
 };
 
-const normalizePhone = (value?: string | null) => {
+export const normalizePhone = (value?: string | null) => {
   const digits = (value ?? "").replace(/\D/g, "");
   return digits || null;
 };

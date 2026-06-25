@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { Music, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function PhoneNumber() {
   const navigate = useNavigate();
@@ -81,11 +82,8 @@ export default function PhoneNumber() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Music className="h-5 w-5 text-primary" />
-          </div>
-          <span className="font-display text-2xl font-semibold text-foreground">SimchaSync</span>
+        <div className="mb-8 flex justify-center">
+          <BrandLogo size="lg" />
         </div>
 
         <Card className="border-border/60 shadow-sm">

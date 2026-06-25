@@ -81,6 +81,8 @@ export default function PublicBooking() {
     if (landingPage?.tagline) parts.push(`Tagline: ${landingPage.tagline}`);
     if (landingPage?.about) parts.push(`About:\n${landingPage.about}`);
     if (landingPage?.services_description) parts.push(`Services:\n${landingPage.services_description}`);
+    const eventTypeLabels = EVENT_TYPES.map((et) => (t.app.bookings.types as any)[et]).filter(Boolean);
+    if (eventTypeLabels.length) parts.push(`Event types handled: ${eventTypeLabels.join(", ")}`);
     if (packages?.length) {
       const lines = packages.map((pkg: any) => {
         const price = pkg.price != null ? ` — $${Number(pkg.price).toLocaleString()}` : "";
@@ -90,7 +92,7 @@ export default function PublicBooking() {
       parts.push(`Packages:\n${lines.join("\n")}`);
     }
     return parts.join("\n\n");
-  }, [landingPage, packages]);
+  }, [landingPage, packages, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

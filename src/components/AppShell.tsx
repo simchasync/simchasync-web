@@ -7,7 +7,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { TrialBanner } from "@/components/TrialBanner";
 import {
   LayoutDashboard, Calendar, Users, FileText, UsersRound, Settings,
-  LogOut, Music, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
+  LogOut, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
   ChevronLeft
 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
@@ -19,6 +19,8 @@ import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import BrandLogo from "@/components/BrandLogo";
+import MuiThemeBridge from "@/theme/MuiThemeBridge";
 
 const allNavItems = [
   { key: "dashboard", path: "/app", icon: LayoutDashboard, roles: ["owner", "social_media_manager", "booking_manager"] },
@@ -106,6 +108,7 @@ export default function AppShell() {
   if (!user) return null;
 
   return (
+    <MuiThemeBridge>
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <aside
@@ -119,12 +122,7 @@ export default function AppShell() {
           "flex h-16 items-center border-b border-sidebar-border transition-all duration-300",
           collapsed ? "justify-center px-2" : "gap-3 px-5"
         )}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shrink-0 shadow-vibrant">
-            <Music className="h-5 w-5 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <span className="font-display text-base font-bold text-primary truncate">SimchaSync</span>
-          )}
+          <BrandLogo showWordmark={!collapsed} size="sm" wordmarkClassName="truncate" />
         </div>
 
         {/* Workspace Switcher */}
@@ -226,10 +224,7 @@ export default function AppShell() {
           <aside className="absolute left-0 top-0 h-full w-72 bg-gradient-sidebar shadow-2xl animate-slide-in-left">
             <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-gold shrink-0">
-                  <Music className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-display text-base font-bold text-primary">SimchaSync</span>
+                <BrandLogo size="sm" />
               </div>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="text-sidebar-foreground hover:bg-sidebar-accent">
                 <X className="h-5 w-5" />
@@ -296,10 +291,7 @@ export default function AppShell() {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary shadow-gold shrink-0">
-              <Music className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-display text-base font-bold text-primary">SimchaSync</span>
+            <BrandLogo size="sm" />
           </div>
           <div className="ml-auto flex items-center gap-1">
             <div className="md:hidden">
@@ -345,5 +337,6 @@ export default function AppShell() {
         <PWAInstallPrompt />
       </div>
     </div>
+    </MuiThemeBridge>
   );
 }
