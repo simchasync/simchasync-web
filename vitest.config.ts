@@ -9,6 +9,15 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // @mui/material's internal Transition.mjs does a directory import of
+    // react-transition-group (an ESM-incompatible CJS package) -- forcing it
+    // through Vite's CJS interop via deps.inline avoids the raw Node ESM
+    // resolver choking on the directory import.
+    server: {
+      deps: {
+        inline: ["@mui/material", "react-transition-group"],
+      },
+    },
     coverage: {
       provider: "v8",
       all: true,
