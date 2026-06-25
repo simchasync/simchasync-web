@@ -163,24 +163,29 @@ Deno.serve(async (req) => {
     const sig = req.headers.get("stripe-signature");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
+    // Fail closed: without a configured secret there is no way to verify
+    // the request actually came from Stripe, and this endpoint must stay
+    // public (verify_jwt = false) for Stripe to call it at all.
+    if (!webhookSecret) {
+      console.error("[stripe-webhook] STRIPE_WEBHOOK_SECRET is not configured — rejecting unverifiable event");
+      return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!sig) {
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let event: Stripe.Event;
-    if (sig && webhookSecret) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-      } catch (err) {
-        console.error("[stripe-webhook] Signature verification failed:", err);
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      try {
-        event = JSON.parse(body) as Stripe.Event;
-      } catch {
-        return new Response(JSON.stringify({ error: "Invalid payload" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
+    } catch (err) {
+      console.error("[stripe-webhook] Signature verification failed:", err);
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     log("Event type:", { type: event.type });
