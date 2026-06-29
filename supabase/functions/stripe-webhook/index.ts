@@ -162,6 +162,10 @@ Deno.serve(async (req) => {
     const body = await req.text();
     const sig = req.headers.get("stripe-signature");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    // Stripe issues a separate signing secret for the "Events on Connected
+    // accounts" destination (used by customer invoice-payment checkouts on
+    // tenants' connected accounts) even when it points at this same URL.
+    const connectWebhookSecret = Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET");
 
     // Fail closed: without a configured secret there is no way to verify
     // the request actually came from Stripe, and this endpoint must stay
@@ -181,11 +185,21 @@ Deno.serve(async (req) => {
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-    } catch (err) {
-      console.error("[stripe-webhook] Signature verification failed:", err);
-      return new Response(JSON.stringify({ error: "Invalid signature" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    } catch (primaryErr) {
+      if (!connectWebhookSecret) {
+        console.error("[stripe-webhook] Signature verification failed:", primaryErr);
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      try {
+        event = await stripe.webhooks.constructEventAsync(body, sig, connectWebhookSecret);
+      } catch (connectErr) {
+        console.error("[stripe-webhook] Signature verification failed against both secrets:", connectErr);
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     log("Event type:", { type: event.type });
