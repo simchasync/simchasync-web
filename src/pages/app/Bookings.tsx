@@ -135,6 +135,16 @@ export default function Bookings() {
     enabled: !!tenantId && role !== "member",
   });
 
+  const { data: tenantSettings } = useQuery({
+    queryKey: ["tenant", tenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("tenants").select("auto_generate_invoices").eq("id", tenantId!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tenantId,
+  });
+
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoices", tenantId],
     queryFn: async () => {
@@ -218,8 +228,9 @@ export default function Bookings() {
       const depositStatus = (data as any).deposit_status || "unpaid";
       const paymentStatus = data.payment_status;
 
-      // Auto-generate invoices for new bookings
-      if (isNew && totalPrice > 0) {
+      // Auto-generate invoices for new bookings (unless the workspace has opted out)
+      const autoGenerate = tenantSettings?.auto_generate_invoices ?? true;
+      if (isNew && totalPrice > 0 && autoGenerate) {
         const invoicesToCreate: any[] = [];
         const clientName = clients.find((c: any) => c.id === data.client_id)?.name || "Client";
         const eventLabel = `${data.event_type} — ${format(new Date(data.event_date), "MMM d, yyyy")}`;

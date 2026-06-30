@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { User, Building2, Camera, CreditCard, CalendarDays, Copy, ExternalLink, Check, RefreshCw, Link2, FileText, Crown, Info, ChevronDown, Loader2, XCircle, Paintbrush, Trash2, AlertTriangle, Share2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptionDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -58,6 +59,7 @@ export default function SettingsPage() {
   // Workspace state
   const [workspaceName, setWorkspaceName] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [autoGenerateInvoices, setAutoGenerateInvoices] = useState(true);
 
   // Stripe Connect state
   const [connectingStripe, setConnectingStripe] = useState(false);
@@ -183,6 +185,7 @@ export default function SettingsPage() {
     if (tenant) {
       setWorkspaceName(tenant.name);
       setPaymentInstructions((tenant as any).payment_instructions || "");
+      setAutoGenerateInvoices((tenant as any).auto_generate_invoices ?? true);
     }
   }, [tenant]);
 
@@ -226,6 +229,23 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       toast({ title: t.common.save + " ✓" });
+      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const autoGenerateMutation = useMutation({
+    mutationFn: async (value: boolean) => {
+      const { error } = await supabase
+        .from("tenants")
+        .update({ auto_generate_invoices: value } as any)
+        .eq("id", tenantId!);
+      if (error) throw error;
+      return value;
+    },
+    onSuccess: (value) => {
+      setAutoGenerateInvoices(value);
+      toast({ title: value ? "Auto-invoice generation enabled" : "Auto-invoice generation disabled" });
       queryClient.invalidateQueries({ queryKey: ["tenant"] });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -785,6 +805,19 @@ export default function SettingsPage() {
             >
               {paymentInstructionsMutation.isPending ? t.common.loading : t.common.save}
             </Button>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-sm font-medium">Auto-generate invoices on new booking</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  When enabled, saving a new booking with a price automatically creates deposit, balance, and travel-fee invoices.
+                </p>
+              </div>
+              <Switch
+                checked={autoGenerateInvoices}
+                disabled={autoGenerateMutation.isPending}
+                onCheckedChange={(v) => autoGenerateMutation.mutate(v)}
+              />
+            </div>
           </CardContent>
         </Card>
       )}

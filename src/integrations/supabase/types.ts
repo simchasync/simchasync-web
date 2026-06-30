@@ -1187,6 +1187,7 @@ export type Database = {
       tenants: {
         Row: {
           calendar_token: string | null
+          auto_generate_invoices: boolean
           created_at: string
           custom_price_cents: number | null
           id: string
@@ -1210,6 +1211,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_generate_invoices?: boolean
           calendar_token?: string | null
           created_at?: string
           custom_price_cents?: number | null
@@ -1234,6 +1236,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_generate_invoices?: boolean
           calendar_token?: string | null
           created_at?: string
           custom_price_cents?: number | null
