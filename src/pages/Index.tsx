@@ -431,7 +431,7 @@ export default function Index() {
           <div className="flex gap-4 text-xs text-muted-foreground">
             <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
-            <a href="#" className="transition-colors hover:text-foreground">Contact</a>
+            <a href="mailto:simchasync@gmail.com" className="transition-colors hover:text-foreground">Contact</a>
           </div>
         </div>
       </footer>

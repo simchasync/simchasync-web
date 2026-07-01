@@ -205,7 +205,7 @@ export default function Support() {
                   </Select>
                   <Button
                     className="w-full"
-                    disabled={!form.subject || createMutation.isPending}
+                    disabled={!form.subject?.trim() || !form.description?.trim() || createMutation.isPending}
                     onClick={() => createMutation.mutate(form)}
                   >
                     {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -276,7 +276,7 @@ export default function Support() {
                   />
                   <Button
                     className="w-full"
-                    disabled={!featureForm.title || featureMutation.isPending}
+                    disabled={!featureForm.title?.trim() || !featureForm.description?.trim() || featureMutation.isPending}
                     onClick={() => featureMutation.mutate(featureForm)}
                   >
                     {featureMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -370,7 +370,7 @@ export default function Support() {
               />
               <Button
                 size="sm"
-                disabled={!replyText || replyMutation.isPending}
+                disabled={!replyText.trim() || replyMutation.isPending}
                 onClick={() => replyMutation.mutate()}
               >
                 Send

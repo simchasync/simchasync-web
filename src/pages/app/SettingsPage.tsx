@@ -254,9 +254,14 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    const allowed = ["jpg", "jpeg", "png", "gif", "webp"];
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!allowed.includes(ext)) {
+      toast({ title: "Invalid file type", description: "Please upload a JPG, PNG, GIF, or WebP image.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
       const path = `${user.id}/avatar.${ext}`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
       if (upErr) throw upErr;
@@ -306,6 +311,7 @@ export default function SettingsPage() {
       }
       if (data?.url) {
         window.location.href = data.url;
+        // don't reset connectingStripe — page is navigating away
         return;
       }
       toast({ title: "Error", description: "No onboarding URL received. Please try again.", variant: "destructive" });
@@ -360,7 +366,7 @@ export default function SettingsPage() {
       toast({ title: s.bookingLinkCopied });
       setTimeout(() => setBookingCopied(false), 2000);
     } catch {
-      // User cancelled native share or clipboard unavailable.
+      toast({ title: "Could not copy link", description: "Please copy the URL manually from your browser.", variant: "destructive" });
     }
   };
 

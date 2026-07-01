@@ -65,12 +65,16 @@ export default function Agents() {
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof form) => {
+      const name = values.name.trim();
+      if (!name) throw new Error("Agent name is required");
+      const rate = Number(values.commission_rate);
+      if (isNaN(rate) || rate < 0 || rate > 100) throw new Error("Commission rate must be between 0 and 100");
       const payload = {
-        name: values.name,
-        email: values.email || null,
-        phone: values.phone || null,
-        commission_rate: Number(values.commission_rate) || 10,
-        notes: values.notes || null,
+        name,
+        email: values.email.trim() || null,
+        phone: values.phone.trim() || null,
+        commission_rate: rate,
+        notes: values.notes?.trim() || null,
       };
       if (editing) {
         const { error } = await supabase.from("agents").update(payload).eq("id", editing.id);
