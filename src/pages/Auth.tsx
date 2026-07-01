@@ -11,6 +11,8 @@ import BrandLogo from "@/components/BrandLogo";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 
+const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AuthMode = "login" | "signup" | "reset";
@@ -177,7 +179,7 @@ export default function Auth() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: fields.email.trim(),
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: APP_URL },
       });
       if (error) throw error;
       toast({ title: t.auth.confirmEmailTitle, description: t.auth.resendConfirmationSuccess });
@@ -222,7 +224,7 @@ export default function Auth() {
           password: fields.password,
           options: {
             data: { full_name: fields.name.trim(), phone: fields.phone.trim() },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: APP_URL,
           },
         });
         if (error) throw error;
@@ -235,7 +237,7 @@ export default function Auth() {
 
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(fields.email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${APP_URL}/reset-password`,
         });
         if (error) throw error;
         toast({ title: "Check your email", description: "We sent you a password reset link." });
@@ -254,7 +256,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/phone`,
+          redirectTo: `${APP_URL}/auth/phone`,
         },
       });
       if (error) {
