@@ -24,48 +24,16 @@ function BrandIcon({ className }: { className?: string }) {
       aria-label="SimchaSync Logo"
       className={cn("shrink-0", className)}
     >
-      <defs>
-        <linearGradient id="sc-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#1e3f72" />
-          <stop offset="100%" stopColor="#0b1b36" />
-        </linearGradient>
-        <linearGradient id="sc-gold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ead06e" />
-          <stop offset="100%" stopColor="#9c7228" />
-        </linearGradient>
-        <linearGradient id="sc-sheen" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="white" stopOpacity="0.13" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      {/* Background */}
-      <rect width="100" height="100" rx="22" fill="url(#sc-bg)" />
-
-      {/* Top-glass sheen */}
-      <rect width="100" height="50" rx="22" fill="url(#sc-sheen)" />
-
-      {/* Note head — tilted oval */}
-      <ellipse
-        cx="34"
-        cy="70"
-        rx="14.5"
-        ry="9.5"
-        transform="rotate(-20 34 70)"
-        fill="url(#sc-gold)"
-      />
-
-      {/* Stem */}
-      <rect x="46.5" y="20" width="4.5" height="52" rx="2.25" fill="url(#sc-gold)" />
-
-      {/* Flag — elegant single sweep */}
-      <path
-        d="M51 20 C77 27 79 54 58 66"
-        stroke="url(#sc-gold)"
-        strokeWidth="5"
-        fill="none"
-        strokeLinecap="round"
-      />
+      {/* Deep navy background */}
+      <rect width="100" height="100" rx="20" fill="#0D1F3C" />
+      {/* Gold inner border ring — luxury detail */}
+      <rect x="3.5" y="3.5" width="93" height="93" rx="17" fill="none" stroke="#C7A155" strokeWidth="1.5" opacity="0.45" />
+      {/* Notehead — precise oval at 25° */}
+      <ellipse cx="35" cy="69" rx="13" ry="8.5" transform="rotate(-25 35 69)" fill="#C7A155" />
+      {/* Stem — right edge of notehead, perfectly vertical */}
+      <rect x="47" y="26" width="4" height="44" rx="2" fill="#C7A155" />
+      {/* Flag — single elegant S-curve */}
+      <path d="M51 26 C78 31 80 55 57 64" stroke="#C7A155" strokeWidth="4.5" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
