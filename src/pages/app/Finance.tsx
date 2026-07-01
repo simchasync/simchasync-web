@@ -59,7 +59,7 @@ export default function Finance() {
   const qc = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
 
-  const [datePreset, setDatePreset] = useState<DatePreset>("this_month");
+  const [datePreset, setDatePreset] = useState<DatePreset>("this_year");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [expenseDialog, setExpenseDialog] = useState(false);
@@ -77,7 +77,7 @@ export default function Finance() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id, event_date, event_type, total_price, travel_fee, travel_fee_type, payment_status, clients(name)")
+        .select("id, event_date, event_type, total_price, deposit, balance_due, travel_fee, travel_fee_type, payment_status, clients(name)")
         .eq("tenant_id", tenantId!);
       if (error) throw error;
       return data;
@@ -204,10 +204,15 @@ export default function Finance() {
   const revenueReceived = paidEvents.reduce((s: number, e: any) =>
     s + getEffectiveTotal(Number(e.total_price) || 0, Number(e.travel_fee) || 0, e.travel_fee_type), 0);
 
-  // Outstanding = unpaid booking totals (incl. travel fees billed to the customer) minus deposits
+  // Outstanding = unpaid booking totals (incl. travel fees billed to the customer) minus deposits/payments made
   const unpaidEvents = filteredEvents.filter((e: any) => e.payment_status !== "paid");
-  const totalOutstanding = unpaidEvents.reduce((s: number, e: any) =>
-    s + computeBalanceDue(Number(e.total_price) || 0, Number(e.deposit) || 0, Number(e.travel_fee) || 0, e.travel_fee_type), 0);
+  const totalOutstanding = unpaidEvents.reduce((s: number, e: any) => {
+    // Use stored balance_due when available (reflects partial payments); fall back to computed value
+    const outstanding = e.balance_due != null
+      ? Number(e.balance_due)
+      : computeBalanceDue(Number(e.total_price) || 0, Number(e.deposit) || 0, Number(e.travel_fee) || 0, e.travel_fee_type);
+    return s + outstanding;
+  }, 0);
 
   // Monthly breakdown for chart
   const monthlyData = useMemo(() => {
