@@ -117,7 +117,7 @@ export default function Index() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="hidden text-white/70 hover:text-primary hover:bg-primary/10 md:inline-flex"
+                  className="text-white/70 hover:text-primary hover:bg-primary/10"
                 >
                   {l.nav.login}
                 </Button>
