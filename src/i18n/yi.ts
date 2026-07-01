@@ -255,6 +255,12 @@ export const yi = {
       confirmDeleteDesc: "דער פּאָסט וועט אויסגעמעקט ווערן. דאָס קען נישט אומגעקערט ווערן.",
       hashtagsHint: "מיט לייכשפּאַצן, למשל #חתונה #dj",
       toneHint: "שטעלט דעם שטימונג פאַר AI כיתוב",
+      postUrl: "פּאָסט לינק",
+      postUrlPlaceholder: "https://www.instagram.com/p/...",
+      openPost: "עפֿן פּאָסט",
+      copyCaption: "קאָפּירן כיתוב",
+      copied: "קאָפּירט אין קלעפּבאָרד",
+      openPlatform: "עפֿן {platform}",
     },
     support: {
       title: "שטיצע",

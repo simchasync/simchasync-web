@@ -1194,6 +1194,7 @@ export type Database = {
           status: string
           scheduled_date: string | null
           posted_at: string | null
+          post_url: string | null
           event_id: string | null
           notes: string | null
           created_at: string
@@ -1208,6 +1209,7 @@ export type Database = {
           status?: string
           scheduled_date?: string | null
           posted_at?: string | null
+          post_url?: string | null
           event_id?: string | null
           notes?: string | null
           created_at?: string
@@ -1222,6 +1224,7 @@ export type Database = {
           status?: string
           scheduled_date?: string | null
           posted_at?: string | null
+          post_url?: string | null
           event_id?: string | null
           notes?: string | null
           created_at?: string

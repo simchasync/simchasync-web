@@ -341,6 +341,12 @@ export const en = {
       confirmDeleteDesc: "This post will be permanently removed. This cannot be undone.",
       hashtagsHint: "Space-separated, e.g. #wedding #dj",
       toneHint: "Sets the mood for AI caption generation",
+      postUrl: "Post URL",
+      postUrlPlaceholder: "https://www.instagram.com/p/...",
+      openPost: "Open Post",
+      copyCaption: "Copy Caption",
+      copied: "Copied to clipboard",
+      openPlatform: "Open {platform}",
     },
     support: {
       title: "Support",

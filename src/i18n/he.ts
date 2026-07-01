@@ -255,6 +255,12 @@ export const he = {
       confirmDeleteDesc: "הפוסט יימחק לצמיתות. לא ניתן לבטל פעולה זו.",
       hashtagsHint: "מופרדים ברווח, לדוגמה #חתונה #dj",
       toneHint: "קובע את האווירה ליצירת כיתוב עם בינה מלאכותית",
+      postUrl: "קישור לפוסט",
+      postUrlPlaceholder: "https://www.instagram.com/p/...",
+      openPost: "פתח פוסט",
+      copyCaption: "העתק כיתוב",
+      copied: "הועתק ללוח",
+      openPlatform: "פתח {platform}",
     },
     support: {
       title: "תמיכה",

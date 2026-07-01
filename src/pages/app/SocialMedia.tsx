@@ -15,7 +15,7 @@ import { Card as MuiCard, CardContent as MuiCardContent, Chip } from "@mui/mater
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Instagram, Facebook, Pencil, Trash2, Sparkles, CheckCircle2, BarChart3, CalendarDays, FileText, Music } from "lucide-react";
+import { Plus, Instagram, Facebook, Pencil, Trash2, Sparkles, CheckCircle2, BarChart3, CalendarDays, FileText, Music, ExternalLink, Copy } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type SocialPost = Tables<"social_posts">;
@@ -23,6 +23,22 @@ type SocialPost = Tables<"social_posts">;
 const PLATFORMS = ["instagram", "facebook", "tiktok", "youtube", "twitter"] as const;
 const STATUSES  = ["draft", "scheduled", "posted"] as const;
 const TONES     = ["warm", "professional", "fun", "elegant"] as const;
+
+const platformComposeUrl: Record<string, string> = {
+  instagram: "https://www.instagram.com/",
+  facebook:  "https://www.facebook.com/",
+  tiktok:    "https://www.tiktok.com/upload",
+  youtube:   "https://studio.youtube.com/",
+  twitter:   "https://x.com/compose/post",
+};
+
+const captionLimit: Record<string, number | null> = {
+  instagram: 2200,
+  tiktok:    2200,
+  twitter:   280,
+  facebook:  null,
+  youtube:   null,
+};
 
 const platformIcon: Record<string, React.ReactNode> = {
   instagram: <Instagram className="h-3.5 w-3.5" />,
@@ -45,6 +61,7 @@ const emptyForm = {
   status:         "draft"    as string,
   scheduled_date: "",
   posted_at:      "",
+  post_url:       "",
   event_id:       "",
   notes:          "",
   tone:           "warm"     as string,
@@ -112,6 +129,7 @@ export default function SocialMedia() {
         status:         values.status,
         scheduled_date: values.scheduled_date || null,
         posted_at:      values.status === "posted" && !values.posted_at ? new Date().toISOString() : values.posted_at || null,
+        post_url:       values.post_url || null,
         event_id:       values.event_id || null,
         notes:          values.notes    || null,
         updated_at:     new Date().toISOString(),
@@ -174,11 +192,23 @@ export default function SocialMedia() {
       status:         post.status,
       scheduled_date: post.scheduled_date ?? "",
       posted_at:      post.posted_at      ? format(new Date(post.posted_at), "yyyy-MM-dd'T'HH:mm") : "",
+      post_url:       (post as any).post_url ?? "",
       event_id:       post.event_id       ?? "",
       notes:          post.notes          ?? "",
       tone:           "warm",
     });
     setDialogOpen(true);
+  };
+
+  const copyCaption = async (post: SocialPost) => {
+    const text = [post.caption, post.hashtags].filter(Boolean).join("\n\n");
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: s.copied });
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
+    }
   };
 
   const closeDialog = () => {
@@ -380,32 +410,74 @@ export default function SocialMedia() {
                     </div>
                   </div>
 
-                  {canWrite && (
-                    <div className="flex gap-2 border-t border-border/50 px-4 py-2.5">
-                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openEdit(post)}>
-                        <Pencil className="h-3.5 w-3.5" /> Edit
-                      </Button>
-                      {post.status !== "posted" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1 text-emerald border-emerald/30 hover:bg-emerald/5"
-                          onClick={() => markPostedMutation.mutate(post.id)}
-                          disabled={markPostedMutation.isPending}
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" /> {s.markPosted}
-                        </Button>
-                      )}
+                  <div className="flex flex-wrap gap-2 border-t border-border/50 px-4 py-2.5">
+                    {/* Copy caption — always shown if there's content */}
+                    {(post.caption || post.hashtags) && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="ml-auto h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleteId(post.id)}
+                        className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => copyCaption(post)}
+                        title={s.copyCaption}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Copy className="h-3.5 w-3.5" /> {s.copyCaption}
                       </Button>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Open posted URL — only when post_url is saved */}
+                    {(post as any).post_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs gap-1 text-primary hover:text-primary/80"
+                        asChild
+                      >
+                        <a href={(post as any).post_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5" /> {s.openPost}
+                        </a>
+                      </Button>
+                    )}
+
+                    {/* Open platform compose page */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                      asChild
+                    >
+                      <a href={platformComposeUrl[post.platform] ?? "https://instagram.com"} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {s.openPlatform.replace("{platform}", (s.platforms as any)[post.platform] ?? post.platform)}
+                      </a>
+                    </Button>
+
+                    {canWrite && (
+                      <>
+                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openEdit(post)}>
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </Button>
+                        {post.status !== "posted" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1 text-emerald border-emerald/30 hover:bg-emerald/5"
+                            onClick={() => markPostedMutation.mutate(post.id)}
+                            disabled={markPostedMutation.isPending}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {s.markPosted}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteId(post.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </MuiCardContent>
               </MuiCard>
             );
@@ -511,6 +583,17 @@ export default function SocialMedia() {
                   placeholder="Write your post caption here…"
                   className="resize-none"
                 />
+                {(() => {
+                  const limit = captionLimit[form.platform] ?? null;
+                  const len   = form.caption.length;
+                  if (limit === null) return null;
+                  const over = len > limit;
+                  return (
+                    <p className={`text-[11px] text-right ${over ? "text-destructive font-semibold" : "text-muted-foreground/80"}`}>
+                      {len.toLocaleString()} / {limit.toLocaleString()}
+                    </p>
+                  );
+                })()}
               </div>
 
               {/* Hashtags */}
@@ -532,6 +615,19 @@ export default function SocialMedia() {
                     type="date"
                     value={form.scheduled_date}
                     onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {/* Post URL — shown when status is posted */}
+              {form.status === "posted" && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm">{s.postUrl}</Label>
+                  <Input
+                    type="url"
+                    value={form.post_url}
+                    onChange={(e) => setForm({ ...form, post_url: e.target.value })}
+                    placeholder={s.postUrlPlaceholder}
                   />
                 </div>
               )}
