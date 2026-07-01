@@ -24,10 +24,48 @@ function BrandIcon({ className }: { className?: string }) {
       aria-label="SimchaSync Logo"
       className={cn("shrink-0", className)}
     >
-      <rect width="100" height="100" rx="22" fill="#112A4D" />
-      <ellipse cx="38" cy="70" rx="14" ry="10" transform="rotate(-18 38 70)" fill="#C7A155" />
-      <rect x="50" y="28" width="5" height="44" rx="2.5" fill="#C7A155" />
-      <path d="M55 28 C74 33 76 54 60 62" stroke="#C7A155" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id="sc-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1e3f72" />
+          <stop offset="100%" stopColor="#0b1b36" />
+        </linearGradient>
+        <linearGradient id="sc-gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ead06e" />
+          <stop offset="100%" stopColor="#9c7228" />
+        </linearGradient>
+        <linearGradient id="sc-sheen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="white" stopOpacity="0.13" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Background */}
+      <rect width="100" height="100" rx="22" fill="url(#sc-bg)" />
+
+      {/* Top-glass sheen */}
+      <rect width="100" height="50" rx="22" fill="url(#sc-sheen)" />
+
+      {/* Note head — tilted oval */}
+      <ellipse
+        cx="34"
+        cy="70"
+        rx="14.5"
+        ry="9.5"
+        transform="rotate(-20 34 70)"
+        fill="url(#sc-gold)"
+      />
+
+      {/* Stem */}
+      <rect x="46.5" y="20" width="4.5" height="52" rx="2.25" fill="url(#sc-gold)" />
+
+      {/* Flag — elegant single sweep */}
+      <path
+        d="M51 20 C77 27 79 54 58 66"
+        stroke="url(#sc-gold)"
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -46,14 +84,17 @@ export default function BrandLogo({
     <div className={cn("inline-flex items-center", showIcon && s.gap, className)}>
       {showIcon && <BrandIcon className={cn(s.icon, iconClassName)} />}
       {showWordmark && (
-        <div className={cn("font-display font-semibold leading-none tracking-tight", s.wordmark, wordmarkClassName)}>
+        <div
+          className={cn(
+            "font-display leading-none tracking-wide",
+            s.wordmark,
+            wordmarkClassName,
+          )}
+        >
           {/* Every BrandLogo placement sits on a background that tracks the light/dark
-              theme (bg-card, bg-gradient-navy, bg-gradient-sidebar all flip with it), so
-              dark: variants here always match the real rendered background. Both brand
-              colors fail WCAG AA contrast against the *other* mode's background if not
-              swapped — navy is unreadable on dark surfaces, gold fails on light ones. */}
-          <span className="text-[#112A4D] dark:text-white">Simcha</span>
-          <span className="text-[#8A6A24] dark:text-[#C7A155]">Sync</span>
+              theme, so dark: variants always match the real rendered background. */}
+          <span className="font-light text-[#112A4D] dark:text-white/90">Simcha</span>
+          <span className="font-bold text-[#8A6A24] dark:text-[#C7A155]">Sync</span>
         </div>
       )}
     </div>
