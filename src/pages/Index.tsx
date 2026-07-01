@@ -111,7 +111,7 @@ export default function Index() {
             </nav>
 
             {/* Auth actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
               <Link to="/auth/login" aria-label={l.nav.login}>
                 <Button
