@@ -26,14 +26,15 @@ function BrandIcon({ className }: { className?: string }) {
     >
       {/* Deep navy background */}
       <rect width="100" height="100" rx="20" fill="#0D1F3C" />
-      {/* Gold inner border ring — luxury detail */}
+      {/* Gold inner border ring */}
       <rect x="3.5" y="3.5" width="93" height="93" rx="17" fill="none" stroke="#C7A155" strokeWidth="1.5" opacity="0.45" />
-      {/* Notehead — precise oval at 25° */}
-      <ellipse cx="35" cy="69" rx="13" ry="8.5" transform="rotate(-25 35 69)" fill="#C7A155" />
-      {/* Stem — right edge of notehead, perfectly vertical */}
-      <rect x="47" y="26" width="4" height="44" rx="2" fill="#C7A155" />
-      {/* Flag — single elegant S-curve */}
-      <path d="M51 26 C78 31 80 55 57 64" stroke="#C7A155" strokeWidth="4.5" fill="none" strokeLinecap="round" />
+      {/* Music note — source path from 24×24 viewBox, scaled & centred */}
+      <g transform="translate(18, 12) scale(2.75)">
+        <path
+          fill="#C7A155"
+          d="M15.915 6.702a6.249 6.249 0 0 0-.77-.45h.01A3.612 3.612 0 0 1 13 3.026V2.5h-1v13.96a3.965 3.965 0 0 0-2.508-.417C7.562 16.3 5.996 17.61 6 18.963s1.578 2.249 3.508 1.993c1.867-.246 3.38-1.481 3.474-2.788H13V6.996a5.411 5.411 0 0 1 2.159.703 6.036 6.036 0 0 1 2.176 2.15 6.365 6.365 0 0 1 .25 5.94l.481.211a6.982 6.982 0 0 0-2.15-9.298z"
+        />
+      </g>
     </svg>
   );
 }
