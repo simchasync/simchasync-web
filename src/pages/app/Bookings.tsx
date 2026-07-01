@@ -384,6 +384,7 @@ export default function Bookings() {
   const generateInvoiceMutation = useMutation({
     mutationFn: async (ev: any) => {
       const totalPrice = Number(ev.total_price) || 0;
+      if (!(totalPrice > 0)) throw new Error("Cannot create an invoice for a $0 booking");
       const deposit = Number(ev.deposit) || 0;
       const invoiceAmount = Math.max(totalPrice - deposit, 0);
       const clientName = ev.clients?.name || ev.client_name || "Client";
@@ -508,7 +509,9 @@ export default function Bookings() {
   const unpaidCount = events.filter((ev: any) => getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) !== "paid").length;
   const outstandingTotal = events.reduce((sum: number, ev: any) => {
     if (getEventPaymentStatus(ev, invoicesByEventId[ev.id] ?? []) === "paid") return sum;
-    return sum + Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0);
+    return sum + (ev.balance_due != null
+      ? Number(ev.balance_due)
+      : Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0));
   }, 0);
 
   return (
@@ -682,7 +685,7 @@ export default function Bookings() {
                                 <p className="font-semibold">${ev.total_price ?? 0}</p>
                                 {eventPaymentStatus !== "paid" && (Number(ev.total_price) || 0) > 0 && (
                                   <p className="text-xs text-amber/70 mt-0.5">
-                                    Due: ${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}
+                                    Due: ${(ev.balance_due != null ? Number(ev.balance_due) : Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0)).toLocaleString()}
                                   </p>
                                 )}
                               </>
@@ -746,7 +749,7 @@ export default function Bookings() {
                           {showFinancialFields && <TableCell className="text-right font-medium">${ev.total_price ?? 0}</TableCell>}
                           {showFinancialFields && (
                             <TableCell className="text-right font-medium">
-                              {eventPaymentStatus === "paid" ? "$0" : `$${Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0).toLocaleString()}`}
+                              {eventPaymentStatus === "paid" ? "$0" : `$${(ev.balance_due != null ? Number(ev.balance_due) : Math.max((Number(ev.total_price) || 0) - (Number(ev.deposit) || 0), 0)).toLocaleString()}`}
                             </TableCell>
                           )}
                           {showFinancialFields && (
@@ -845,7 +848,7 @@ export default function Bookings() {
                 toast({ title: "Date is required", variant: "destructive" });
                 return;
               }
-              if (form.event_date < todayIso) {
+              if (form.event_date < todayIso && form.event_date !== (editing?.event_date ?? "")) {
                 toast({ title: "Past dates are not allowed", variant: "destructive" });
                 return;
               }
