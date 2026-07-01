@@ -221,8 +221,8 @@ export default function AppShell() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/60 glass" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-72 bg-gradient-sidebar shadow-2xl animate-slide-in-left">
-            <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-gradient-sidebar shadow-2xl animate-slide-in-left">
+            <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
                 <BrandLogo size="sm" />
               </div>
@@ -230,10 +230,10 @@ export default function AppShell() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="px-3 py-2.5 border-b border-sidebar-border">
+            <div className="shrink-0 px-3 py-2.5 border-b border-sidebar-border">
               <WorkspaceSwitcher />
             </div>
-            <nav className="space-y-0.5 p-2 overflow-y-auto flex-1">
+            <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 return (
@@ -257,11 +257,11 @@ export default function AppShell() {
                 );
               })}
             </nav>
-            <div className="border-t border-sidebar-border p-2 space-y-1">
+            <div className="shrink-0 border-t border-sidebar-border p-2 space-y-1">
               <LanguageSwitcher variant="compact" className="w-full justify-start" />
               <ThemeToggle
                 variant="default"
-                className="text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                className="text-sidebar-foreground/60"
               />
               <Button variant="ghost" onClick={signOut} className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground">
                 <LogOut className="h-[18px] w-[18px]" /> <span className="text-[13px]">Log Out</span>
@@ -290,8 +290,8 @@ export default function AppShell() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <BrandLogo size="sm" />
+          <div className="flex min-w-0 items-center gap-2 md:hidden">
+            <BrandLogo size="xs" wordmarkClassName="truncate max-w-[120px]" />
           </div>
           <div className="ml-auto flex items-center gap-1">
             <div className="md:hidden">
