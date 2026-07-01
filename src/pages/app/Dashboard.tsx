@@ -274,9 +274,9 @@ export default function Dashboard() {
         expenses: allExpenses,
         colleagueCosts: allColleagueCosts,
         commissions: allCommissions,
-        now,
+        now: new Date(),
       }),
-    [events, invoices, allExpenses, allColleagueCosts, allCommissions, now],
+    [events, invoices, allExpenses, allColleagueCosts, allCommissions],
   );
 
   const {
@@ -316,9 +316,9 @@ export default function Dashboard() {
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{d.title}</h1>
           <p className="text-sm text-muted-foreground">
-            {now.getHours() < 12 ? d.goodMorning : now.getHours() < 18 ? d.goodAfternoon : d.goodEvening}
+            {new Date().getHours() < 12 ? d.goodMorning : new Date().getHours() < 18 ? d.goodAfternoon : d.goodEvening}
             {" · "}
-            {format(now, "EEEE, MMMM d, yyyy")}
+            {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
         <QuickActions />
