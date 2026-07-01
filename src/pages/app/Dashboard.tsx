@@ -235,29 +235,35 @@ export default function Dashboard() {
     enabled: !!tenantId && showProfitAnalytics && eventIds.length > 0,
   });
 
-  const now = useMemo(() => new Date(), []);
-
   const upcoming = useMemo(
-    () => events.filter((event) => new Date(event.event_date) >= now).sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-    [events, now],
+    () => {
+      const now = new Date();
+      return events.filter((event) => new Date(event.event_date) >= now).sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+    },
+    [events],
   );
 
   const thisMonthCount = useMemo(
-    () => events.filter((event) => isWithinInterval(new Date(event.event_date), { start: startOfMonth(now), end: endOfMonth(now) })).length,
-    [events, now],
+    () => {
+      const now = new Date();
+      return events.filter((event) => isWithinInterval(new Date(event.event_date), { start: startOfMonth(now), end: endOfMonth(now) })).length;
+    },
+    [events],
   );
 
   const monthlyRevenue = useMemo(
-    () =>
-      Array.from({ length: 6 }, (_, i) => {
+    () => {
+      const now = new Date();
+      return Array.from({ length: 6 }, (_, i) => {
         const month = subMonths(now, 5 - i);
         const interval = { start: startOfMonth(month), end: endOfMonth(month) };
         const revenue = events
           .filter((event) => isWithinInterval(new Date(event.event_date), interval))
           .reduce((sum, event) => sum + getBookingRevenue(event), 0);
         return { month: format(month, "MMM"), revenue };
-      }),
-    [events, now],
+      });
+    },
+    [events],
   );
 
   const analytics = useMemo(

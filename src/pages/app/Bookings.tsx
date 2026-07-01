@@ -871,9 +871,10 @@ export default function Bookings() {
                 <div className="space-y-1.5">
                   <Label className="text-sm">{b.client}</Label>
                   <div className="flex gap-1.5">
-                    <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                    <Select value={form.client_id || "__none__"} onValueChange={(v) => setForm({ ...form, client_id: v === "__none__" ? "" : v })}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Select client" /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__none__"><span className="text-muted-foreground">No client</span></SelectItem>
                         {clients.map((cl) => (
                           <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>
                         ))}
