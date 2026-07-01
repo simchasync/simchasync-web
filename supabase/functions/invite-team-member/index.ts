@@ -29,10 +29,10 @@ const ROLE_LABELS: Record<InviteRole, string> = {
   member: "a Member",
 };
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function jsonResponse(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
 }
 
@@ -148,6 +148,7 @@ async function sendInviteEmail({
 
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
+  const json = (body: Record<string, unknown>, status = 200) => jsonResponse(body, status, corsHeaders);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -160,7 +161,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Missing authorization" }, 401);
+      return json({ error: "Missing authorization" }, 401);
     }
 
     const callerClient = createClient(supabaseUrl, anonKey, {
@@ -171,7 +172,7 @@ Deno.serve(async (req) => {
     const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
 
     if (claimsError || !claimsData?.claims?.sub) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const caller = { id: claimsData.claims.sub as string };
@@ -187,14 +188,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (membershipError || !callerMembership) {
-      return jsonResponse({ error: "Unauthorized" }, 403);
+      return json({ error: "Unauthorized" }, 403);
     }
 
     const canInviteColleagues = callerMembership.role === "owner" || callerMembership.role === "booking_manager";
     const canInviteTeammates = callerMembership.role === "owner";
 
     if (requestedRole === "member" ? !canInviteColleagues : !canInviteTeammates) {
-      return jsonResponse(
+      return json(
         { error: requestedRole === "member" ? "Only owners and booking managers can invite colleagues" : "Only owners can invite teammates" },
         403,
       );
@@ -207,7 +208,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (tenantError || !tenantData) {
-      return jsonResponse({ error: "Workspace not found" }, 404);
+      return json({ error: "Workspace not found" }, 404);
     }
 
     const tenantName = tenantData.name || "your workspace";
@@ -228,7 +229,7 @@ Deno.serve(async (req) => {
     );
 
     if (existingUser && existingUser.id === caller.id) {
-      return jsonResponse({ error: "You cannot invite yourself — you are already a member of this workspace." }, 400);
+      return json({ error: "You cannot invite yourself — you are already a member of this workspace." }, 400);
     }
 
     // Don't fire a duplicate email if one just went out for this membership
@@ -248,7 +249,7 @@ Deno.serve(async (req) => {
         existingMembership.invited_at &&
         Date.now() - new Date(existingMembership.invited_at).getTime() < EMAIL_RESEND_COOLDOWN_MS
       ) {
-        return jsonResponse({
+        return json({
           success: true,
           invited: true,
           added: false,
@@ -322,7 +323,7 @@ Deno.serve(async (req) => {
           .eq("user_id", existingUser.id);
       }
 
-      return jsonResponse({
+      return json({
         success: true,
         invited: !existingMembership || existingMembership.invitation_status !== "accepted",
         added: !existingMembership,
@@ -374,7 +375,7 @@ Deno.serve(async (req) => {
       emailError = friendlyEmailError(emailErr);
     }
 
-    return jsonResponse({
+    return json({
       success: true,
       invited: true,
       added: true,
@@ -385,7 +386,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("invite-team-member error:", err);
-    return jsonResponse({
+    return json({
       error: err instanceof Error ? err.message : "Unknown error",
     }, err instanceof ValidationError ? 400 : 500);
   }
