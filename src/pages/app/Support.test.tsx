@@ -185,6 +185,7 @@ describe("Support", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Request a Feature/i }));
     fireEvent.change(screen.getByPlaceholderText("Feature title"), { target: { value: "Dark mode for invoices" } });
+    fireEvent.change(screen.getByPlaceholderText("Describe the feature you'd like to see..."), { target: { value: "Add dark mode support to the invoice preview." } });
     fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
     await waitFor(() => {

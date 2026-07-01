@@ -227,23 +227,18 @@ describe("Invoices", () => {
     expect(await screen.findByTestId("invoice-preview")).toHaveTextContent("inv1");
   });
 
-  it("shows an error toast when generating a payment link without Stripe connected", async () => {
+  it("hides the Pay Link button when Stripe is not connected", async () => {
     resolvedByTable.invoices = { data: [makeInvoice()], error: null };
     renderInvoices();
     await screen.findAllByText("Jane Doe");
 
-    fireEvent.click(screen.getByRole("button", { name: /Pay Link/i }));
-
-    await waitFor(() => {
-      expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Connect Stripe in Settings first", variant: "destructive" }),
-      );
-    });
+    expect(screen.queryByRole("button", { name: /Pay Link/i })).not.toBeInTheDocument();
     expect(mockInvoke).not.toHaveBeenCalled();
   });
 
   it("copies an existing payment link instead of generating a new one", async () => {
     resolvedByTable.invoices = { data: [makeInvoice({ stripe_payment_url: "https://pay.example.com/abc" })], error: null };
+    resolvedByTable.tenants = { data: { stripe_connect_onboarded: true, name: "Acme", payment_instructions: null }, error: null };
     renderInvoices();
     await screen.findAllByText("Jane Doe");
 
