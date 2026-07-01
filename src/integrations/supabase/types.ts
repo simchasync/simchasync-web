@@ -1184,6 +1184,66 @@ export type Database = {
           },
         ]
       }
+      social_posts: {
+        Row: {
+          id: string
+          tenant_id: string
+          platform: string
+          caption: string | null
+          hashtags: string | null
+          status: string
+          scheduled_date: string | null
+          posted_at: string | null
+          event_id: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          platform?: string
+          caption?: string | null
+          hashtags?: string | null
+          status?: string
+          scheduled_date?: string | null
+          posted_at?: string | null
+          event_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          platform?: string
+          caption?: string | null
+          hashtags?: string | null
+          status?: string
+          scheduled_date?: string | null
+          posted_at?: string | null
+          event_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           calendar_token: string | null
