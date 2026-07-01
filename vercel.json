@@ -1,3 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "pro.simchasync.com" }],
+      "destination": "/auth/login",
+      "permanent": false
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
