@@ -845,7 +845,7 @@ export default function Bookings() {
                 toast({ title: "Date is required", variant: "destructive" });
                 return;
               }
-              if (!editing && form.event_date < todayIso) {
+              if (form.event_date < todayIso) {
                 toast({ title: "Past dates are not allowed", variant: "destructive" });
                 return;
               }

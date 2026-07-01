@@ -97,16 +97,22 @@ export default function PublicBooking() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
+    const trimmedName = form.name.trim();
+    if (!trimmedName) {
+      toast({ title: "Please enter your name", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       const { error } = await supabase.from("booking_requests").insert({
         tenant_id: tenant.id,
-        name: form.name,
-        email: form.email || null,
-        phone: form.phone || null,
-        event_type: form.event_type,
+        name: trimmedName,
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        // "other" is UI-only — never persist the sentinel value
+        event_type: form.event_type === "other" ? null : form.event_type || null,
         event_date: form.event_date || null,
-        message: form.message || null,
+        message: form.message.trim() || null,
       });
       if (error) throw error;
 

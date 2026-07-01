@@ -108,10 +108,16 @@ export default function Clients() {
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof form) => {
+      const name = values.name.trim();
+      if (!name) throw new Error("Client name is required");
+      const email = values.email.trim() || null;
+      const phone = values.phone.trim() || null;
+      const notes = values.notes?.trim() || null;
+
       if (editing) {
         const { error } = await supabase
           .from("clients")
-          .update({ name: values.name, email: values.email || null, phone: values.phone || null, notes: values.notes || null })
+          .update({ name, email, phone, notes })
           .eq("id", editing.id);
         if (error) throw error;
         return { wasCreated: false };
@@ -119,13 +125,7 @@ export default function Clients() {
 
       if (!tenantId) throw new Error("Workspace not found");
 
-      return getOrCreateClient({
-        tenantId,
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        notes: values.notes,
-      });
+      return getOrCreateClient({ tenantId, name, email, phone, notes });
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["clients"] });

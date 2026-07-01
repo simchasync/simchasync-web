@@ -126,7 +126,7 @@ export default function Invoices() {
         event_id: values.event_id || null,
         amount: Number(values.amount) || 0,
         status: values.status as Invoice["status"],
-        sent_at: values.status === "sent" && !editing?.sent_at ? new Date().toISOString() : editing?.sent_at ?? null,
+        sent_at: values.status === "sent" ? (editing?.sent_at ?? new Date().toISOString()) : editing?.sent_at ?? null,
       };
 
       if (editing) {
@@ -437,7 +437,7 @@ export default function Invoices() {
                             <DollarSign className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Payment
                           </Button>
                         )}
-                        {canWrite && (
+                        {canWrite && stripeConnected && (
                           <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs" disabled={generatingLink === i.id}
                             onClick={() => handlePaymentLink(i.id, i.stripe_payment_url)}>
                             {i.stripe_payment_url ? <Copy className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="mr-1.5 h-3.5 w-3.5" />}
@@ -471,7 +471,7 @@ export default function Invoices() {
             <DialogTitle>{t.common.create} {inv.title.toLowerCase()}</DialogTitle>
             <DialogDescription>Create a new invoice</DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); if (!(Number(form.amount) > 0)) return; saveMutation.mutate(form); }} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="invoice-amount">{inv.amount} *</Label>
               <Input id="invoice-amount" type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
