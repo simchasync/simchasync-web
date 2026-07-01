@@ -5,6 +5,30 @@
       "has": [{ "type": "host", "value": "pro.simchasync.com" }],
       "destination": "/auth/login",
       "permanent": false
+    },
+    {
+      "source": "/auth/:path*",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/auth/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/auth/:path*",
+      "has": [{ "type": "host", "value": "www.simchasync.com" }],
+      "destination": "https://pro.simchasync.com/auth/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/app/:path*",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/app/:path*",
+      "has": [{ "type": "host", "value": "www.simchasync.com" }],
+      "destination": "https://pro.simchasync.com/app/:path*",
+      "permanent": false
     }
   ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
