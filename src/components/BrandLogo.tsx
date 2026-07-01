@@ -18,11 +18,17 @@ const sizeClasses = {
 
 function BrandIcon({ className }: { className?: string }) {
   return (
-    <img
-      src="/simchasync-icon.png"
-      alt="SimchaSync Logo"
-      className={cn("shrink-0 object-contain", className)}
-    />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      aria-label="SimchaSync Logo"
+      className={cn("shrink-0", className)}
+    >
+      <rect width="100" height="100" rx="22" fill="#112A4D" />
+      <ellipse cx="38" cy="70" rx="14" ry="10" transform="rotate(-18 38 70)" fill="#C7A155" />
+      <rect x="50" y="28" width="5" height="44" rx="2.5" fill="#C7A155" />
+      <path d="M55 28 C74 33 76 54 60 62" stroke="#C7A155" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
