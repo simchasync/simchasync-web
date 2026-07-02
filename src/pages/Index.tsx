@@ -114,20 +114,21 @@ export default function Index() {
             </nav>
 
             {/* Auth actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5">
               <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
               <Link to="/auth/login" aria-label={l.nav.login}>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white/70 hover:text-primary hover:bg-primary/10"
+                  className="text-white/70 hover:text-primary hover:bg-primary/10 px-2.5"
                 >
                   {l.nav.login}
                 </Button>
               </Link>
               <Link to="/auth/register">
-                <Button size="sm" className="gap-1.5 font-medium shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20">
-                  {l.nav.signup}
+                <Button size="sm" className="gap-1 font-medium shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 px-3 whitespace-nowrap">
+                  <span className="hidden sm:inline">{l.nav.signup}</span>
+                  <span className="sm:hidden">Sign Up</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
