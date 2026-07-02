@@ -11,7 +11,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+const APP_URL = import.meta.env.VITE_APP_URL ?? "https://pro.simchasync.com";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
