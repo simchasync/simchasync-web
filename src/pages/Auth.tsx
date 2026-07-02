@@ -1,5 +1,5 @@
 import { MailCheck, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, Send } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +78,73 @@ function PasswordInput({
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
+    </div>
+  );
+}
+
+function OtpInput({
+  value,
+  onChange,
+  autoFocus,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const setValue = (i: number, digit: string) => {
+    const chars = Array.from({ length: 6 }, (_, j) => value[j] ?? "");
+    chars[i] = digit;
+    onChange(chars.join(""));
+  };
+
+  const handleChange = (i: number, raw: string) => {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    setValue(i, digit);
+    if (digit && i < 5) refs.current[i + 1]?.focus();
+  };
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !value[i] && i > 0) {
+      e.preventDefault();
+      refs.current[i - 1]?.focus();
+      setValue(i - 1, "");
+    }
+    if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === "ArrowRight" && i < 5) refs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    onChange(pasted);
+    refs.current[Math.min(pasted.length, 5)]?.focus();
+  };
+
+  return (
+    <div className="flex justify-center gap-2" onPaste={handlePaste}>
+      {Array.from({ length: 6 }, (_, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={value[i] ?? ""}
+          autoFocus={autoFocus && i === 0}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onFocus={(e) => e.target.select()}
+          className={[
+            "h-14 w-10 rounded-xl border-2 text-center font-mono text-2xl font-bold text-foreground shadow-sm transition-all duration-150 outline-none",
+            "focus:border-primary focus:ring-4 focus:ring-primary/15 focus:scale-105",
+            value[i]
+              ? "border-primary/50 bg-primary/5"
+              : "border-border bg-background",
+          ].join(" ")}
+        />
+      ))}
     </div>
   );
 }
@@ -194,8 +261,8 @@ export default function Auth() {
   };
 
   const handleVerifyOtp = async () => {
-    if (otpValue.length < 6) {
-      toast({ title: "Error", description: "Enter the full verification code from your email.", variant: "destructive" });
+    if (otpValue.length !== 6) {
+      toast({ title: "Error", description: "Enter the 6-digit code from your email.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -349,22 +416,12 @@ export default function Auth() {
                 <p className="mt-1.5 text-sm text-muted-foreground">We sent a 6-digit code to</p>
                 <p className="mt-0.5 text-sm font-medium text-foreground break-all">{fields.email}</p>
               </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                value={otpValue}
-                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                placeholder="00000000"
-                autoFocus
-                className="w-full rounded-md border border-input bg-background px-3 py-3 text-center font-mono text-2xl tracking-[0.4em] text-foreground shadow-sm outline-none ring-offset-background placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              />
+              <OtpInput value={otpValue} onChange={setOtpValue} autoFocus />
               <p className="text-xs text-muted-foreground">The code expires in 1 hour.</p>
               <Button
                 type="button"
                 className="w-full gap-2 font-semibold"
-                disabled={otpValue.length < 6 || loading}
+                disabled={otpValue.length !== 6 || loading}
                 onClick={handleVerifyOtp}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
