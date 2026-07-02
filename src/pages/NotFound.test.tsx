@@ -44,7 +44,7 @@ describe("NotFound", () => {
 
   it("shows a link back home", () => {
     renderNotFound();
-    expect(screen.getByRole("link", { name: /Back to home/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /Back to home/i })).toHaveAttribute("href", "https://simchasync.com");
   });
 
   it("does not show the dashboard link when logged out", () => {
