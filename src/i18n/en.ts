@@ -411,9 +411,9 @@ export const en = {
     passwordsDoNotMatch: "Passwords do not match.",
     confirmEmailTitle: "Check your email",
     confirmEmailDescription:
-      "We sent a confirmation link. Check spam and promotions. You can resend the email below if needed.",
-    resendConfirmation: "Resend confirmation email",
-    resendConfirmationSuccess: "We sent another confirmation link.",
+      "We sent a 6-digit verification code to your email. Enter it below to activate your account.",
+    resendConfirmation: "Resend code",
+    resendConfirmationSuccess: "We sent a new 6-digit code.",
     signedInWelcome: "Welcome — you're signed in.",
     resendEmailMissing: "Enter the email you signed up with first.",
   },

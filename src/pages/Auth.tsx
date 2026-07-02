@@ -143,12 +143,14 @@ export default function Auth() {
   const [fields, setFields] = useState<FieldState>(INITIAL_FIELDS);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
 
   // Sync mode when URL changes (e.g. back/forward)
   useEffect(() => {
     setMode(modeFromPath(location.pathname));
-    setAwaitingConfirmation(false);
+    setAwaitingOtp(false);
+    setOtpValue("");
   }, [location.pathname]);
 
   const setField = useCallback(
@@ -182,12 +184,34 @@ export default function Auth() {
         options: { emailRedirectTo: APP_URL },
       });
       if (error) throw error;
-      toast({ title: t.auth.confirmEmailTitle, description: t.auth.resendConfirmationSuccess });
+      toast({ title: "Code sent", description: t.auth.resendConfirmationSuccess });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not resend";
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setResendLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpValue.length !== 6) {
+      toast({ title: "Error", description: "Enter the 6-digit code from your email.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: fields.email,
+        token: otpValue,
+        type: "signup",
+      });
+      if (error) throw error;
+      navigate("/app");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid or expired code.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -232,7 +256,7 @@ export default function Auth() {
           navigate("/app");
           return;
         }
-        setAwaitingConfirmation(true);
+        setAwaitingOtp(true);
         toast({ title: t.auth.confirmEmailTitle, description: t.auth.confirmEmailDescription });
 
       } else {
@@ -305,23 +329,38 @@ export default function Auth() {
       <Card className="w-full max-w-sm border-border/60 shadow-sm">
         <CardContent className="p-7">
 
-          {awaitingConfirmation ? (
-            /* ── Email confirmation screen (replaces form) ── */
-            <div className="space-y-6 py-2 text-center">
+          {awaitingOtp ? (
+            /* ── OTP verification screen (replaces form) ── */
+            <div className="space-y-5 py-2 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <MailCheck className="h-7 w-7 text-primary" />
               </div>
               <div>
                 <h2 className="font-display text-xl font-semibold">Check your email</h2>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  We sent a confirmation link to
-                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">We sent a 6-digit code to</p>
                 <p className="mt-0.5 text-sm font-medium text-foreground break-all">{fields.email}</p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Click the link in the email to activate your account.
-                It expires in 24 hours.
-              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={otpValue}
+                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                autoFocus
+                className="w-full rounded-md border border-input bg-background px-3 py-3 text-center font-mono text-2xl tracking-[0.5em] text-foreground shadow-sm outline-none ring-offset-background placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              />
+              <p className="text-xs text-muted-foreground">The code expires in 1 hour.</p>
+              <Button
+                type="button"
+                className="w-full gap-2 font-semibold"
+                disabled={otpValue.length !== 6 || loading}
+                onClick={handleVerifyOtp}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                Verify
+              </Button>
               <Button
                 type="button"
                 variant="outline"
