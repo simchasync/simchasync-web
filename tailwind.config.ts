@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Plus Jakarta Sans", "sans-serif"],
+        display: ["Playfair Display", "serif"],
         sans: ["Inter", "sans-serif"],
         serif: ["Instrument Serif", "serif"],
       },
