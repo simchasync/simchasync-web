@@ -194,8 +194,8 @@ export default function Auth() {
   };
 
   const handleVerifyOtp = async () => {
-    if (otpValue.length !== 6) {
-      toast({ title: "Error", description: "Enter the 6-digit code from your email.", variant: "destructive" });
+    if (otpValue.length < 6) {
+      toast({ title: "Error", description: "Enter the full verification code from your email.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -355,16 +355,16 @@ export default function Auth() {
                 pattern="[0-9]*"
                 maxLength={6}
                 value={otpValue}
-                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000"
+                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="00000000"
                 autoFocus
-                className="w-full rounded-md border border-input bg-background px-3 py-3 text-center font-mono text-2xl tracking-[0.5em] text-foreground shadow-sm outline-none ring-offset-background placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full rounded-md border border-input bg-background px-3 py-3 text-center font-mono text-2xl tracking-[0.4em] text-foreground shadow-sm outline-none ring-offset-background placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
               <p className="text-xs text-muted-foreground">The code expires in 1 hour.</p>
               <Button
                 type="button"
                 className="w-full gap-2 font-semibold"
-                disabled={otpValue.length !== 6 || loading}
+                disabled={otpValue.length < 6 || loading}
                 onClick={handleVerifyOtp}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
