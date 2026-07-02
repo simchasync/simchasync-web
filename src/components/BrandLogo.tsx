@@ -10,31 +10,38 @@ type BrandLogoProps = {
 };
 
 const sizeClasses = {
-  xs: { icon: "h-7 w-7", wordmark: "text-sm", gap: "gap-1.5" },
-  sm: { icon: "h-10 w-10", wordmark: "text-lg", gap: "gap-2.5" },
-  md: { icon: "h-14 w-14", wordmark: "text-2xl", gap: "gap-3" },
-  lg: { icon: "h-20 w-20", wordmark: "text-3xl", gap: "gap-4" },
+  xs: { icon: "h-4 w-4",  wordmark: "text-sm",  gap: "gap-1.5" },
+  sm: { icon: "h-5 w-5",  wordmark: "text-xl",  gap: "gap-2"   },
+  md: { icon: "h-7 w-7",  wordmark: "text-2xl", gap: "gap-2.5" },
+  lg: { icon: "h-9 w-9",  wordmark: "text-3xl", gap: "gap-3"   },
 } as const;
+
+// Gold gradient stops — shared across icon and text
+const GOLD_START  = "#EDD08A";
+const GOLD_MID    = "#C7A155";
+const GOLD_END    = "#9A7830";
+const GOLD_STYLE  = `linear-gradient(135deg, ${GOLD_START} 0%, ${GOLD_MID} 50%, ${GOLD_END} 100%)`;
 
 function BrandIcon({ className }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
+      viewBox="0 0 16 16"
       aria-label="SimchaSync Logo"
       className={cn("shrink-0", className)}
     >
-      {/* Deep navy background */}
-      <rect width="100" height="100" rx="20" fill="#0D1F3C" />
-      {/* Gold inner border ring */}
-      <rect x="3.5" y="3.5" width="93" height="93" rx="17" fill="none" stroke="#C7A155" strokeWidth="1.5" opacity="0.45" />
-      {/* Music note — source path from 24×24 viewBox, scaled & centred */}
-      <g transform="translate(18, 12) scale(2.75)">
-        <path
-          fill="#C7A155"
-          d="M15.915 6.702a6.249 6.249 0 0 0-.77-.45h.01A3.612 3.612 0 0 1 13 3.026V2.5h-1v13.96a3.965 3.965 0 0 0-2.508-.417C7.562 16.3 5.996 17.61 6 18.963s1.578 2.249 3.508 1.993c1.867-.246 3.38-1.481 3.474-2.788H13V6.996a5.411 5.411 0 0 1 2.159.703 6.036 6.036 0 0 1 2.176 2.15 6.365 6.365 0 0 1 .25 5.94l.481.211a6.982 6.982 0 0 0-2.15-9.298z"
-        />
-      </g>
+      <defs>
+        <linearGradient id="scIconGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor={GOLD_START} />
+          <stop offset="50%"  stopColor={GOLD_MID}   />
+          <stop offset="100%" stopColor={GOLD_END}    />
+        </linearGradient>
+      </defs>
+      {/* music.svg path — double music note (♫) */}
+      <path
+        fill="url(#scIconGold)"
+        d="M15 0h1v11.5c0 1.381-1.567 2.5-3.5 2.5S9 12.881 9 11.5S10.567 9 12.5 9c.979 0 1.865.287 2.5.751V4L7 5.778V13.5C7 14.881 5.433 16 3.5 16S0 14.881 0 13.5S1.567 11 3.5 11c.979 0 1.865.287 2.5.751V2l9-2z"
+      />
     </svg>
   );
 }
@@ -50,21 +57,20 @@ export default function BrandLogo({
   const s = sizeClasses[size];
 
   return (
-    <div className={cn("inline-flex items-center", showIcon && s.gap, className)}>
+    <div className={cn("inline-flex items-center", showIcon && showWordmark && s.gap, className)}>
       {showIcon && <BrandIcon className={cn(s.icon, iconClassName)} />}
       {showWordmark && (
-        <div
-          className={cn(
-            "font-display leading-none tracking-wide",
-            s.wordmark,
-            wordmarkClassName,
-          )}
+        <span
+          className={cn("font-display font-bold leading-none tracking-wide", s.wordmark, wordmarkClassName)}
+          style={{
+            background:              GOLD_STYLE,
+            WebkitBackgroundClip:    "text",
+            WebkitTextFillColor:     "transparent",
+            backgroundClip:          "text",
+          }}
         >
-          {/* Every BrandLogo placement sits on a background that tracks the light/dark
-              theme, so dark: variants always match the real rendered background. */}
-          <span className="font-light text-[#112A4D] dark:text-white/90">Simcha</span>
-          <span className="font-bold text-[#8A6A24] dark:text-[#C7A155]">Sync</span>
-        </div>
+          SimchaSync
+        </span>
       )}
     </div>
   );
