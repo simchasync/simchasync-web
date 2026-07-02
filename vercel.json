@@ -29,6 +29,42 @@
       "has": [{ "type": "host", "value": "www.simchasync.com" }],
       "destination": "https://pro.simchasync.com/app/:path*",
       "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/admin/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "host", "value": "www.simchasync.com" }],
+      "destination": "https://pro.simchasync.com/admin/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/reset-password",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/reset-password",
+      "permanent": false
+    },
+    {
+      "source": "/reset-password",
+      "has": [{ "type": "host", "value": "www.simchasync.com" }],
+      "destination": "https://pro.simchasync.com/reset-password",
+      "permanent": false
+    },
+    {
+      "source": "/payment-success",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/payment-success",
+      "permanent": false
+    },
+    {
+      "source": "/payment-cancelled",
+      "has": [{ "type": "host", "value": "simchasync.com" }],
+      "destination": "https://pro.simchasync.com/payment-cancelled",
+      "permanent": false
     }
   ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]

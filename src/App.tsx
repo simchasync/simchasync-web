@@ -13,6 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AuthRedirect from "./components/AuthRedirect";
+import DomainGuard from "./components/DomainGuard";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import Maintenance from "./pages/Maintenance";
@@ -98,6 +99,7 @@ const App = () => (
                   <Analytics />
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <AuthRedirect />
+                    <DomainGuard />
                     <Suspense fallback={<RouteLoader />}>
                       <Routes>
                       <Route path="/" element={<Index />} />
