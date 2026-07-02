@@ -1,6 +1,6 @@
 import { MailCheck, Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, Send } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -295,15 +295,6 @@ export default function Auth() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4">
-      {/* Back to landing page — hard navigation to simchasync.com */}
-      <div className="absolute left-4 top-4">
-        <a href="https://simchasync.com">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Home
-          </Button>
-        </a>
-      </div>
 
       {/* Theme toggle */}
       <div className="absolute right-4 top-4">
