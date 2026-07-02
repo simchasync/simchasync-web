@@ -252,6 +252,15 @@ export default function Auth() {
           },
         });
         if (error) throw error;
+        // Supabase returns empty identities (no error) when the email is already registered
+        if (data.user && data.user.identities?.length === 0) {
+          toast({
+            title: "Account already exists",
+            description: "An account with this email already exists. Please log in instead.",
+            variant: "destructive",
+          });
+          return;
+        }
         if (data.session) {
           navigate("/app");
           return;
