@@ -27,9 +27,9 @@ export default function NotFound() {
 
       <header className="relative z-10 border-b border-secondary/30 bg-navy/60 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="transition-opacity hover:opacity-90">
+          <a href="https://simchasync.com" className="transition-opacity hover:opacity-90">
             <BrandLogo size="md" />
-          </Link>
+          </a>
         </div>
       </header>
 
@@ -58,10 +58,10 @@ export default function NotFound() {
               size="lg"
               className="bg-gradient-gold font-semibold text-primary-foreground shadow-gold hover:opacity-90"
             >
-              <Link to="/" className="inline-flex items-center gap-2">
+              <a href="https://simchasync.com" className="inline-flex items-center gap-2">
                 <Home className="h-5 w-5 shrink-0" />
                 {p.goHome}
-              </Link>
+              </a>
             </Button>
             {!loading && user && (
               <Button

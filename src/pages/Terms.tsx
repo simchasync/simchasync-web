@@ -10,10 +10,10 @@ export default function Terms() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-5 py-12">
         <Button asChild variant="ghost" size="sm" className="mb-6 -ml-2">
-          <Link to="/">
+          <a href="https://simchasync.com">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to home
-          </Link>
+          </a>
         </Button>
 
         <h1 className="font-display text-3xl font-bold">Terms of Service</h1>
