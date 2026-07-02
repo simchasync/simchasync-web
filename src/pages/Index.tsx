@@ -95,7 +95,10 @@ export default function Index() {
         {/* ── Navigation ─────────────────────────────────────────────────────── */}
         <header className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between gap-4">
-            {/* Logo - removed per user request */}
+            {/* Logo */}
+            <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
+              <BrandLogo size="sm" />
+            </Link>
 
             {/* Desktop nav */}
             <nav className="hidden items-center gap-1 md:flex">
@@ -111,7 +114,7 @@ export default function Index() {
             </nav>
 
             {/* Auth actions */}
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2">
               <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
               <Link to="/auth/login" aria-label={l.nav.login}>
                 <Button
