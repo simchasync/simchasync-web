@@ -8,7 +8,7 @@ import { TrialBanner } from "@/components/TrialBanner";
 import {
   LayoutDashboard, Calendar, Users, FileText, UsersRound, Settings,
   LogOut, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
-  ChevronLeft
+  ChevronLeft, ChevronDown, MoreHorizontal,
 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,8 @@ const allNavItems = [
   { key: "bookingPage", path: "/app/booking-page", icon: Paintbrush, roles: ["owner"] },
   { key: "settings", path: "/app/settings", icon: Settings, roles: ["owner"] },
 ] as const;
+
+const PRIMARY_NAV_KEYS = new Set(["dashboard", "bookings", "clients", "invoices"]);
 
 export default function AppShell() {
   const { user, loading, signOut } = useAuth();
@@ -64,6 +66,10 @@ export default function AppShell() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const primaryNavItems = useMemo(() => navItems.filter(i => PRIMARY_NAV_KEYS.has(i.key)), [navItems]);
+  const advancedNavItems = useMemo(() => navItems.filter(i => !PRIMARY_NAV_KEYS.has(i.key)), [navItems]);
 
   const isActive = useCallback((path: string) => {
     if (path === "/app") return location.pathname === "/app";
@@ -139,7 +145,7 @@ export default function AppShell() {
               Workspace inactive
             </div>
           )}
-          {navItems.map((item) => {
+          {(collapsed ? navItems : primaryNavItems).map((item) => {
             const active = isActive(item.path);
             const linkContent = (
               <Link
@@ -174,6 +180,38 @@ export default function AppShell() {
             }
             return linkContent;
           })}
+
+          {/* Advanced section — desktop expanded only */}
+          {!collapsed && advancedNavItems.length > 0 && (
+            <div className="mt-2">
+              <button
+                onClick={() => setAdvancedOpen(v => !v)}
+                className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-sidebar-foreground/35 uppercase tracking-widest hover:text-sidebar-foreground/60 transition-colors rounded-lg hover:bg-sidebar-accent/50"
+              >
+                <span>Advanced</span>
+                <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", advancedOpen && "rotate-180")} />
+              </button>
+              {advancedOpen && advancedNavItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200 relative",
+                      active
+                        ? "bg-sidebar-primary/15 text-sidebar-primary"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    )}
+                  >
+                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
+                    <item.icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-sidebar-primary")} />
+                    <span className="truncate">{t.app.nav[item.key as keyof typeof t.app.nav]}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
         {/* Bottom Actions */}
@@ -234,7 +272,7 @@ export default function AppShell() {
               <WorkspaceSwitcher />
             </div>
             <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-              {navItems.map((item) => {
+              {primaryNavItems.map((item) => {
                 const active = isActive(item.path);
                 return (
                   <Link
@@ -248,14 +286,43 @@ export default function AppShell() {
                         : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     )}
                   >
-                    {active && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />
-                    )}
+                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
                     <item.icon className={cn("h-[18px] w-[18px]", active && "text-sidebar-primary")} />
                     {t.app.nav[item.key as keyof typeof t.app.nav]}
                   </Link>
                 );
               })}
+              {advancedNavItems.length > 0 && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => setAdvancedOpen(v => !v)}
+                    className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-sidebar-foreground/35 uppercase tracking-widest hover:text-sidebar-foreground/60 transition-colors rounded-lg hover:bg-sidebar-accent/50"
+                  >
+                    <span>Advanced</span>
+                    <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", advancedOpen && "rotate-180")} />
+                  </button>
+                  {advancedOpen && advancedNavItems.map((item) => {
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.key}
+                        to={item.path}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 relative",
+                          active
+                            ? "bg-sidebar-primary/15 text-sidebar-primary"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        )}
+                      >
+                        {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
+                        <item.icon className={cn("h-[18px] w-[18px]", active && "text-sidebar-primary")} />
+                        {t.app.nav[item.key as keyof typeof t.app.nav]}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </nav>
             <div className="shrink-0 border-t border-sidebar-border p-2 space-y-1">
               <LanguageSwitcher variant="compact" className="w-full justify-start" />
@@ -310,7 +377,7 @@ export default function AppShell() {
         {/* Bottom nav (mobile) */}
         {navItems.length > 0 && (
           <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-card/95 glass safe-area-bottom md:hidden">
-            {navItems.slice(0, 5).map((item) => {
+            {primaryNavItems.slice(0, 4).map((item) => {
               const active = isActive(item.path);
               return (
                 <Link
@@ -331,6 +398,15 @@ export default function AppShell() {
                 </Link>
               );
             })}
+            <button
+              onClick={() => { setAdvancedOpen(true); setSidebarOpen(true); }}
+              className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-all duration-200 active:scale-95"
+            >
+              <div className="flex items-center justify-center w-8 h-8 rounded-xl">
+                <MoreHorizontal className="h-[18px] w-[18px]" />
+              </div>
+              <span>More</span>
+            </button>
           </nav>
         )}
 
