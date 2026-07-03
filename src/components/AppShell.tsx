@@ -76,6 +76,11 @@ export default function AppShell() {
     return location.pathname.startsWith(path);
   }, [location.pathname]);
 
+  // Auto-expand Advanced section when user is on an advanced route
+  useEffect(() => {
+    if (advancedNavItems.some(i => isActive(i.path))) setAdvancedOpen(true);
+  }, [location.pathname, advancedNavItems, isActive]);
+
   useEffect(() => {
     if (!loading && !user) navigate("/auth/login");
   }, [user, loading, navigate]);
