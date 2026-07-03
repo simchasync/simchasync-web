@@ -16,15 +16,15 @@ export function StatCard({
   const a = ACCENT_STYLES[accent] ?? ACCENT_STYLES.emerald;
   return (
     <Card variant="outlined" className={`animate-card-in card-interactive overflow-hidden border-t-[3px] ${a.border}`}>
-      <CardContent className="p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-          <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${a.iconBg}`}>
-            <Icon className={`h-4 w-4 ${a.iconText}`} />
+      <CardContent className="p-3 md:p-5">
+        <div className="flex items-start justify-between gap-1 mb-2 md:mb-3">
+          <p className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight line-clamp-2">{label}</p>
+          <div className={`flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-lg md:rounded-xl shrink-0 ${a.iconBg}`}>
+            <Icon className={`h-3.5 w-3.5 md:h-4 md:w-4 ${a.iconText}`} />
           </div>
         </div>
-        <p className="text-2xl font-bold tracking-tight tabular-nums">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground/70 mt-0.5">{sub}</p>}
+        <p className="text-lg md:text-2xl font-bold tracking-tight tabular-nums truncate">{value}</p>
+        {sub && <p className="text-[10px] md:text-xs text-muted-foreground/70 mt-0.5 truncate">{sub}</p>}
       </CardContent>
     </Card>
   );

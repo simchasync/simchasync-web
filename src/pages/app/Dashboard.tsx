@@ -296,7 +296,7 @@ export default function Dashboard() {
 
   if (isSocialOnly) {
     return (
-      <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="p-3 md:p-8 space-y-4 md:space-y-6 max-w-7xl mx-auto">
         <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{d.title}</h1>
         <Card variant="outlined">
           <CardContent className="flex flex-col items-center justify-center py-20 text-center">
@@ -310,9 +310,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 md:p-8 space-y-4 md:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight mb-0.5">{d.title}</h1>
           <p className="text-sm text-muted-foreground">
@@ -331,7 +331,7 @@ export default function Dashboard() {
           {/* Stat Cards */}
           <section>
             <SectionHeader title={d.overview} />
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4">
               <StatCard label={d.totalRevenue} value={formatCurrency(totalRevenue)} sub={`${formatCurrency(revenueReceived)} ${d.received}`} icon={DollarSign} accent="emerald" />
               <StatCard label={d.outstanding} value={formatCurrency(outstanding)} sub={d.unpaidBookings.replace("{count}", String(unpaidBookings))} icon={AlertCircle} accent="amber" />
               <StatCard label={d.thisMonth} value={formatCurrency(thisMonthRevenue)} sub={d.eventsCount.replace("{count}", String(thisMonthCount))} icon={Calendar} accent="cyan" />
@@ -340,7 +340,7 @@ export default function Dashboard() {
           </section>
 
           {/* Upcoming + Invoices */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-3 md:gap-6 md:grid-cols-2">
             <section>
               <SectionHeader title={d.upcoming} count={upcoming.length} />
               <Card variant="outlined" className="animate-card-in">
@@ -440,7 +440,7 @@ export default function Dashboard() {
           {showProfitAnalytics && (
             <section>
               <SectionHeader title={d.profitAnalytics} />
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4">
                 <StatCard label={d.totalExpenses} value={formatCurrency(totalExpenses)} icon={TrendingDown} accent="rose" />
                 <StatCard label={d.netProfit} value={`${netProfit >= 0 ? "+" : ""}${formatCurrency(netProfit)}`} icon={ArrowUpRight} accent={netProfit >= 0 ? "emerald" : "rose"} />
                 <StatCard label={d.avgProfitPerBooking} value={formatCurrency(avgProfitPerBooking)} icon={DollarSign} accent="violet" />
