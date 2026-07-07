@@ -293,7 +293,6 @@ function FeaturesSection({
       id="features"
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
-      style={{ minHeight: "100vh" }}
     >
       {/* Gold radial glow */}
       <div
@@ -304,14 +303,13 @@ function FeaturesSection({
 
       <div
         className="relative z-10 flex flex-col"
-        style={{ minHeight: "100vh", padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) 4rem" }}
+        style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) 4rem" }}
       >
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: EASE }}
-          className="mb-auto"
         >
           <p className="text-[13px] font-medium font-sans uppercase tracking-[0.12em] mb-4" style={goldText}>
             // Everything you need
@@ -327,7 +325,7 @@ function FeaturesSection({
         {/* ── Scroll-driven promo video card ── */}
         <motion.div
           ref={promoRef}
-          className="relative mt-14 mb-4 rounded-2xl overflow-hidden"
+          className="relative mt-10 rounded-2xl overflow-hidden"
           style={{
             scale: promoScale,
             opacity: promoOpacity,
@@ -361,7 +359,7 @@ function FeaturesSection({
         </motion.div>
 
         {/* Cards */}
-        <div className="grid gap-5 mt-16" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
+        <div className="grid gap-5 mt-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
           {items.slice(0, 3).map((item, i) => {
             const Icon = FEATURE_ICONS[i];
             const tags = TAGS[i];
