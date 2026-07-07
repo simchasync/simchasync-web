@@ -577,28 +577,28 @@ function PricingSection({
     target: ref,
     offset: ["start end", "end start"],
   });
-  // Scroll-driven vertical pan across the flora horizon
-  const gardenPos = useTransform(scrollYProgress, [0, 1], ["center 30%", "center 62%"]);
+  // Scroll-driven vertical pan across the flora — reveals tops → base as you scroll
+  const gardenPos = useTransform(scrollYProgress, [0, 1], ["center 12%", "center 78%"]);
   // Gentle top fade so the band dissolves up into the section
   const gardenMask =
-    "linear-gradient(to bottom, transparent 0%, #000 18%, #000 100%)";
+    "linear-gradient(to bottom, transparent 0%, #000 15%, #000 100%)";
 
   return (
     <section
       id="pricing"
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
-      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(15rem,28vw,24rem)" }}
+      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(20rem,40vw,34rem)" }}
     >
-      {/* ── Scroll-driven full-width garden band (bottom, no-repeat, cover) ── */}
+      {/* ── Scroll-driven full-width garden band (bottom, no-repeat, full width) ── */}
       <motion.div
         aria-hidden
         className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none"
         style={{
-          height: "clamp(240px, 30vw, 420px)",
+          height: "clamp(320px, 42vw, 600px)",
           backgroundImage: "url(/seam-garden.png)",
           backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
+          backgroundSize: "100% auto",
           backgroundPosition: gardenPos,
           opacity: 0.92,
           WebkitMaskImage: gardenMask,
