@@ -401,8 +401,9 @@ function MissionSection() {
   const wordProgress = useTransform(scrollYProgress, [0.15, 0.85], [0, 1]);
 
   // Background video: subtle parallax drift + gentle scale as the section passes.
-  const bgY     = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
-  const bgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.15, 1.05, 1.15]);
+  // Tighter ranges keep upscaling minimal → crisper footage.
+  const bgY     = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+  const bgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.04, 1.12]);
 
   const para1 = "We built SimchaSync for the musicians behind every simcha — where bookings, invoices, and client relationships stay synced without the chaos.";
   const para2 = "A platform where your music business runs as beautifully as the celebrations you perform — less admin, less friction, more music.";
@@ -421,13 +422,23 @@ function MissionSection() {
       {/* ── Background video (behind the text) ── */}
       <motion.video
         aria-hidden
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
         src={MISSION_VIDEO}
         autoPlay
         muted
         loop
         playsInline
-        style={{ y: bgY, scale: bgScale, opacity: 0.5 }}
+        preload="auto"
+        disablePictureInPicture
+        style={{
+          y: bgY,
+          scale: bgScale,
+          opacity: 0.58,
+          // GPU compositing for smooth 60fps scroll + sharper scaling
+          willChange: "transform, opacity",
+          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
+        }}
       />
 
       {/* Scrim for text legibility — darker at edges, lets center art breathe */}
