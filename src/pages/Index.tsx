@@ -90,65 +90,31 @@ function Navbar() {
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
+// Mindloop-style direct MP4 with scroll-driven parallax + fade-out
 function HeroBackground() {
   const { scrollYProgress } = useScroll();
-  const y1 = useTransform(scrollYProgress, [0, 0.6], [0, -200]);
-  const y2 = useTransform(scrollYProgress, [0, 0.6], [0, 120]);
-  const y3 = useTransform(scrollYProgress, [0, 0.6], [0, -80]);
-  const fade = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "-22%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.48], [0.62, 0]);
 
   return (
-    <motion.div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-[#05040e]" style={{ opacity: fade }}>
-      {/* Gold orb — top center, parallax up */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{
-          width: "110vw", height: "110vw", borderRadius: "50%",
-          background: "radial-gradient(circle at 40% 40%, rgba(199,161,85,0.38) 0%, rgba(199,130,50,0.15) 35%, transparent 65%)",
-          top: "-45%", left: "-5%",
-          filter: "blur(60px)",
-          y: y1,
-        }}
-        animate={{ x: [0, 40, 0] }}
-        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+    <div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-black">
+      {/* scale(1.28) gives parallax room without exposing edges */}
+      <motion.video
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        style={{ opacity, y, scale: 1.28 }}
       />
-      {/* Indigo/violet orb — bottom right, parallax down */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{
-          width: "85vw", height: "85vw", borderRadius: "50%",
-          background: "radial-gradient(circle at 60% 50%, rgba(100,70,210,0.35) 0%, rgba(60,30,140,0.15) 40%, transparent 65%)",
-          bottom: "-25%", right: "-20%",
-          filter: "blur(70px)",
-          y: y2,
-        }}
-        animate={{ x: [0, -35, 0] }}
-        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-      />
-      {/* Deep teal accent — mid left */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{
-          width: "55vw", height: "55vw", borderRadius: "50%",
-          background: "radial-gradient(circle at center, rgba(20,80,100,0.28) 0%, transparent 65%)",
-          top: "25%", left: "-15%",
-          filter: "blur(50px)",
-          y: y3,
-        }}
-        animate={{ x: [0, 25, 0] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 9 }}
-      />
-      {/* Subtle dot-grid for perceived depth */}
+      {/* Bottom section fade into features */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
-        }}
+        aria-hidden
+        className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
+        style={{ height: "16rem", background: "linear-gradient(to bottom, transparent, #000)" }}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -159,7 +125,7 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
   const allWords = [...line1, "Simchas", ...line2];
 
   return (
-    <section className="relative min-h-screen bg-[#05040e] flex flex-col overflow-hidden selection:bg-white selection:text-black">
+    <section className="relative min-h-screen bg-black flex flex-col overflow-hidden selection:bg-white selection:text-black">
       <HeroBackground />
 
       {/* Overlay for text contrast */}
