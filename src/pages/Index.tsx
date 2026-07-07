@@ -158,11 +158,11 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
         style={{ background: "radial-gradient(ellipse 70% 30% at 50% -5%, rgba(237,208,138,0.10), transparent 60%)" }}
       />
 
-      {/* Fade into features section */}
+      {/* Fade into mission section — pure black to match the next section */}
       <div
         aria-hidden
-        className="absolute bottom-0 left-0 right-0 z-[2] pointer-events-none h-32"
-        style={{ background: "linear-gradient(to bottom, transparent, #050505)" }}
+        className="absolute bottom-0 left-0 right-0 z-[2] pointer-events-none h-56"
+        style={{ background: "linear-gradient(to bottom, transparent 0%, #000 70%, #000 100%)" }}
       />
 
       <Navbar />
@@ -507,8 +507,8 @@ function MissionSection() {
       {/* Top + bottom fades to blend into neighbouring sections */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-40 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom, #000, transparent)" }}
+        className="absolute inset-x-0 top-0 h-56 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, #000 0%, #000 30%, transparent 100%)" }}
       />
       <div
         aria-hidden
