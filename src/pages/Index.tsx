@@ -577,35 +577,36 @@ function PricingSection({
     target: ref,
     offset: ["start end", "end start"],
   });
-  // Scroll-driven vertical pan across the flora horizon + subtle zoom
-  const gardenPos   = useTransform(scrollYProgress, [0, 1], ["center 28%", "center 60%"]);
-  const gardenScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.06, 1, 1.06]);
-  // Fade top of the black-backed strip so it dissolves up into the section
+  // Scroll-driven parallax drift + subtle zoom for the full garden image
+  const gardenY     = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
+  const gardenScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
+  // Gentle top fade only — keeps the whole flora visible while dissolving the
+  // black upper edge into the section.
   const gardenMask =
-    "linear-gradient(to bottom, transparent 0%, #000 40%, #000 90%, transparent 100%)";
+    "linear-gradient(to bottom, transparent 0%, #000 16%, #000 100%)";
 
   return (
     <section
       id="pricing"
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
-      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(10rem,18vw,14rem)" }}
+      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(20rem,42vw,34rem)" }}
     >
-      {/* ── Scroll-driven garden divider strip (contained horizon band) ── */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 z-0 overflow-hidden pointer-events-none select-none"
-        style={{
-          height: "clamp(200px, 26vw, 340px)",
-          WebkitMaskImage: gardenMask,
-          maskImage: gardenMask,
-        }}
-      >
+      {/* ── Scroll-driven full garden divider (whole image, bottom-anchored) ── */}
+      <div className="absolute inset-x-0 bottom-0 z-0 flex justify-center pointer-events-none select-none">
         <motion.img
+          aria-hidden
           src="/seam-garden.png"
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: gardenPos, scale: gardenScale, willChange: "transform", opacity: 0.85 }}
+          className="block w-full max-w-[1600px] h-auto"
+          style={{
+            y: gardenY,
+            scale: gardenScale,
+            opacity: 0.9,
+            WebkitMaskImage: gardenMask,
+            maskImage: gardenMask,
+            willChange: "transform",
+          }}
         />
       </div>
 
