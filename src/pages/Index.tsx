@@ -90,6 +90,68 @@ function Navbar() {
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
+function HeroBackground() {
+  const { scrollYProgress } = useScroll();
+  const y1 = useTransform(scrollYProgress, [0, 0.6], [0, -200]);
+  const y2 = useTransform(scrollYProgress, [0, 0.6], [0, 120]);
+  const y3 = useTransform(scrollYProgress, [0, 0.6], [0, -80]);
+  const fade = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  return (
+    <motion.div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-[#05040e]" style={{ opacity: fade }}>
+      {/* Gold orb — top center, parallax up */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          width: "110vw", height: "110vw", borderRadius: "50%",
+          background: "radial-gradient(circle at 40% 40%, rgba(199,161,85,0.38) 0%, rgba(199,130,50,0.15) 35%, transparent 65%)",
+          top: "-45%", left: "-5%",
+          filter: "blur(60px)",
+          y: y1,
+        }}
+        animate={{ x: [0, 40, 0] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Indigo/violet orb — bottom right, parallax down */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          width: "85vw", height: "85vw", borderRadius: "50%",
+          background: "radial-gradient(circle at 60% 50%, rgba(100,70,210,0.35) 0%, rgba(60,30,140,0.15) 40%, transparent 65%)",
+          bottom: "-25%", right: "-20%",
+          filter: "blur(70px)",
+          y: y2,
+        }}
+        animate={{ x: [0, -35, 0] }}
+        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+      />
+      {/* Deep teal accent — mid left */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          width: "55vw", height: "55vw", borderRadius: "50%",
+          background: "radial-gradient(circle at center, rgba(20,80,100,0.28) 0%, transparent 65%)",
+          top: "25%", left: "-15%",
+          filter: "blur(50px)",
+          y: y3,
+        }}
+        animate={{ x: [0, 25, 0] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 9 }}
+      />
+      {/* Subtle dot-grid for perceived depth */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
+        }}
+      />
+    </motion.div>
+  );
+}
+
 function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; ctaSecondary: string }) {
   // "Manage Your" | "Simchas" | "Like a Pro"
   const line1 = ["Manage", "Your"];
@@ -97,40 +159,8 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
   const allWords = [...line1, "Simchas", ...line2];
 
   return (
-    <section className="relative min-h-screen bg-black flex flex-col overflow-hidden selection:bg-white selection:text-black">
-      {/* Animated gradient orbs — scroll-driven dark background */}
-      <div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-[#030305]">
-        <motion.div
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            width: "70vw", height: "70vw",
-            background: "radial-gradient(circle, rgba(199,161,85,0.08) 0%, transparent 70%)",
-            top: "-25%", left: "15%",
-          }}
-          animate={{ y: [0, 45, 0], x: [0, -28, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            width: "55vw", height: "55vw",
-            background: "radial-gradient(circle, rgba(80,55,170,0.07) 0%, transparent 70%)",
-            bottom: "0%", right: "-15%",
-          }}
-          animate={{ y: [0, -35, 0], x: [0, 22, 0] }}
-          transition={{ duration: 17, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        />
-        <motion.div
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            width: "38vw", height: "38vw",
-            background: "radial-gradient(circle, rgba(40,20,90,0.09) 0%, transparent 70%)",
-            top: "35%", left: "-8%",
-          }}
-          animate={{ y: [0, 22, 0] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 7 }}
-        />
-      </div>
+    <section className="relative min-h-screen bg-[#05040e] flex flex-col overflow-hidden selection:bg-white selection:text-black">
+      <HeroBackground />
 
       {/* Overlay for text contrast */}
       <div
