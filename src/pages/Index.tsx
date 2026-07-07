@@ -270,18 +270,6 @@ function FeaturesSection({
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
-  // Scroll-driven promo card
-  const promoRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: promoProgress } = useScroll({
-    target: promoRef,
-    offset: ["start end", "center center"],
-  });
-  const promoScale   = useTransform(promoProgress, [0, 1], [0.9, 1]);
-  const promoOpacity = useTransform(promoProgress, [0, 0.45], [0, 1]);
-  const promoY       = useTransform(promoProgress, [0, 1], [70, 0]);
-  // Inner video parallax — footage drifts slightly as the card scrolls
-  const promoVideoY  = useTransform(promoProgress, [0, 1], ["-8%", "6%"]);
-
   const TAGS = [
     ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
     ["Stripe", "PDF Invoices", "Payment Links", "P&L Reports"],
@@ -322,44 +310,8 @@ function FeaturesSection({
           </h2>
         </motion.div>
 
-        {/* ── Scroll-driven promo video card ── */}
-        <motion.div
-          ref={promoRef}
-          className="relative mt-10 rounded-2xl overflow-hidden"
-          style={{
-            scale: promoScale,
-            opacity: promoOpacity,
-            y: promoY,
-            border: "1px solid rgba(237,208,138,0.12)",
-            aspectRatio: "16 / 7",
-          }}
-        >
-          {/* scale(1.15) gives the inner parallax room without exposing edges */}
-          <motion.video
-            className="absolute inset-0 w-full h-full object-cover"
-            src={PROMO_VIDEO}
-            autoPlay
-            muted
-            loop
-            playsInline
-            style={{ y: promoVideoY, scale: 1.15 }}
-          />
-          {/* Darkening vignette so the card doesn't blow out */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)" }}
-          />
-          {/* Gold shimmer top edge */}
-          <div
-            aria-hidden
-            className="absolute top-0 left-0 right-0 h-px pointer-events-none"
-            style={{ background: "linear-gradient(90deg, transparent 5%, rgba(237,208,138,0.45) 50%, transparent 95%)" }}
-          />
-        </motion.div>
-
         {/* Cards */}
-        <div className="grid gap-5 mt-6" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
+        <div className="grid gap-5 mt-14" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
           {items.slice(0, 3).map((item, i) => {
             const Icon = FEATURE_ICONS[i];
             const tags = TAGS[i];
@@ -419,7 +371,6 @@ function FeaturesSection({
 // ── Mission (scroll-driven word reveal) ───────────────────────────────────────
 
 const MISSION_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4";
-const PROMO_VIDEO    = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4";
 
 function MissionSection() {
   const sectionRef = useRef<HTMLElement>(null);
