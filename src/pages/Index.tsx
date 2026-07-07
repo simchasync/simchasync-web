@@ -572,6 +572,17 @@ function PricingSection({
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
+  // Scroll-driven garden background behind the pricing cards
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const gardenY       = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
+  const gardenScale   = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.04, 1.12]);
+  const gardenOpacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 0.55, 0.55, 0.15]);
+  const gardenMask =
+    "radial-gradient(ellipse 85% 80% at 50% 55%, #000 55%, transparent 100%)";
+
   return (
     <section
       id="pricing"
@@ -579,9 +590,34 @@ function PricingSection({
       className="relative bg-[#050505] overflow-hidden"
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem)" }}
     >
+      {/* ── Scroll-driven garden background (behind the cards) ── */}
+      <motion.img
+        aria-hidden
+        src="/seam-garden.png"
+        alt=""
+        className="absolute left-1/2 top-1/2 z-0 w-[max(100vw,1100px)] max-w-none -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
+        style={{
+          y: gardenY,
+          scale: gardenScale,
+          opacity: gardenOpacity,
+          WebkitMaskImage: gardenMask,
+          maskImage: gardenMask,
+          willChange: "transform, opacity",
+        }}
+      />
+      {/* Scrim so the plan cards stay legible over the garden */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 50%, rgba(5,5,5,0.45) 0%, rgba(5,5,5,0.80) 70%, rgba(5,5,5,0.95) 100%)",
+        }}
+      />
+
+      <div
+        aria-hidden
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(237,208,138,0.03), transparent 70%)" }}
       />
 
@@ -590,7 +626,7 @@ function PricingSection({
         initial={{ opacity: 0, y: 30 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.7, ease: EASE }}
-        className="text-center mb-16"
+        className="relative z-10 text-center mb-16"
       >
         <p className="text-[13px] font-medium font-sans uppercase tracking-[0.12em] mb-4" style={goldText}>
           // Transparent Pricing
@@ -608,7 +644,7 @@ function PricingSection({
 
       {/* Cards */}
       <div
-        className="grid gap-5 mx-auto"
+        className="relative z-10 grid gap-5 mx-auto"
         style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", maxWidth: 960 }}
       >
         {plans.map((plan, i) => (
@@ -688,7 +724,7 @@ function PricingSection({
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ delay: 0.6 }}
-        className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 mt-10 text-[12px] sm:text-[13px] text-white/30 font-sans font-light"
+        className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 mt-10 text-[12px] sm:text-[13px] text-white/30 font-sans font-light"
       >
         {["No credit card required", "Cancel anytime", "30-day money-back guarantee"].map((item) => (
           <span key={item} className="whitespace-nowrap">✓ {item}</span>
@@ -733,56 +769,6 @@ function Footer() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-// Full-width garden band straddling the hero/mission seam so the join is invisible.
-function SeamDivider() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  // Scroll-driven parallax drift + gentle breathing scale
-  const y = useTransform(scrollYProgress, [0, 1], [70, -70]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.08, 1.02, 1.08]);
-
-  // Fade all four edges of the black-backed image so its rectangle blends into
-  // the sections seamlessly (top/bottom into the join, left/right off-screen safe).
-  const edgeMask =
-    "linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%)";
-
-  return (
-    <div
-      ref={ref}
-      aria-hidden
-      className="relative z-[2] h-0 pointer-events-none select-none overflow-visible"
-    >
-      {/* Backing black band — guarantees no hard line across the full width */}
-      <div
-        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-screen"
-        style={{
-          height: "min(56vw, 620px)",
-          background: "linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%)",
-        }}
-      />
-
-      {/* Garden band — full-bleed, centered on the seam */}
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,1100px)]">
-        <motion.img
-          src="/seam-garden.png"
-          alt=""
-          style={{
-            y,
-            scale,
-            willChange: "transform",
-            WebkitMaskImage: edgeMask,
-            maskImage: edgeMask,
-          }}
-          className="block w-full h-auto opacity-95"
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function Index() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
@@ -793,7 +779,6 @@ export default function Index() {
   return (
     <div className="min-h-screen antialiased" style={{ background: "#050505" }}>
       <Hero subtitle={l.hero.subtitle} cta={l.hero.cta} ctaSecondary={l.hero.ctaSecondary} />
-      <SeamDivider />
       <MissionSection />
       <FeaturesSection items={l.features.items} />
       <PricingSection plans={l.pricing.plans} />
