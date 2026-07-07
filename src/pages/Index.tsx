@@ -577,40 +577,35 @@ function PricingSection({
     target: ref,
     offset: ["start end", "end start"],
   });
-  // Scroll-driven parallax drift + subtle zoom for the full garden image
-  const gardenY     = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
-  const gardenScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.05, 1, 1.05]);
-  // Gentle top fade only — keeps the whole flora visible while dissolving the
-  // black upper edge into the section.
+  // Scroll-driven vertical pan across the flora horizon
+  const gardenPos = useTransform(scrollYProgress, [0, 1], ["center 30%", "center 62%"]);
+  // Gentle top fade so the band dissolves up into the section
   const gardenMask =
-    "linear-gradient(to bottom, transparent 0%, #000 14%, #000 100%)";
+    "linear-gradient(to bottom, transparent 0%, #000 18%, #000 100%)";
 
   return (
     <section
       id="pricing"
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
-      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(16rem,30vw,26rem)" }}
+      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(15rem,28vw,24rem)" }}
     >
-      {/* ── Scroll-driven full garden divider (whole image, capped height) ── */}
-      <div className="absolute inset-x-0 bottom-0 z-0 flex justify-center pointer-events-none select-none">
-        <motion.img
-          aria-hidden
-          src="/seam-garden.png"
-          alt=""
-          className="block w-auto h-auto"
-          style={{
-            maxHeight: "clamp(220px, 30vw, 400px)",
-            maxWidth: "100%",
-            y: gardenY,
-            scale: gardenScale,
-            opacity: 0.9,
-            WebkitMaskImage: gardenMask,
-            maskImage: gardenMask,
-            willChange: "transform",
-          }}
-        />
-      </div>
+      {/* ── Scroll-driven full-width garden band (bottom, no-repeat, cover) ── */}
+      <motion.div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 z-0 pointer-events-none select-none"
+        style={{
+          height: "clamp(240px, 30vw, 420px)",
+          backgroundImage: "url(/seam-garden.png)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: gardenPos,
+          opacity: 0.92,
+          WebkitMaskImage: gardenMask,
+          maskImage: gardenMask,
+          willChange: "background-position",
+        }}
+      />
 
       <div
         aria-hidden
