@@ -583,23 +583,25 @@ function PricingSection({
   // Gentle top fade only — keeps the whole flora visible while dissolving the
   // black upper edge into the section.
   const gardenMask =
-    "linear-gradient(to bottom, transparent 0%, #000 16%, #000 100%)";
+    "linear-gradient(to bottom, transparent 0%, #000 14%, #000 100%)";
 
   return (
     <section
       id="pricing"
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
-      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(20rem,42vw,34rem)" }}
+      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) clamp(16rem,30vw,26rem)" }}
     >
-      {/* ── Scroll-driven full garden divider (whole image, bottom-anchored) ── */}
+      {/* ── Scroll-driven full garden divider (whole image, capped height) ── */}
       <div className="absolute inset-x-0 bottom-0 z-0 flex justify-center pointer-events-none select-none">
         <motion.img
           aria-hidden
           src="/seam-garden.png"
           alt=""
-          className="block w-full max-w-[1600px] h-auto"
+          className="block w-auto h-auto"
           style={{
+            maxHeight: "clamp(220px, 30vw, 400px)",
+            maxWidth: "100%",
             y: gardenY,
             scale: gardenScale,
             opacity: 0.9,
