@@ -740,22 +740,22 @@ function SeamDivider() {
     target: ref,
     offset: ["start end", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], [40, -40]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.04, 1, 1.04]);
+  const y = useTransform(scrollYProgress, [0, 1], [60, -60]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.06, 1, 1.06]);
 
   return (
     <div
       ref={ref}
       aria-hidden
-      className="relative z-20 h-0 pointer-events-none select-none overflow-visible"
+      className="relative z-[2] h-0 pointer-events-none select-none overflow-visible"
     >
       {/* Static centering wrapper — keeps Tailwind translate off the animated element */}
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(1100px,150vw)] max-w-none">
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(1600px,175vw)] max-w-none">
         <motion.img
           src="/seam-island.png"
           alt=""
           style={{ y, scale, willChange: "transform" }}
-          className="w-full h-auto opacity-95 drop-shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+          className="w-full h-auto opacity-95 drop-shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
         />
       </div>
     </div>
