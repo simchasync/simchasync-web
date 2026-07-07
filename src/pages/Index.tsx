@@ -312,6 +312,37 @@ function FeaturesSection({
           </h2>
         </motion.div>
 
+        {/* ── Promo video card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 48 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.75, delay: 0.18, ease: EASE }}
+          className="relative mt-14 mb-4 rounded-2xl overflow-hidden"
+          style={{ border: "1px solid rgba(237,208,138,0.12)" }}
+        >
+          <video
+            className="w-full object-cover"
+            src={PROMO_VIDEO}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{ aspectRatio: "16 / 7", display: "block" }}
+          />
+          {/* Darkening vignette so the card doesn't blow out */}
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)" }}
+          />
+          {/* Gold shimmer top edge */}
+          <div
+            aria-hidden
+            className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+            style={{ background: "linear-gradient(90deg, transparent 5%, rgba(237,208,138,0.45) 50%, transparent 95%)" }}
+          />
+        </motion.div>
+
         {/* Cards */}
         <div className="grid gap-5 mt-16" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
           {items.slice(0, 3).map((item, i) => {
@@ -372,12 +403,28 @@ function FeaturesSection({
 
 // ── Mission (scroll-driven word reveal) ───────────────────────────────────────
 
+const MISSION_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4";
+const PROMO_VIDEO    = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4";
+
 function MissionSection() {
-  const ref = useRef<HTMLElement>(null);
+  const sectionRef  = useRef<HTMLElement>(null);
+  const videoRef    = useRef<HTMLDivElement>(null);
+
+  // Word-reveal: tracks the whole section (start entering → fully exited)
   const { scrollYProgress } = useScroll({
-    target: ref,
+    target: sectionRef,
     offset: ["start end", "end start"],
   });
+
+  // Video entrance: tracks only the video container (bottom of viewport → 65% up)
+  const { scrollYProgress: videoReveal } = useScroll({
+    target: videoRef,
+    offset: ["start end", "center 65%"],
+  });
+
+  const videoScale   = useTransform(videoReveal, [0, 1], [0.88, 1.0]);
+  const videoOpacity = useTransform(videoReveal, [0, 0.38], [0, 1]);
+  const videoY       = useTransform(videoReveal, [0, 1], [56, 0]);
 
   const para1 = "We built SimchaSync for the musicians behind every simcha — where bookings, invoices, and client relationships stay synced without the chaos.";
   const para2 = "A platform where your music business runs as beautifully as the celebrations you perform — less admin, less friction, more music.";
@@ -389,7 +436,7 @@ function MissionSection() {
 
   return (
     <section
-      ref={ref}
+      ref={sectionRef}
       className="relative bg-[#050505] overflow-hidden"
       style={{ padding: "clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,5rem)" }}
     >
@@ -398,7 +445,47 @@ function MissionSection() {
         className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(237,208,138,0.03), transparent 70%)" }}
       />
+
       <div className="relative z-10 max-w-5xl mx-auto">
+        {/* ── Scroll-driven video reveal ── */}
+        <div ref={videoRef} className="flex justify-center mb-20">
+          <motion.div
+            className="relative rounded-3xl overflow-hidden"
+            style={{
+              scale: videoScale,
+              opacity: videoOpacity,
+              y: videoY,
+              width: "min(720px, 100%)",
+              aspectRatio: "1 / 1",
+            }}
+          >
+            <video
+              className="w-full h-full object-cover"
+              src={MISSION_VIDEO}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+            {/* Inner frame — adds subtle depth */}
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-3xl pointer-events-none"
+              style={{
+                boxShadow: "inset 0 0 80px rgba(0,0,0,0.55)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            />
+            {/* Gold shimmer at top edge */}
+            <div
+              aria-hidden
+              className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(237,208,138,0.35), transparent)" }}
+            />
+          </motion.div>
+        </div>
+
+        {/* ── Word-by-word scroll reveal ── */}
         <p
           className="font-medium leading-relaxed select-none"
           style={{ fontSize: "clamp(1.4rem,3vw,2.3rem)", letterSpacing: "-0.02em" }}
