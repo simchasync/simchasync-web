@@ -270,6 +270,18 @@ function FeaturesSection({
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
+  // Scroll-driven promo card
+  const promoRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: promoProgress } = useScroll({
+    target: promoRef,
+    offset: ["start end", "center center"],
+  });
+  const promoScale   = useTransform(promoProgress, [0, 1], [0.9, 1]);
+  const promoOpacity = useTransform(promoProgress, [0, 0.45], [0, 1]);
+  const promoY       = useTransform(promoProgress, [0, 1], [70, 0]);
+  // Inner video parallax — footage drifts slightly as the card scrolls
+  const promoVideoY  = useTransform(promoProgress, [0, 1], ["-8%", "6%"]);
+
   const TAGS = [
     ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
     ["Stripe", "PDF Invoices", "Payment Links", "P&L Reports"],
@@ -312,22 +324,27 @@ function FeaturesSection({
           </h2>
         </motion.div>
 
-        {/* ── Promo video card ── */}
+        {/* ── Scroll-driven promo video card ── */}
         <motion.div
-          initial={{ opacity: 0, y: 48 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.75, delay: 0.18, ease: EASE }}
+          ref={promoRef}
           className="relative mt-14 mb-4 rounded-2xl overflow-hidden"
-          style={{ border: "1px solid rgba(237,208,138,0.12)" }}
+          style={{
+            scale: promoScale,
+            opacity: promoOpacity,
+            y: promoY,
+            border: "1px solid rgba(237,208,138,0.12)",
+            aspectRatio: "16 / 7",
+          }}
         >
-          <video
-            className="w-full object-cover"
+          {/* scale(1.15) gives the inner parallax room without exposing edges */}
+          <motion.video
+            className="absolute inset-0 w-full h-full object-cover"
             src={PROMO_VIDEO}
             autoPlay
             muted
             loop
             playsInline
-            style={{ aspectRatio: "16 / 7", display: "block" }}
+            style={{ y: promoVideoY, scale: 1.15 }}
           />
           {/* Darkening vignette so the card doesn't blow out */}
           <div
@@ -407,24 +424,20 @@ const MISSION_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOt
 const PROMO_VIDEO    = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4";
 
 function MissionSection() {
-  const sectionRef  = useRef<HTMLElement>(null);
-  const videoRef    = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  // Word-reveal: tracks the whole section (start entering → fully exited)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });
 
-  // Video entrance: tracks only the video container (bottom of viewport → 65% up)
-  const { scrollYProgress: videoReveal } = useScroll({
-    target: videoRef,
-    offset: ["start end", "center 65%"],
-  });
+  // Word-reveal timeline is compressed into the middle of the scroll so the
+  // text finishes revealing before the section scrolls away.
+  const wordProgress = useTransform(scrollYProgress, [0.15, 0.85], [0, 1]);
 
-  const videoScale   = useTransform(videoReveal, [0, 1], [0.88, 1.0]);
-  const videoOpacity = useTransform(videoReveal, [0, 0.38], [0, 1]);
-  const videoY       = useTransform(videoReveal, [0, 1], [56, 0]);
+  // Background video: subtle parallax drift + gentle scale as the section passes.
+  const bgY     = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+  const bgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.15, 1.05, 1.15]);
 
   const para1 = "We built SimchaSync for the musicians behind every simcha — where bookings, invoices, and client relationships stay synced without the chaos.";
   const para2 = "A platform where your music business runs as beautifully as the celebrations you perform — less admin, less friction, more music.";
@@ -437,64 +450,53 @@ function MissionSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#050505] overflow-hidden"
-      style={{ padding: "clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,5rem)" }}
+      className="relative bg-black overflow-hidden flex items-center"
+      style={{ minHeight: "115vh", padding: "clamp(6rem,12vw,10rem) clamp(1.5rem,5vw,5rem)" }}
     >
+      {/* ── Background video (behind the text) ── */}
+      <motion.video
+        aria-hidden
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        src={MISSION_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        style={{ y: bgY, scale: bgScale, opacity: 0.5 }}
+      />
+
+      {/* Scrim for text legibility — darker at edges, lets center art breathe */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(237,208,138,0.03), transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 75% at 50% 45%, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.72) 70%, rgba(0,0,0,0.92) 100%)",
+        }}
+      />
+      {/* Top + bottom fades to blend into neighbouring sections */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-40 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, #000, transparent)" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
+        style={{ background: "linear-gradient(to top, #000, transparent)" }}
       />
 
+      {/* ── Text (in front) ── */}
       <div className="relative z-10 max-w-5xl mx-auto">
-        {/* ── Scroll-driven video reveal ── */}
-        <div ref={videoRef} className="flex justify-center mb-20">
-          <motion.div
-            className="relative rounded-3xl overflow-hidden"
-            style={{
-              scale: videoScale,
-              opacity: videoOpacity,
-              y: videoY,
-              width: "min(720px, 100%)",
-              aspectRatio: "1 / 1",
-            }}
-          >
-            <video
-              className="w-full h-full object-cover"
-              src={MISSION_VIDEO}
-              autoPlay
-              muted
-              loop
-              playsInline
-            />
-            {/* Inner frame — adds subtle depth */}
-            <div
-              aria-hidden
-              className="absolute inset-0 rounded-3xl pointer-events-none"
-              style={{
-                boxShadow: "inset 0 0 80px rgba(0,0,0,0.55)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            />
-            {/* Gold shimmer at top edge */}
-            <div
-              aria-hidden
-              className="absolute top-0 left-0 right-0 h-px pointer-events-none"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(237,208,138,0.35), transparent)" }}
-            />
-          </motion.div>
-        </div>
-
-        {/* ── Word-by-word scroll reveal ── */}
         <p
           className="font-medium leading-relaxed select-none"
-          style={{ fontSize: "clamp(1.4rem,3vw,2.3rem)", letterSpacing: "-0.02em" }}
+          style={{ fontSize: "clamp(1.5rem,3.4vw,2.6rem)", letterSpacing: "-0.02em", textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}
         >
           {words1.map((word, i) => (
             <ScrollWord
               key={i}
               word={word}
-              progress={scrollYProgress}
+              progress={wordProgress}
               range={[i / total, (i + 1) / total]}
               highlighted={HIGHLIGHTED.has(word.toLowerCase().replace(/[.,—]/g, ""))}
             />
@@ -502,7 +504,7 @@ function MissionSection() {
         </p>
         <p
           className="font-medium leading-relaxed select-none mt-8"
-          style={{ fontSize: "clamp(1.1rem,2.2vw,1.7rem)", letterSpacing: "-0.02em" }}
+          style={{ fontSize: "clamp(1.15rem,2.4vw,1.9rem)", letterSpacing: "-0.02em", textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}
         >
           {words2.map((word, i) => {
             const idx = words1.length + i;
@@ -510,7 +512,7 @@ function MissionSection() {
               <ScrollWord
                 key={i}
                 word={word}
-                progress={scrollYProgress}
+                progress={wordProgress}
                 range={[idx / total, (idx + 1) / total]}
                 highlighted={HIGHLIGHTED.has(word.toLowerCase().replace(/[.,—]/g, ""))}
               />
