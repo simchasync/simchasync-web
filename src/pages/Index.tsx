@@ -749,13 +749,23 @@ function SeamDivider() {
       aria-hidden
       className="relative z-[2] h-0 pointer-events-none select-none overflow-visible"
     >
+      {/* Full-width black band centered on the seam — masks the section join everywhere */}
+      <div
+        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-screen"
+        style={{
+          height: "460px",
+          background:
+            "linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%)",
+        }}
+      />
+
       {/* Static centering wrapper — keeps Tailwind translate off the animated element */}
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(1600px,175vw)] max-w-none">
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(2000px,205vw)] max-w-none">
         <motion.img
           src="/seam-island.png"
           alt=""
           style={{ y, scale, willChange: "transform" }}
-          className="w-full h-auto opacity-95 drop-shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+          className="w-full h-auto opacity-95 drop-shadow-[0_30px_80px_rgba(0,0,0,0.75)]"
         />
       </div>
     </div>
