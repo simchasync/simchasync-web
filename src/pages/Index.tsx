@@ -278,6 +278,8 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
 
 const FEATURE_ICONS = [Calendar, CreditCard, Users];
 
+const FEATURES_BG_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260611_183632_c311af08-e4b7-458f-81e7-79847a49b3d3.mp4";
+
 function FeaturesSection({
   items,
 }: {
@@ -285,6 +287,15 @@ function FeaturesSection({
 }) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  // Scroll-driven background video (behind the cards)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const bgY       = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+  const bgScale   = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.04, 1.12]);
+  const bgOpacity = useTransform(scrollYProgress, [0, 0.25, 0.75, 1], [0, 0.4, 0.4, 0]);
 
   const TAGS = [
     ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
@@ -298,10 +309,51 @@ function FeaturesSection({
       ref={ref}
       className="relative bg-[#050505] overflow-hidden"
     >
+      {/* ── Scroll-driven background video (behind the cards) ── */}
+      <motion.video
+        aria-hidden
+        className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none z-0"
+        src={FEATURES_BG_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        style={{
+          y: bgY,
+          scale: bgScale,
+          opacity: bgOpacity,
+          willChange: "transform, opacity",
+          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
+        }}
+      />
+      {/* Scrim over video so cards/text stay legible */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 45%, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.82) 70%, rgba(5,5,5,0.95) 100%)",
+        }}
+      />
+      {/* Top + bottom fades to blend into neighbouring sections */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-40 z-0 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, #050505, transparent)" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-40 z-0 pointer-events-none"
+        style={{ background: "linear-gradient(to top, #050505, transparent)" }}
+      />
+
       {/* Gold radial glow */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(237,208,138,0.05), transparent 60%)" }}
       />
 
