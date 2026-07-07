@@ -168,29 +168,29 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
       <Navbar />
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pt-24 pb-8 px-6 text-center">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pt-24 pb-8 px-4 sm:px-6 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-          className="landing-glass mb-8 inline-flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4"
+          className="landing-glass mb-8 inline-flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 sm:pr-4 max-w-[94vw]"
         >
           <span
-            className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wide font-sans"
+            className="shrink-0 rounded-full px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wide font-sans"
             style={{ ...goldText, border: "1px solid rgba(237,208,138,0.25)" }}
           >
             ♫ FREE TRIAL
           </span>
-          <span className="text-[13px] text-white/80 font-sans">
+          <span className="text-[11px] sm:text-[13px] text-white/80 font-sans truncate">
             Try free for 30 days — No credit card required
           </span>
         </motion.div>
 
         {/* Headline — Instrument Serif italic, word-by-word blur reveal */}
         <h1
-          className="font-serif italic text-white m-0 mb-6 max-w-3xl mx-auto"
-          style={{ fontSize: "clamp(3rem, 8vw, 6rem)", lineHeight: 0.95, letterSpacing: "-0.02em", fontWeight: 700 }}
+          className="font-serif italic text-white m-0 mb-6 max-w-3xl mx-auto px-1"
+          style={{ fontSize: "clamp(2.4rem, 9vw, 6rem)", lineHeight: 0.98, letterSpacing: "-0.02em", fontWeight: 700 }}
         >
           {allWords.map((word, i) => (
             <motion.span
@@ -225,18 +225,18 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
-          className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5"
+          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5 w-full sm:w-auto max-w-sm sm:max-w-none"
         >
           <Link
             to="/auth/register"
-            className="flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold font-sans transition-all duration-200 hover:opacity-88 hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold font-sans transition-all duration-200 hover:opacity-88 hover:-translate-y-0.5"
             style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 8px 32px rgba(199,161,85,0.40)" }}
           >
             {cta} <ArrowRight className="h-5 w-5" />
           </Link>
           <a
             href="#features"
-            className="landing-glass flex items-center gap-2 rounded-full px-8 py-4 text-base font-medium text-white/75 font-sans transition-colors hover:text-white"
+            className="landing-glass flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-medium text-white/75 font-sans transition-colors hover:text-white"
           >
             {ctaSecondary}
           </a>
@@ -262,14 +262,16 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
       </div>
 
       {/* Trust strip */}
-      <motion.p
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.6, ease: EASE }}
-        className="relative z-10 text-center pb-6 text-[13px] text-white/40 font-sans font-light"
+        className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-6 text-[12px] sm:text-[13px] text-white/40 font-sans font-light"
       >
-        ✓ No credit card &nbsp;·&nbsp; ✓ 30-day money-back guarantee &nbsp;·&nbsp; ✓ Cancel anytime
-      </motion.p>
+        {["No credit card", "30-day money-back guarantee", "Cancel anytime"].map((item) => (
+          <span key={item} className="whitespace-nowrap">✓ {item}</span>
+        ))}
+      </motion.div>
     </section>
   );
 }
@@ -372,7 +374,7 @@ function FeaturesSection({
           </p>
           <h2
             className="font-serif italic text-white m-0"
-            style={{ fontSize: "clamp(3rem,6vw,5.5rem)", lineHeight: 0.92, letterSpacing: "-0.02em", fontWeight: 700 }}
+            style={{ fontSize: "clamp(2.6rem,7vw,5.5rem)", lineHeight: 0.94, letterSpacing: "-0.02em", fontWeight: 700 }}
           >
             Run your music<br />business
           </h2>
@@ -595,7 +597,7 @@ function PricingSection({
         </p>
         <h2
           className="font-serif italic text-white m-0 mb-4"
-          style={{ fontSize: "clamp(2.5rem,5vw,4rem)", lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 700 }}
+          style={{ fontSize: "clamp(2.2rem,6vw,4rem)", lineHeight: 1.02, letterSpacing: "-0.02em", fontWeight: 700 }}
         >
           Simple, honest pricing
         </h2>
@@ -615,13 +617,12 @@ function PricingSection({
             initial={{ opacity: 0, y: 40 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.65, delay: 0.1 + i * 0.12, ease: EASE }}
-            className={plan.popular ? "landing-glass-strong" : "landing-glass"}
+            className={`${plan.popular ? "landing-glass-strong md:scale-[1.03]" : "landing-glass"}`}
             style={{
               borderRadius: 22,
               padding: 28,
               display: "flex",
               flexDirection: "column",
-              transform: plan.popular ? "scale(1.03)" : undefined,
             }}
           >
             {plan.popular && (
@@ -683,14 +684,16 @@ function PricingSection({
         ))}
       </div>
 
-      <motion.p
+      <motion.div
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ delay: 0.6 }}
-        className="text-center mt-10 text-[13px] text-white/30 font-sans font-light"
+        className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 mt-10 text-[12px] sm:text-[13px] text-white/30 font-sans font-light"
       >
-        ✓ No credit card required &nbsp;·&nbsp; ✓ Cancel anytime &nbsp;·&nbsp; ✓ 30-day money-back guarantee
-      </motion.p>
+        {["No credit card required", "Cancel anytime", "30-day money-back guarantee"].map((item) => (
+          <span key={item} className="whitespace-nowrap">✓ {item}</span>
+        ))}
+      </motion.div>
     </section>
   );
 }
@@ -700,11 +703,11 @@ function PricingSection({
 function Footer() {
   return (
     <footer
-      className="flex flex-wrap items-center justify-between gap-4 bg-[#050505]"
+      className="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 text-center sm:text-left bg-[#050505]"
       style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px clamp(1.5rem,5vw,5rem)" }}
     >
       <BrandLogo size="sm" />
-      <p className="text-xs text-white/28 font-sans m-0">
+      <p className="order-last sm:order-none text-xs text-white/28 font-sans m-0">
         © {new Date().getFullYear()} SimchaSync. All rights reserved.
       </p>
       <div className="flex gap-5">
