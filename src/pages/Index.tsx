@@ -749,13 +749,15 @@ function SeamDivider() {
       aria-hidden
       className="relative z-20 h-0 pointer-events-none select-none overflow-visible"
     >
-      <motion.img
-        src="/flowers%26grass.png"
-        alt=""
-        loading="lazy"
-        style={{ y, scale, willChange: "transform" }}
-        className="absolute left-1/2 top-0 w-[min(1100px,150vw)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
-      />
+      {/* Static centering wrapper — keeps Tailwind translate off the animated element */}
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(1100px,150vw)] max-w-none">
+        <motion.img
+          src="/seam-island.png"
+          alt=""
+          style={{ y, scale, willChange: "transform" }}
+          className="w-full h-auto opacity-95 drop-shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+        />
+      </div>
     </div>
   );
 }
