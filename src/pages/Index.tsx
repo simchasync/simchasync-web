@@ -733,6 +733,33 @@ function Footer() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+// Decorative floating island straddling the hero/mission seam so the join is invisible.
+function SeamDivider() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.04, 1, 1.04]);
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="relative z-20 h-0 pointer-events-none select-none overflow-visible"
+    >
+      <motion.img
+        src="/flowers%26grass.png"
+        alt=""
+        loading="lazy"
+        style={{ y, scale, willChange: "transform" }}
+        className="absolute left-1/2 top-0 w-[min(1100px,150vw)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-90 drop-shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+      />
+    </div>
+  );
+}
+
 export default function Index() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
@@ -743,6 +770,7 @@ export default function Index() {
   return (
     <div className="min-h-screen antialiased" style={{ background: "#050505" }}>
       <Hero subtitle={l.hero.subtitle} cta={l.hero.cta} ctaSecondary={l.hero.ctaSecondary} />
+      <SeamDivider />
       <MissionSection />
       <FeaturesSection items={l.features.items} />
       <PricingSection plans={l.pricing.plans} />
