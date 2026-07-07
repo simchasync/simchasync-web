@@ -1,444 +1,502 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
-import BlurText from "@/components/landing/BlurText";
-import {
-  Calendar, Users, FileText, CreditCard, Share2, Globe,
-  Check, Star, ArrowRight, Sparkles, ChevronRight,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import ThemeToggle from "@/components/ThemeToggle";
-import BackgroundVideo from "@/components/landing/BackgroundVideo";
+import { useLanguage } from "@/contexts/LanguageContext";
 import BrandLogo from "@/components/BrandLogo";
+import BackgroundVideo from "@/components/landing/BackgroundVideo";
+import BlurText from "@/components/landing/BlurText";
+import { Calendar, CreditCard, Users, Check, ArrowRight, Star, ChevronRight } from "lucide-react";
 
-// ─── Animation helpers ────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.08, duration: 0.6, ease: EASE },
-  }),
+const GOLD = "linear-gradient(135deg, #EDD08A 0%, #C7A155 50%, #9A7830 100%)";
+const goldText: React.CSSProperties = {
+  background: GOLD,
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text",
 };
 
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
-};
+// ── Navbar ────────────────────────────────────────────────────────────────────
 
-// ─── Feature metadata ─────────────────────────────────────────────────────────
+function Navbar() {
+  return (
+    <header className="fixed top-4 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10">
+      {/* Logo */}
+      <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
+        <BrandLogo size="sm" />
+      </Link>
 
-const featureIcons = [Calendar, Users, FileText, CreditCard, Share2, Globe];
+      {/* Center pill — desktop only */}
+      <div className="landing-glass hidden md:flex items-center gap-0.5 rounded-full px-1.5 py-1.5">
+        {(["features", "pricing"] as const).map((id) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-body capitalize"
+          >
+            {id}
+          </a>
+        ))}
+        <Link to="/auth/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-body">
+          Log In
+        </Link>
+        <Link
+          to="/auth/register"
+          className="landing-glass-strong flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold ml-1 font-body transition-opacity hover:opacity-80"
+          style={goldText}
+        >
+          Start Free Trial <ChevronRight className="h-3.5 w-3.5" style={{ color: "#C7A155" }} />
+        </Link>
+      </div>
 
-// ─── Reusable section wrapper ─────────────────────────────────────────────────
+      {/* Mobile: auth buttons only */}
+      <div className="flex items-center gap-2 md:hidden">
+        <Link to="/auth/login" className="text-sm text-white/70 font-body px-3 py-2">Log In</Link>
+        <Link
+          to="/auth/register"
+          className="landing-glass-strong rounded-full px-4 py-2 text-sm font-semibold font-body"
+          style={goldText}
+        >
+          Sign Up
+        </Link>
+      </div>
+    </header>
+  );
+}
 
-function AnimatedSection({
-  children,
-  className = "",
+// ── Hero ──────────────────────────────────────────────────────────────────────
+
+function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; ctaSecondary: string }) {
+  const titleWords = ["Manage", "Your", "Simchas", "Like", "a", "Pro"];
+
+  return (
+    <section className="relative min-h-screen bg-black flex flex-col overflow-hidden selection:bg-white selection:text-black">
+      <BackgroundVideo />
+
+      {/* Gradient overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.65) 100%)" }}
+      />
+
+      {/* Gold radial glow from top */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 80% 35% at 50% -5%, rgba(237,208,138,0.07), transparent 60%)" }}
+      />
+
+      <Navbar />
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pt-24 pb-8 px-6 text-center">
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+          className="landing-glass mb-8 inline-flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4"
+        >
+          <span
+            className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wide font-body"
+            style={{ ...goldText, border: "1px solid rgba(237,208,138,0.25)" }}
+          >
+            ♫ FREE TRIAL
+          </span>
+          <span className="text-[13px] text-white/75 font-body">Try free for 30 days — No credit card required</span>
+        </motion.div>
+
+        {/* Headline */}
+        <h1
+          className="font-heading font-black text-white/92 mb-6 max-w-3xl mx-auto"
+          style={{ fontSize: "clamp(2.8rem, 7vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.03em" }}
+        >
+          {titleWords.map((word, i) => (
+            <motion.span
+              key={word + i}
+              initial={{ opacity: 0, filter: "blur(10px)", y: -16 }}
+              animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+              transition={{ delay: i * 0.11, duration: 0.55, ease: EASE }}
+              className="inline-block"
+              style={{
+                marginRight: "0.22em",
+                ...(word === "Simchas"
+                  ? { ...goldText, filter: "drop-shadow(0 0 14px rgba(242,184,75,0.22))" }
+                  : {}),
+              }}
+            >
+              {word}
+            </motion.span>
+          ))}
+        </h1>
+
+        {/* Subtitle */}
+        <BlurText
+          text={subtitle}
+          delay={90}
+          animateBy="words"
+          direction="top"
+          className="mb-10 text-base md:text-lg text-white/55 font-light font-body leading-relaxed max-w-xl mx-auto tracking-wide"
+        />
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+          className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5"
+        >
+          <Link
+            to="/auth/register"
+            className="flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold font-body transition-all duration-200 hover:opacity-88 hover:-translate-y-0.5"
+            style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 8px 32px rgba(199,161,85,0.35)" }}
+          >
+            {cta} <ArrowRight className="h-5 w-5" />
+          </Link>
+          <a
+            href="#features"
+            className="landing-glass flex items-center gap-2 rounded-full px-8 py-4 text-base font-medium text-white/70 font-body transition-colors hover:text-white"
+          >
+            {ctaSecondary}
+          </a>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.45, ease: EASE }}
+          className="flex flex-wrap items-stretch justify-center gap-4 mt-10"
+        >
+          {[
+            { value: "$29.99/mo", label: "Starting price · cancel anytime" },
+            { value: "2,000+", label: "Families across North America & Israel" },
+          ].map(({ value, label }) => (
+            <div key={value} className="landing-glass rounded-[1.25rem] px-7 py-5 text-left" style={{ minWidth: 190 }}>
+              <p className="font-heading font-bold leading-none mb-2" style={{ fontSize: "1.9rem", ...goldText }}>{value}</p>
+              <p className="text-[12px] text-white/45 font-body font-light leading-snug">{label}</p>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Trust strip */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7, delay: 0.6, ease: EASE }}
+        className="relative z-10 text-center pb-6 text-[13px] text-white/35 font-body font-light"
+      >
+        ✓ No credit card &nbsp;·&nbsp; ✓ 30-day money-back guarantee &nbsp;·&nbsp; ✓ Cancel anytime
+      </motion.p>
+    </section>
+  );
+}
+
+// ── Features ──────────────────────────────────────────────────────────────────
+
+const FEATURE_ICONS = [Calendar, CreditCard, Users];
+
+function FeaturesSection({
+  title,
+  items,
 }: {
-  children: React.ReactNode;
-  className?: string;
+  title: string;
+  items: { title: string; desc: string }[];
 }) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  const TAGS = [
+    ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
+    ["Stripe", "PDF Invoices", "Payment Links", "P&L Reports"],
+    ["Client History", "Balances", "Preferences", "CRM"],
+  ];
+
   return (
-    <motion.div
+    <section
+      id="features"
       ref={ref}
-      variants={staggerContainer}
-      initial="hidden"
-      animate={inView ? "visible" : "hidden"}
-      className={className}
+      className="relative bg-[#050505] overflow-hidden"
+      style={{ minHeight: "100vh" }}
     >
-      {children}
-    </motion.div>
+      {/* Subtle gold glow */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(237,208,138,0.04), transparent 60%)" }}
+      />
+
+      <div
+        className="relative z-10 flex flex-col"
+        style={{ minHeight: "100vh", padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem) 4rem" }}
+      >
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="mb-auto"
+        >
+          <p className="text-[13px] font-medium font-body uppercase tracking-[0.12em] mb-4" style={goldText}>
+            // Everything you need
+          </p>
+          <h2
+            className="font-heading font-black text-white/92 m-0"
+            style={{ fontSize: "clamp(3rem,6vw,5.5rem)", lineHeight: 0.92, letterSpacing: "-0.03em" }}
+          >
+            {title.split("\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                {i === 0 && <br />}
+              </span>
+            ))}
+          </h2>
+        </motion.div>
+
+        {/* Cards */}
+        <div className="grid gap-5 mt-16" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
+          {items.slice(0, 3).map((item, i) => {
+            const Icon = FEATURE_ICONS[i];
+            const tags = TAGS[i];
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 40 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.65, delay: 0.15 + i * 0.12, ease: EASE }}
+                className="landing-glass flex flex-col p-6"
+                style={{ borderRadius: 22, minHeight: 340 }}
+              >
+                {/* Top row */}
+                <div className="flex items-start justify-between gap-3">
+                  <div
+                    className="landing-glass flex items-center justify-center shrink-0"
+                    style={{ width: 44, height: 44, borderRadius: 12, color: "#C7A155" }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-1.5" style={{ maxWidth: "65%" }}>
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="landing-glass rounded-full px-2.5 py-1 text-[11px] text-white/70 font-body whitespace-nowrap"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex-1" />
+
+                {/* Bottom */}
+                <div className="mt-6">
+                  <h3
+                    className="font-heading font-bold m-0"
+                    style={{ fontSize: "clamp(1.6rem,3vw,2rem)", letterSpacing: "-0.02em", lineHeight: 1, ...goldText }}
+                  >
+                    {item.title.replace(/ — Coming Soon/i, "")}
+                  </h3>
+                  <p
+                    className="mt-3 text-sm text-white/58 font-body font-light leading-relaxed"
+                    style={{ maxWidth: "34ch" }}
+                  >
+                    {item.desc.replace(/ \(Coming Soon\)/i, "")}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
-// ─── Section label ────────────────────────────────────────────────────────────
+// ── Pricing ───────────────────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function PricingSection({
+  plans,
+}: {
+  plans: {
+    name: string;
+    price: string;
+    period: string;
+    desc: string;
+    features: string[];
+    cta: string;
+    popular?: boolean;
+  }[];
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
   return (
-    <motion.p
-      variants={fadeUp}
-      className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/70"
+    <section
+      id="pricing"
+      ref={ref}
+      className="relative bg-[#050505] overflow-hidden"
+      style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem)" }}
     >
-      {children}
-    </motion.p>
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(237,208,138,0.03), transparent 70%)" }}
+      />
+
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.7, ease: EASE }}
+        className="text-center mb-16"
+      >
+        <p className="text-[13px] font-medium font-body uppercase tracking-[0.12em] mb-4" style={goldText}>
+          // Transparent Pricing
+        </p>
+        <h2
+          className="font-heading font-black text-white/92 m-0 mb-4"
+          style={{ fontSize: "clamp(2.5rem,5vw,4rem)", lineHeight: 1, letterSpacing: "-0.03em" }}
+        >
+          Simple, honest pricing
+        </h2>
+        <p className="text-[15px] text-white/48 font-body font-light m-0">
+          Start with a free 30-day trial. Full access, no credit card required.
+        </p>
+      </motion.div>
+
+      {/* Cards */}
+      <div
+        className="grid gap-5 mx-auto"
+        style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", maxWidth: 960 }}
+      >
+        {plans.map((plan, i) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 40 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.65, delay: 0.1 + i * 0.12, ease: EASE }}
+            className={plan.popular ? "landing-glass-strong" : "landing-glass"}
+            style={{ borderRadius: 22, padding: 28, display: "flex", flexDirection: "column", transform: plan.popular ? "scale(1.03)" : undefined }}
+          >
+            {plan.popular && (
+              <div className="mb-4">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-bold tracking-wider font-body"
+                  style={{ background: GOLD, color: "#1a0f00" }}
+                >
+                  <Star className="h-3 w-3 fill-current" /> MOST POPULAR
+                </span>
+              </div>
+            )}
+
+            <h3 className="font-heading font-bold m-0 mb-1.5 text-[1.6rem]" style={goldText}>{plan.name}</h3>
+            <p className="text-[13px] text-white/45 font-body font-light m-0 mb-5">{plan.desc}</p>
+
+            <div className="mb-6 pb-6 border-b border-white/[0.06]">
+              <span className="font-heading font-black text-white text-[2.8rem] leading-none">{plan.price}</span>
+              <span className="text-[14px] text-white/35 font-body ml-1">{plan.period}</span>
+            </div>
+
+            <ul className="flex-1 flex flex-col gap-2.5 m-0 p-0 list-none mb-7">
+              {plan.features.map((f) => {
+                const isComingSoon = /coming soon/i.test(f);
+                const label = f.replace(/ — Coming Soon/i, "");
+                return (
+                  <li
+                    key={f}
+                    className={`flex items-start gap-2.5 text-[13px] font-body font-light ${isComingSoon ? "text-white/30" : "text-white/68"}`}
+                  >
+                    <Check
+                      className={`h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5 ${isComingSoon ? "text-white/20 bg-white/5" : "bg-[rgba(199,161,85,0.15)]"}`}
+                      style={isComingSoon ? {} : { color: "#C7A155" }}
+                    />
+                    {label}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <Link
+              to="/auth/register"
+              className="block text-center rounded-full py-3.5 text-[15px] font-semibold font-body transition-opacity hover:opacity-85"
+              style={
+                plan.popular
+                  ? { background: GOLD, color: "#1a0f00", boxShadow: "0 6px 24px rgba(199,161,85,0.3)" }
+                  : { border: "1px solid rgba(237,208,138,0.25)", ...goldText }
+              }
+            >
+              {plan.cta}
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={inView ? { opacity: 1 } : {}}
+        transition={{ delay: 0.6 }}
+        className="text-center mt-10 text-[13px] text-white/30 font-body font-light"
+      >
+        ✓ No credit card required &nbsp;·&nbsp; ✓ Cancel anytime &nbsp;·&nbsp; ✓ 30-day money-back guarantee
+      </motion.p>
+    </section>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ── Footer ────────────────────────────────────────────────────────────────────
+
+function Footer() {
+  return (
+    <footer
+      className="flex flex-wrap items-center justify-between gap-4 bg-[#050505]"
+      style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px clamp(1.5rem,5vw,5rem)" }}
+    >
+      <BrandLogo size="sm" />
+      <p className="text-xs text-white/28 font-body m-0">
+        © {new Date().getFullYear()} SimchaSync. All rights reserved.
+      </p>
+      <div className="flex gap-5">
+        {[
+          ["Privacy", "/privacy"],
+          ["Terms", "/terms"],
+          ["Contact", "mailto:simchasync@gmail.com"],
+        ].map(([label, href]) => (
+          href.startsWith("mailto") ? (
+            <a key={label} href={href} className="text-xs text-white/30 font-body no-underline transition-colors hover:text-[#C7A155]">
+              {label}
+            </a>
+          ) : (
+            <Link key={label} to={href} className="text-xs text-white/30 font-body no-underline transition-colors hover:text-[#C7A155]">
+              {label}
+            </Link>
+          )
+        ))}
+      </div>
+    </footer>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Index() {
-  const { t } = useLanguage();
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const l = t.landing;
 
   if (!loading && user) return <Navigate to="/app" replace />;
 
   return (
-    <div className="min-h-screen text-foreground antialiased">
-      {/* ── Dark Hero Section with Video ─────────────────────────────────────── */}
-      <section className="relative bg-black min-h-screen flex flex-col overflow-hidden selection:bg-white selection:text-black">
-        <BackgroundVideo />
-
-        {/* Gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 pointer-events-none z-[1]" />
-
-        {/* ── Navigation ─────────────────────────────────────────────────────── */}
-        <header className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-          <div className="container flex h-16 items-center justify-between gap-4">
-            {/* Logo */}
-            <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
-              <BrandLogo size="sm" />
-            </Link>
-
-            {/* Desktop nav */}
-            <nav className="hidden items-center gap-1 md:flex">
-              {(["features", "pricing"] as const).map((id) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className="rounded-md px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  {l.nav[id as keyof typeof l.nav]}
-                </a>
-              ))}
-            </nav>
-
-            {/* Auth actions */}
-            <div className="flex shrink-0 items-center gap-1.5">
-              <ThemeToggle variant="icon" className="text-white/70 hover:bg-white/10 hover:text-white" />
-              <Link to="/auth/login" aria-label={l.nav.login}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/70 hover:text-primary hover:bg-primary/10 px-2.5"
-                >
-                  {l.nav.login}
-                </Button>
-              </Link>
-              <Link to="/auth/register">
-                <Button size="sm" className="gap-1 font-medium shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 px-3 whitespace-nowrap">
-                  <span className="hidden sm:inline">{l.nav.signup}</span>
-                  <span className="sm:hidden">Sign Up</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        {/* ── Hero Content ──────────────────────────────────────────────────── */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-20 md:py-24">
-          {/* Premium gradient backdrop */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-20%,rgba(255,255,255,0.06),transparent_50%)]"
-          />
-
-          <div className="container relative">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: EASE }}
-              className="mx-auto max-w-3xl text-center"
-            >
-              {/* Premium Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-                className="mb-10 inline-flex items-center gap-2.5 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-primary/5 backdrop-blur-md"
-              >
-                <Sparkles className="h-4 w-4 text-primary/80" />
-                <span>Try free for 30 days — No credit card</span>
-              </motion.div>
-
-              {/* Premium Headline */}
-              <h1 className="mb-8 font-display text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-white/90 md:text-7xl">
-                {l.hero.title.split(" ").map((word, i, arr) => {
-                  const delay = i * 0.12;
-                  const isSimchas = word === "Simchas";
-                  return (
-                    <motion.span
-                      key={i}
-                      initial={{ opacity: 0, filter: "blur(10px)", y: -16 }}
-                      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                      transition={{ delay, duration: 0.5, ease: EASE }}
-                      className={`inline-block ${isSimchas ? "bg-gradient-to-r from-primary via-[#f5b342] to-[#d4932a] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(242,184,75,0.3)]" : ""}`}
-                    >
-                      {word}{i < arr.length - 1 ? "\u00A0" : ""}
-                    </motion.span>
-                  );
-                })}
-              </h1>
-
-              {/* Premium Subheadline */}
-              <BlurText
-                text={l.hero.subtitle}
-                delay={100}
-                animateBy="words"
-                direction="top"
-                className="mb-12 text-base md:text-lg leading-relaxed text-white/60 font-light tracking-wide max-w-xl mx-auto"
-              />
-
-              {/* Premium CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
-                className="flex flex-col gap-4 sm:flex-row sm:justify-center sm:items-center"
-              >
-                <Link to="/auth/register">
-                  <Button
-                    size="lg"
-                    className="gap-2 px-8 py-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:translate-y-[-2px]"
-                  >
-                    {l.hero.cta}
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <a href="#features">
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="px-8 py-6 text-base font-semibold bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 hover:bg-white/20 hover:border-white/40 hover:text-white shadow-none"
-                  >
-                    {l.hero.ctaSecondary}
-                  </Button>
-                </a>
-              </motion.div>
-
-              {/* Premium Social proof */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
-                className="mt-12 text-sm font-medium text-white/60"
-              >
-                ✓ Trusted by 2,000+ families across North America & Israel
-              </motion.p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ───────────────────────────────────────────────────────── */}
-      <section id="features" className="relative py-28 md:py-40">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <div className="container relative">
-          <AnimatedSection className="mb-16 max-w-2xl">
-            <SectionLabel>Everything You Need</SectionLabel>
-            <motion.h2
-              variants={fadeUp}
-              custom={1}
-              className="mb-4 font-display text-4xl font-bold tracking-tight md:text-5xl"
-            >
-              {l.features.title}
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              custom={2}
-              className="text-lg text-muted-foreground/90"
-            >
-              {l.features.subtitle}
-            </motion.p>
-          </AnimatedSection>
-
-          <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {l.features.items.map((item, i) => {
-              const Icon = featureIcons[i];
-              return (
-                <motion.div key={i} variants={fadeUp} custom={i}>
-                  <Card className="group relative h-full overflow-hidden border-border/40 bg-gradient-to-br from-card to-card/50 transition-all duration-500 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <CardContent className="relative flex flex-col gap-4 p-7">
-                      {/* Icon */}
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 group-hover:from-primary/30 group-hover:to-primary/10 transition-colors duration-300">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="mb-2 font-display text-lg font-semibold leading-snug">
-                          {item.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-muted-foreground/80">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── Pricing ────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="relative py-28 md:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none" />
-        <div className="container relative">
-          <AnimatedSection className="mb-16 max-w-2xl mx-auto text-center">
-            <SectionLabel>Transparent Pricing</SectionLabel>
-            <motion.h2
-              variants={fadeUp}
-              custom={1}
-              className="mb-4 font-display text-4xl font-bold tracking-tight md:text-5xl"
-            >
-              {l.pricing.title}
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              custom={2}
-              className="text-lg text-muted-foreground/90"
-            >
-              {l.pricing.subtitle}
-            </motion.p>
-          </AnimatedSection>
-
-          <AnimatedSection className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {l.pricing.plans.map((plan, i) => (
-              <motion.div key={i} variants={fadeUp} custom={i} className="relative group">
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 z-20 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/40">
-                      <Star className="h-4 w-4 fill-current" />
-                      MOST POPULAR
-                    </span>
-                  </div>
-                )}
-
-                <Card
-                  className={[
-                    "h-full relative overflow-hidden transition-all duration-500",
-                    plan.popular
-                      ? "border-primary/60 shadow-2xl shadow-primary/20 lg:scale-105 bg-gradient-to-br from-card to-primary/5"
-                      : "border-border/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 bg-gradient-to-br from-card/80 to-card",
-                  ].join(" ")}
-                >
-                  {plan.popular && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />}
-
-                  <CardContent className="relative flex flex-col h-full p-8">
-                    <div className="mb-8 pb-8 border-b border-border/40">
-                      <h3 className="mb-2 font-display text-2xl font-bold">
-                        {plan.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground/80">{plan.desc}</p>
-                    </div>
-
-                    <div className="mb-8">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-display text-5xl font-black text-foreground">
-                          {plan.price}
-                        </span>
-                        <span className="text-base text-muted-foreground/70">
-                          {plan.period}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-xs font-medium text-muted-foreground/60">30-day free trial included</p>
-                    </div>
-
-                    <ul className="mb-10 flex flex-col gap-3.5 flex-1">
-                      {plan.features.map((f, j) => {
-                        const isComingSoon =
-                          f.includes("Coming Soon") || f.includes("בקרוב");
-                        const label = isComingSoon
-                          ? f.replace(/ — Coming Soon| — בקרוב/, "")
-                          : f;
-                        return (
-                          <li
-                            key={j}
-                            className={[
-                              "flex items-start gap-3 text-sm font-medium",
-                              isComingSoon
-                                ? "text-muted-foreground/40"
-                                : "text-foreground/80",
-                            ].join(" ")}
-                          >
-                            <Check
-                              className={[
-                                "mt-0.5 h-5 w-5 shrink-0 rounded-full p-0.5",
-                                isComingSoon
-                                  ? "bg-muted/20 text-muted-foreground/30"
-                                  : "bg-primary/20 text-primary",
-                              ].join(" ")}
-                            />
-                            <span className="flex flex-wrap items-center gap-2">
-                              {label}
-                              {isComingSoon && (
-                                <Badge
-                                  variant="outline"
-                                  className="h-5 border-border/40 px-2 py-0 text-[10px] font-bold uppercase text-muted-foreground/60"
-                                >
-                                  Soon
-                                </Badge>
-                              )}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-
-                    <Link to="/auth/register" className="block">
-                      <Button
-                        variant={plan.popular ? "default" : "outline"}
-                        className={[
-                          "w-full font-bold text-base py-6",
-                          plan.popular
-                            ? "shadow-lg shadow-primary/40 hover:shadow-xl hover:shadow-primary/50 hover:-translate-y-0.5 transition-all duration-300"
-                            : "border-border/40 hover:border-primary/50 hover:bg-accent/50",
-                        ].join(" ")}
-                      >
-                        {plan.cta}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatedSection>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="mt-14 text-center"
-          >
-            <p className="text-sm font-medium text-muted-foreground/80">
-              ✓ No credit card required · ✓ Cancel anytime · ✓ 30-day money-back guarantee
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-border/60 bg-background py-10">
-        <div className="container flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <Link to="/" className="transition-opacity hover:opacity-90">
-            <BrandLogo size="sm" showIcon={false} wordmarkClassName="text-sm font-semibold" />
-          </Link>
-
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} SimchaSync. All rights reserved.
-          </p>
-
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
-            <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
-            <a href="mailto:simchasync@gmail.com" className="transition-colors hover:text-foreground">Contact</a>
-          </div>
-        </div>
-      </footer>
+    <div className="min-h-screen antialiased" style={{ background: "#050505" }}>
+      <Hero subtitle={l.hero.subtitle} cta={l.hero.cta} ctaSecondary={l.hero.ctaSecondary} />
+      <FeaturesSection title="Run your music business" items={l.features.items} />
+      <PricingSection plans={l.pricing.plans} />
+      <Footer />
     </div>
   );
 }
