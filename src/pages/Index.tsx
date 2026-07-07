@@ -1,12 +1,34 @@
 import { Navigate, Link } from "react-router-dom";
-import { motion, useInView } from "motion/react";
+import { motion, useInView, useScroll, useTransform } from "motion/react";
+import type { MotionValue } from "motion/react";
 import { useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import BrandLogo from "@/components/BrandLogo";
-import BackgroundVideo from "@/components/landing/BackgroundVideo";
 import BlurText from "@/components/landing/BlurText";
 import { Calendar, CreditCard, Users, Check, ArrowRight, Star, ChevronRight } from "lucide-react";
+
+// ── Scroll-reveal word component ──────────────────────────────────────────────
+
+interface ScrollWordProps {
+  word: string;
+  progress: MotionValue<number>;
+  range: [number, number];
+  highlighted?: boolean;
+}
+
+function ScrollWord({ word, progress, range, highlighted = false }: ScrollWordProps) {
+  const opacity = useTransform(progress, range, [0.12, 1]);
+  return (
+    <motion.span style={{ opacity, display: "inline-block", marginRight: "0.25em" }}>
+      {highlighted ? (
+        <span className="font-serif italic" style={goldText}>{word}</span>
+      ) : (
+        <span className="text-white/65">{word}</span>
+      )}
+    </motion.span>
+  );
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -76,16 +98,45 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
 
   return (
     <section className="relative min-h-screen bg-black flex flex-col overflow-hidden selection:bg-white selection:text-black">
-      <BackgroundVideo />
+      {/* Animated gradient orbs — scroll-driven dark background */}
+      <div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-[#030305]">
+        <motion.div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "70vw", height: "70vw",
+            background: "radial-gradient(circle, rgba(199,161,85,0.08) 0%, transparent 70%)",
+            top: "-25%", left: "15%",
+          }}
+          animate={{ y: [0, 45, 0], x: [0, -28, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "55vw", height: "55vw",
+            background: "radial-gradient(circle, rgba(80,55,170,0.07) 0%, transparent 70%)",
+            bottom: "0%", right: "-15%",
+          }}
+          animate={{ y: [0, -35, 0], x: [0, 22, 0] }}
+          transition={{ duration: 17, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        />
+        <motion.div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: "38vw", height: "38vw",
+            background: "radial-gradient(circle, rgba(40,20,90,0.09) 0%, transparent 70%)",
+            top: "35%", left: "-8%",
+          }}
+          animate={{ y: [0, 22, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 7 }}
+        />
+      </div>
 
-      {/* Strong gradient overlay — enough contrast for white text */}
+      {/* Overlay for text contrast */}
       <div
         aria-hidden
         className="absolute inset-0 z-[1] pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.50) 65%, rgba(0,0,0,0.75) 100%)",
-        }}
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.70) 100%)" }}
       />
 
       {/* Gold radial glow */}
@@ -93,6 +144,13 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
         aria-hidden
         className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: "radial-gradient(ellipse 70% 30% at 50% -5%, rgba(237,208,138,0.10), transparent 60%)" }}
+      />
+
+      {/* Fade into features section */}
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-0 right-0 z-[2] pointer-events-none h-32"
+        style={{ background: "linear-gradient(to bottom, transparent, #050505)" }}
       />
 
       <Navbar />
@@ -316,6 +374,71 @@ function FeaturesSection({
   );
 }
 
+// ── Mission (scroll-driven word reveal) ───────────────────────────────────────
+
+function MissionSection() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const para1 = "We built SimchaSync for the musicians behind every simcha — where bookings, invoices, and client relationships stay synced without the chaos.";
+  const para2 = "A platform where your music business runs as beautifully as the celebrations you perform — less admin, less friction, more music.";
+
+  const words1 = para1.split(" ");
+  const words2 = para2.split(" ");
+  const total = words1.length + words2.length;
+  const HIGHLIGHTED = new Set(["simcha", "synced", "beautifully", "music."]);
+
+  return (
+    <section
+      ref={ref}
+      className="relative bg-[#050505] overflow-hidden"
+      style={{ padding: "clamp(4rem,8vw,7rem) clamp(1.5rem,5vw,5rem)" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(237,208,138,0.03), transparent 70%)" }}
+      />
+      <div className="relative z-10 max-w-5xl mx-auto">
+        <p
+          className="font-medium leading-relaxed select-none"
+          style={{ fontSize: "clamp(1.4rem,3vw,2.3rem)", letterSpacing: "-0.02em" }}
+        >
+          {words1.map((word, i) => (
+            <ScrollWord
+              key={i}
+              word={word}
+              progress={scrollYProgress}
+              range={[i / total, (i + 1) / total]}
+              highlighted={HIGHLIGHTED.has(word.toLowerCase().replace(/[.,—]/g, ""))}
+            />
+          ))}
+        </p>
+        <p
+          className="font-medium leading-relaxed select-none mt-8"
+          style={{ fontSize: "clamp(1.1rem,2.2vw,1.7rem)", letterSpacing: "-0.02em" }}
+        >
+          {words2.map((word, i) => {
+            const idx = words1.length + i;
+            return (
+              <ScrollWord
+                key={i}
+                word={word}
+                progress={scrollYProgress}
+                range={[idx / total, (idx + 1) / total]}
+                highlighted={HIGHLIGHTED.has(word.toLowerCase().replace(/[.,—]/g, ""))}
+              />
+            );
+          })}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function PricingSection({
@@ -504,6 +627,7 @@ export default function Index() {
   return (
     <div className="min-h-screen antialiased" style={{ background: "#050505" }}>
       <Hero subtitle={l.hero.subtitle} cta={l.hero.cta} ctaSecondary={l.hero.ctaSecondary} />
+      <MissionSection />
       <FeaturesSection items={l.features.items} />
       <PricingSection plans={l.pricing.plans} />
       <Footer />
