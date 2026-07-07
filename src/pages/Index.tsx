@@ -24,40 +24,39 @@ const goldText: React.CSSProperties = {
 function Navbar() {
   return (
     <header className="fixed top-4 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10">
-      {/* Logo */}
       <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
         <BrandLogo size="sm" />
       </Link>
 
-      {/* Center pill — desktop only */}
+      {/* Center pill — desktop */}
       <div className="landing-glass hidden md:flex items-center gap-0.5 rounded-full px-1.5 py-1.5">
         {(["features", "pricing"] as const).map((id) => (
           <a
             key={id}
             href={`#${id}`}
-            className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-body capitalize"
+            className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-sans capitalize"
           >
             {id}
           </a>
         ))}
-        <Link to="/auth/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-body">
+        <Link to="/auth/login" className="rounded-full px-3 py-2 text-sm font-medium text-white/75 transition-colors hover:text-white font-sans">
           Log In
         </Link>
         <Link
           to="/auth/register"
-          className="landing-glass-strong flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold ml-1 font-body transition-opacity hover:opacity-80"
+          className="landing-glass-strong flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold ml-1 font-sans transition-opacity hover:opacity-80"
           style={goldText}
         >
           Start Free Trial <ChevronRight className="h-3.5 w-3.5" style={{ color: "#C7A155" }} />
         </Link>
       </div>
 
-      {/* Mobile: auth buttons only */}
+      {/* Mobile */}
       <div className="flex items-center gap-2 md:hidden">
-        <Link to="/auth/login" className="text-sm text-white/70 font-body px-3 py-2">Log In</Link>
+        <Link to="/auth/login" className="text-sm text-white/70 font-sans px-3 py-2">Log In</Link>
         <Link
           to="/auth/register"
-          className="landing-glass-strong rounded-full px-4 py-2 text-sm font-semibold font-body"
+          className="landing-glass-strong rounded-full px-4 py-2 text-sm font-semibold font-sans"
           style={goldText}
         >
           Sign Up
@@ -70,24 +69,30 @@ function Navbar() {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; ctaSecondary: string }) {
-  const titleWords = ["Manage", "Your", "Simchas", "Like", "a", "Pro"];
+  // "Manage Your" | "Simchas" | "Like a Pro"
+  const line1 = ["Manage", "Your"];
+  const line2 = ["Like", "a", "Pro"];
+  const allWords = [...line1, "Simchas", ...line2];
 
   return (
     <section className="relative min-h-screen bg-black flex flex-col overflow-hidden selection:bg-white selection:text-black">
       <BackgroundVideo />
 
-      {/* Gradient overlay */}
+      {/* Strong gradient overlay — enough contrast for white text */}
       <div
         aria-hidden
         className="absolute inset-0 z-[1] pointer-events-none"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.65) 100%)" }}
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.50) 65%, rgba(0,0,0,0.75) 100%)",
+        }}
       />
 
-      {/* Gold radial glow from top */}
+      {/* Gold radial glow */}
       <div
         aria-hidden
         className="absolute inset-0 z-[1] pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 80% 35% at 50% -5%, rgba(237,208,138,0.07), transparent 60%)" }}
+        style={{ background: "radial-gradient(ellipse 70% 30% at 50% -5%, rgba(237,208,138,0.10), transparent 60%)" }}
       />
 
       <Navbar />
@@ -102,30 +107,32 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
           className="landing-glass mb-8 inline-flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4"
         >
           <span
-            className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wide font-body"
+            className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wide font-sans"
             style={{ ...goldText, border: "1px solid rgba(237,208,138,0.25)" }}
           >
             ♫ FREE TRIAL
           </span>
-          <span className="text-[13px] text-white/75 font-body">Try free for 30 days — No credit card required</span>
+          <span className="text-[13px] text-white/80 font-sans">
+            Try free for 30 days — No credit card required
+          </span>
         </motion.div>
 
-        {/* Headline */}
+        {/* Headline — Instrument Serif italic, word-by-word blur reveal */}
         <h1
-          className="font-heading font-black text-white/92 mb-6 max-w-3xl mx-auto"
-          style={{ fontSize: "clamp(2.8rem, 7vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.03em" }}
+          className="font-serif italic text-white m-0 mb-6 max-w-3xl mx-auto"
+          style={{ fontSize: "clamp(3rem, 8vw, 6rem)", lineHeight: 0.95, letterSpacing: "-0.02em", fontWeight: 700 }}
         >
-          {titleWords.map((word, i) => (
+          {allWords.map((word, i) => (
             <motion.span
               key={word + i}
-              initial={{ opacity: 0, filter: "blur(10px)", y: -16 }}
+              initial={{ opacity: 0, filter: "blur(10px)", y: -18 }}
               animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-              transition={{ delay: i * 0.11, duration: 0.55, ease: EASE }}
+              transition={{ delay: i * 0.10, duration: 0.6, ease: EASE }}
               className="inline-block"
               style={{
                 marginRight: "0.22em",
                 ...(word === "Simchas"
-                  ? { ...goldText, filter: "drop-shadow(0 0 14px rgba(242,184,75,0.22))" }
+                  ? { ...goldText, filter: "drop-shadow(0 0 18px rgba(242,184,75,0.30))" }
                   : {}),
               }}
             >
@@ -140,7 +147,7 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
           delay={90}
           animateBy="words"
           direction="top"
-          className="mb-10 text-base md:text-lg text-white/55 font-light font-body leading-relaxed max-w-xl mx-auto tracking-wide"
+          className="mb-10 text-base md:text-lg text-white/60 font-light font-sans leading-relaxed max-w-xl mx-auto tracking-wide"
         />
 
         {/* CTAs */}
@@ -152,14 +159,14 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
         >
           <Link
             to="/auth/register"
-            className="flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold font-body transition-all duration-200 hover:opacity-88 hover:-translate-y-0.5"
-            style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 8px 32px rgba(199,161,85,0.35)" }}
+            className="flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold font-sans transition-all duration-200 hover:opacity-88 hover:-translate-y-0.5"
+            style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 8px 32px rgba(199,161,85,0.40)" }}
           >
             {cta} <ArrowRight className="h-5 w-5" />
           </Link>
           <a
             href="#features"
-            className="landing-glass flex items-center gap-2 rounded-full px-8 py-4 text-base font-medium text-white/70 font-body transition-colors hover:text-white"
+            className="landing-glass flex items-center gap-2 rounded-full px-8 py-4 text-base font-medium text-white/75 font-sans transition-colors hover:text-white"
           >
             {ctaSecondary}
           </a>
@@ -177,8 +184,8 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
             { value: "2,000+", label: "Families across North America & Israel" },
           ].map(({ value, label }) => (
             <div key={value} className="landing-glass rounded-[1.25rem] px-7 py-5 text-left" style={{ minWidth: 190 }}>
-              <p className="font-heading font-bold leading-none mb-2" style={{ fontSize: "1.9rem", ...goldText }}>{value}</p>
-              <p className="text-[12px] text-white/45 font-body font-light leading-snug">{label}</p>
+              <p className="font-serif italic font-bold leading-none mb-2" style={{ fontSize: "1.9rem", ...goldText }}>{value}</p>
+              <p className="text-[12px] text-white/45 font-sans font-light leading-snug">{label}</p>
             </div>
           ))}
         </motion.div>
@@ -189,7 +196,7 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.6, ease: EASE }}
-        className="relative z-10 text-center pb-6 text-[13px] text-white/35 font-body font-light"
+        className="relative z-10 text-center pb-6 text-[13px] text-white/40 font-sans font-light"
       >
         ✓ No credit card &nbsp;·&nbsp; ✓ 30-day money-back guarantee &nbsp;·&nbsp; ✓ Cancel anytime
       </motion.p>
@@ -202,10 +209,8 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
 const FEATURE_ICONS = [Calendar, CreditCard, Users];
 
 function FeaturesSection({
-  title,
   items,
 }: {
-  title: string;
   items: { title: string; desc: string }[];
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -224,11 +229,11 @@ function FeaturesSection({
       className="relative bg-[#050505] overflow-hidden"
       style={{ minHeight: "100vh" }}
     >
-      {/* Subtle gold glow */}
+      {/* Gold radial glow */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(237,208,138,0.04), transparent 60%)" }}
+        style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(237,208,138,0.05), transparent 60%)" }}
       />
 
       <div
@@ -242,19 +247,14 @@ function FeaturesSection({
           transition={{ duration: 0.7, ease: EASE }}
           className="mb-auto"
         >
-          <p className="text-[13px] font-medium font-body uppercase tracking-[0.12em] mb-4" style={goldText}>
+          <p className="text-[13px] font-medium font-sans uppercase tracking-[0.12em] mb-4" style={goldText}>
             // Everything you need
           </p>
           <h2
-            className="font-heading font-black text-white/92 m-0"
-            style={{ fontSize: "clamp(3rem,6vw,5.5rem)", lineHeight: 0.92, letterSpacing: "-0.03em" }}
+            className="font-serif italic text-white m-0"
+            style={{ fontSize: "clamp(3rem,6vw,5.5rem)", lineHeight: 0.92, letterSpacing: "-0.02em", fontWeight: 700 }}
           >
-            {title.split("\n").map((line, i) => (
-              <span key={i}>
-                {line}
-                {i === 0 && <br />}
-              </span>
-            ))}
+            Run your music<br />business
           </h2>
         </motion.div>
 
@@ -272,7 +272,6 @@ function FeaturesSection({
                 className="landing-glass flex flex-col p-6"
                 style={{ borderRadius: 22, minHeight: 340 }}
               >
-                {/* Top row */}
                 <div className="flex items-start justify-between gap-3">
                   <div
                     className="landing-glass flex items-center justify-center shrink-0"
@@ -284,7 +283,7 @@ function FeaturesSection({
                     {tags.map((tag) => (
                       <span
                         key={tag}
-                        className="landing-glass rounded-full px-2.5 py-1 text-[11px] text-white/70 font-body whitespace-nowrap"
+                        className="landing-glass rounded-full px-2.5 py-1 text-[11px] text-white/65 font-sans whitespace-nowrap"
                       >
                         {tag}
                       </span>
@@ -294,16 +293,15 @@ function FeaturesSection({
 
                 <div className="flex-1" />
 
-                {/* Bottom */}
                 <div className="mt-6">
                   <h3
-                    className="font-heading font-bold m-0"
+                    className="font-serif italic font-bold m-0"
                     style={{ fontSize: "clamp(1.6rem,3vw,2rem)", letterSpacing: "-0.02em", lineHeight: 1, ...goldText }}
                   >
                     {item.title.replace(/ — Coming Soon/i, "")}
                   </h3>
                   <p
-                    className="mt-3 text-sm text-white/58 font-body font-light leading-relaxed"
+                    className="mt-3 text-sm text-white/55 font-sans font-light leading-relaxed"
                     style={{ maxWidth: "34ch" }}
                   >
                     {item.desc.replace(/ \(Coming Soon\)/i, "")}
@@ -356,16 +354,16 @@ function PricingSection({
         transition={{ duration: 0.7, ease: EASE }}
         className="text-center mb-16"
       >
-        <p className="text-[13px] font-medium font-body uppercase tracking-[0.12em] mb-4" style={goldText}>
+        <p className="text-[13px] font-medium font-sans uppercase tracking-[0.12em] mb-4" style={goldText}>
           // Transparent Pricing
         </p>
         <h2
-          className="font-heading font-black text-white/92 m-0 mb-4"
-          style={{ fontSize: "clamp(2.5rem,5vw,4rem)", lineHeight: 1, letterSpacing: "-0.03em" }}
+          className="font-serif italic text-white m-0 mb-4"
+          style={{ fontSize: "clamp(2.5rem,5vw,4rem)", lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 700 }}
         >
           Simple, honest pricing
         </h2>
-        <p className="text-[15px] text-white/48 font-body font-light m-0">
+        <p className="text-[15px] text-white/48 font-sans font-light m-0">
           Start with a free 30-day trial. Full access, no credit card required.
         </p>
       </motion.div>
@@ -382,12 +380,18 @@ function PricingSection({
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.65, delay: 0.1 + i * 0.12, ease: EASE }}
             className={plan.popular ? "landing-glass-strong" : "landing-glass"}
-            style={{ borderRadius: 22, padding: 28, display: "flex", flexDirection: "column", transform: plan.popular ? "scale(1.03)" : undefined }}
+            style={{
+              borderRadius: 22,
+              padding: 28,
+              display: "flex",
+              flexDirection: "column",
+              transform: plan.popular ? "scale(1.03)" : undefined,
+            }}
           >
             {plan.popular && (
               <div className="mb-4">
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-bold tracking-wider font-body"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-bold tracking-wider font-sans"
                   style={{ background: GOLD, color: "#1a0f00" }}
                 >
                   <Star className="h-3 w-3 fill-current" /> MOST POPULAR
@@ -395,12 +399,12 @@ function PricingSection({
               </div>
             )}
 
-            <h3 className="font-heading font-bold m-0 mb-1.5 text-[1.6rem]" style={goldText}>{plan.name}</h3>
-            <p className="text-[13px] text-white/45 font-body font-light m-0 mb-5">{plan.desc}</p>
+            <h3 className="font-serif italic font-bold m-0 mb-1.5" style={{ fontSize: "1.6rem", ...goldText }}>{plan.name}</h3>
+            <p className="text-[13px] text-white/45 font-sans font-light m-0 mb-5">{plan.desc}</p>
 
-            <div className="mb-6 pb-6 border-b border-white/[0.06]">
-              <span className="font-heading font-black text-white text-[2.8rem] leading-none">{plan.price}</span>
-              <span className="text-[14px] text-white/35 font-body ml-1">{plan.period}</span>
+            <div className="mb-6 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <span className="font-serif italic text-white font-bold" style={{ fontSize: "2.8rem", lineHeight: 1 }}>{plan.price}</span>
+              <span className="text-[14px] text-white/35 font-sans ml-1">{plan.period}</span>
             </div>
 
             <ul className="flex-1 flex flex-col gap-2.5 m-0 p-0 list-none mb-7">
@@ -410,11 +414,17 @@ function PricingSection({
                 return (
                   <li
                     key={f}
-                    className={`flex items-start gap-2.5 text-[13px] font-body font-light ${isComingSoon ? "text-white/30" : "text-white/68"}`}
+                    className={`flex items-start gap-2.5 text-[13px] font-sans font-light ${
+                      isComingSoon ? "text-white/30" : "text-white/68"
+                    }`}
                   >
                     <Check
-                      className={`h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5 ${isComingSoon ? "text-white/20 bg-white/5" : "bg-[rgba(199,161,85,0.15)]"}`}
-                      style={isComingSoon ? {} : { color: "#C7A155" }}
+                      className="h-4 w-4 shrink-0 mt-0.5 rounded-full p-0.5"
+                      style={
+                        isComingSoon
+                          ? { color: "rgba(255,255,255,0.20)", background: "rgba(255,255,255,0.05)" }
+                          : { color: "#C7A155", background: "rgba(199,161,85,0.15)" }
+                      }
                     />
                     {label}
                   </li>
@@ -424,10 +434,10 @@ function PricingSection({
 
             <Link
               to="/auth/register"
-              className="block text-center rounded-full py-3.5 text-[15px] font-semibold font-body transition-opacity hover:opacity-85"
+              className="block text-center rounded-full py-3.5 text-[15px] font-semibold font-sans transition-opacity hover:opacity-85"
               style={
                 plan.popular
-                  ? { background: GOLD, color: "#1a0f00", boxShadow: "0 6px 24px rgba(199,161,85,0.3)" }
+                  ? { background: GOLD, color: "#1a0f00", boxShadow: "0 6px 24px rgba(199,161,85,0.30)" }
                   : { border: "1px solid rgba(237,208,138,0.25)", ...goldText }
               }
             >
@@ -441,7 +451,7 @@ function PricingSection({
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ delay: 0.6 }}
-        className="text-center mt-10 text-[13px] text-white/30 font-body font-light"
+        className="text-center mt-10 text-[13px] text-white/30 font-sans font-light"
       >
         ✓ No credit card required &nbsp;·&nbsp; ✓ Cancel anytime &nbsp;·&nbsp; ✓ 30-day money-back guarantee
       </motion.p>
@@ -458,7 +468,7 @@ function Footer() {
       style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "28px clamp(1.5rem,5vw,5rem)" }}
     >
       <BrandLogo size="sm" />
-      <p className="text-xs text-white/28 font-body m-0">
+      <p className="text-xs text-white/28 font-sans m-0">
         © {new Date().getFullYear()} SimchaSync. All rights reserved.
       </p>
       <div className="flex gap-5">
@@ -466,17 +476,17 @@ function Footer() {
           ["Privacy", "/privacy"],
           ["Terms", "/terms"],
           ["Contact", "mailto:simchasync@gmail.com"],
-        ].map(([label, href]) => (
+        ].map(([label, href]) =>
           href.startsWith("mailto") ? (
-            <a key={label} href={href} className="text-xs text-white/30 font-body no-underline transition-colors hover:text-[#C7A155]">
+            <a key={label} href={href} className="text-xs text-white/30 font-sans no-underline transition-colors hover:text-[#C7A155]">
               {label}
             </a>
           ) : (
-            <Link key={label} to={href} className="text-xs text-white/30 font-body no-underline transition-colors hover:text-[#C7A155]">
+            <Link key={label} to={href} className="text-xs text-white/30 font-sans no-underline transition-colors hover:text-[#C7A155]">
               {label}
             </Link>
           )
-        ))}
+        )}
       </div>
     </footer>
   );
@@ -494,7 +504,7 @@ export default function Index() {
   return (
     <div className="min-h-screen antialiased" style={{ background: "#050505" }}>
       <Hero subtitle={l.hero.subtitle} cta={l.hero.cta} ctaSecondary={l.hero.ctaSecondary} />
-      <FeaturesSection title="Run your music business" items={l.features.items} />
+      <FeaturesSection items={l.features.items} />
       <PricingSection plans={l.pricing.plans} />
       <Footer />
     </div>
