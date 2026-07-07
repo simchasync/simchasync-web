@@ -733,15 +733,21 @@ function Footer() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-// Decorative floating island straddling the hero/mission seam so the join is invisible.
+// Full-width garden band straddling the hero/mission seam so the join is invisible.
 function SeamDivider() {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], [60, -60]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.06, 1, 1.06]);
+  // Scroll-driven parallax drift + gentle breathing scale
+  const y = useTransform(scrollYProgress, [0, 1], [70, -70]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.08, 1.02, 1.08]);
+
+  // Fade all four edges of the black-backed image so its rectangle blends into
+  // the sections seamlessly (top/bottom into the join, left/right off-screen safe).
+  const edgeMask =
+    "linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%)";
 
   return (
     <div
@@ -749,23 +755,28 @@ function SeamDivider() {
       aria-hidden
       className="relative z-[2] h-0 pointer-events-none select-none overflow-visible"
     >
-      {/* Full-width black band centered on the seam — masks the section join everywhere */}
+      {/* Backing black band — guarantees no hard line across the full width */}
       <div
         className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-screen"
         style={{
-          height: "460px",
-          background:
-            "linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%)",
+          height: "min(56vw, 620px)",
+          background: "linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%)",
         }}
       />
 
-      {/* Static centering wrapper — keeps Tailwind translate off the animated element */}
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[min(2000px,205vw)] max-w-none">
+      {/* Garden band — full-bleed, centered on the seam */}
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,1100px)]">
         <motion.img
-          src="/seam-island.png"
+          src="/seam-garden.png"
           alt=""
-          style={{ y, scale, willChange: "transform" }}
-          className="w-full h-auto opacity-95 drop-shadow-[0_30px_80px_rgba(0,0,0,0.75)]"
+          style={{
+            y,
+            scale,
+            willChange: "transform",
+            WebkitMaskImage: edgeMask,
+            maskImage: edgeMask,
+          }}
+          className="block w-full h-auto opacity-95"
         />
       </div>
     </div>
