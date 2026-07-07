@@ -90,23 +90,39 @@ function Navbar() {
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
-// Mindloop-style direct MP4 with scroll-driven parallax + fade-out
+const HERO_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4";
+
+// Mindloop-style direct MP4 with scroll-driven parallax + zoom + fade-out
 function HeroBackground() {
   const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "-22%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.48], [0.62, 0]);
+  // Parallax drift (small range keeps upscaling minimal → crisper footage)
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "-14%"]);
+  // Slow cinematic zoom as the user scrolls
+  const scale = useTransform(scrollYProgress, [0, 1], [1.08, 1.2]);
+  // Fade out as hero exits
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [0.72, 0]);
 
   return (
     <div aria-hidden className="absolute inset-0 z-0 overflow-hidden bg-black">
-      {/* scale(1.28) gives parallax room without exposing edges */}
       <motion.video
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
+        className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
+        src={HERO_VIDEO}
         autoPlay
         muted
         loop
         playsInline
-        style={{ opacity, y, scale: 1.28 }}
+        preload="auto"
+        disablePictureInPicture
+        style={{
+          opacity,
+          y,
+          scale,
+          // GPU compositing for smooth 60fps scroll + sharper scaling
+          willChange: "transform, opacity",
+          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
+          imageRendering: "auto",
+        }}
       />
       {/* Bottom section fade into features */}
       <div
