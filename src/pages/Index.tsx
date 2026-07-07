@@ -572,16 +572,17 @@ function PricingSection({
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
-  // Scroll-driven garden background behind the pricing cards
+  // Scroll-driven garden divider anchored to the bottom of the pricing section
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const gardenY       = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
-  const gardenScale   = useTransform(scrollYProgress, [0, 0.5, 1], [1.12, 1.04, 1.12]);
-  const gardenOpacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 0.55, 0.55, 0.15]);
+  const gardenY       = useTransform(scrollYProgress, [0, 1], ["10%", "-6%"]);
+  const gardenScale   = useTransform(scrollYProgress, [0, 0.5, 1], [1.08, 1.02, 1.08]);
+  const gardenOpacity = useTransform(scrollYProgress, [0, 0.35, 1], [0.15, 0.85, 0.85]);
+  // Fade the top of the black-backed image so it dissolves up into the section
   const gardenMask =
-    "radial-gradient(ellipse 85% 80% at 50% 55%, #000 55%, transparent 100%)";
+    "linear-gradient(to bottom, transparent 0%, #000 42%, #000 100%)";
 
   return (
     <section
@@ -590,12 +591,12 @@ function PricingSection({
       className="relative bg-[#050505] overflow-hidden"
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,5rem)" }}
     >
-      {/* ── Scroll-driven garden background (behind the cards) ── */}
+      {/* ── Scroll-driven garden divider (anchored to section bottom) ── */}
       <motion.img
         aria-hidden
         src="/seam-garden.png"
         alt=""
-        className="absolute left-1/2 top-1/2 z-0 w-[max(100vw,1100px)] max-w-none -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
+        className="absolute bottom-0 left-1/2 z-0 w-[max(100vw,1200px)] max-w-none -translate-x-1/2 pointer-events-none select-none"
         style={{
           y: gardenY,
           scale: gardenScale,
@@ -603,15 +604,6 @@ function PricingSection({
           WebkitMaskImage: gardenMask,
           maskImage: gardenMask,
           willChange: "transform, opacity",
-        }}
-      />
-      {/* Scrim so the plan cards stay legible over the garden */}
-      <div
-        aria-hidden
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 70% at 50% 50%, rgba(5,5,5,0.45) 0%, rgba(5,5,5,0.80) 70%, rgba(5,5,5,0.95) 100%)",
         }}
       />
 
