@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import BrandLogo from "@/components/BrandLogo";
 import BlurText from "@/components/landing/BlurText";
-import { Calendar, CreditCard, Users, Check, ArrowRight, Star, ChevronRight } from "lucide-react";
+import { Calendar, CreditCard, Users, Check, ArrowRight, Star, ChevronRight, Sparkles } from "lucide-react";
 
 // ── Scroll-reveal word component ──────────────────────────────────────────────
 
@@ -278,7 +278,7 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
 
 // ── Features ──────────────────────────────────────────────────────────────────
 
-const FEATURE_ICONS = [Calendar, CreditCard, Users];
+const FEATURE_ICONS = [Calendar, CreditCard, Users, Sparkles];
 
 const FEATURES_BG_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260611_183632_c311af08-e4b7-458f-81e7-79847a49b3d3.mp4";
 
@@ -303,6 +303,7 @@ function FeaturesSection({
     ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
     ["Stripe", "PDF Invoices", "Payment Links", "P&L Reports"],
     ["Client History", "Balances", "Preferences", "CRM"],
+    ["Caption Writer", "Hashtags", "Booking Chatbot", "Smart Replies"],
   ];
 
   return (
@@ -382,7 +383,7 @@ function FeaturesSection({
 
         {/* Cards */}
         <div className="grid gap-5 mt-14" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
-          {items.slice(0, 3).map((item, i) => {
+          {items.slice(0, 4).map((item, i) => {
             const Icon = FEATURE_ICONS[i];
             const tags = TAGS[i];
             return (

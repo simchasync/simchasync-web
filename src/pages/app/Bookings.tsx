@@ -389,20 +389,22 @@ export default function Bookings() {
       const invoiceAmount = Math.max(totalPrice - deposit, 0);
       const clientName = ev.clients?.name || ev.client_name || "Client";
       const eventLabel = `${ev.event_type} — ${format(new Date(ev.event_date), "MMM d, yyyy")}`;
-      const { error } = await supabase.from("invoices").insert({
+      const { data: created, error } = await supabase.from("invoices").insert({
         tenant_id: tenantId!,
         client_id: ev.client_id || null,
         event_id: ev.id,
         amount: invoiceAmount > 0 ? invoiceAmount : totalPrice,
         description: `Invoice for ${eventLabel} (${clientName})`,
         status: "draft",
-      });
+      }).select("id").single();
       if (error) throw error;
+      return { invoiceId: created.id, eventId: ev.id };
     },
-    onSuccess: () => {
+    onSuccess: ({ invoiceId, eventId }) => {
       qc.invalidateQueries({ queryKey: ["invoices"] });
       toast({ title: "Invoice created" });
-      navigate("/app/invoices");
+      // Open the newly created draft pre-filled in the invoice editor
+      navigate(`/app/invoices?invoice=${invoiceId}&event=${eventId}`);
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });

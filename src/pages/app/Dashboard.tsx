@@ -26,18 +26,21 @@ import {
 } from "@/lib/dashboardAnalytics";
 import {
   Calendar, DollarSign, TrendingDown, AlertCircle, Eye, Pencil,
-  ArrowUpRight, UserPlus, FileText, Wallet, BarChart3,
+  ArrowUpRight, UserPlus, FileText, Wallet, BarChart3, Sparkles,
 } from "lucide-react";
 
 const LIST_PREVIEW_COUNT = 5;
 
 function QuickActions() {
   const { t } = useLanguage();
+  const { isOwner } = useUserRole();
   const navigate = useNavigate();
   const actions = [
     { label: t.app.dashboard.newBooking, icon: Calendar, onClick: () => navigate("/app/bookings"), primary: true },
     { label: t.app.clients.newClient, icon: UserPlus, onClick: () => navigate("/app/clients") },
     { label: t.app.invoices.newInvoice, icon: FileText, onClick: () => navigate("/app/invoices") },
+    // AI caption tool lives in Social Media — only owners can reach that area
+    ...(isOwner ? [{ label: t.app.socialHub.generateCaption, icon: Sparkles, onClick: () => navigate("/app/social") }] : []),
   ];
   return (
     <div className="flex flex-wrap gap-2">

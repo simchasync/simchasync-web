@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionErrorMessage } from "@/lib/edgeFunctionError";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,7 +145,7 @@ export default function EditInvoiceDialog({ open, onOpenChange, invoice, clients
       setPayAmount(""); setPayNotes("");
       toast({ title: "Payment recorded" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: async (e: Error) => toast({ title: "Error", description: await getEdgeFunctionErrorMessage(e, e.message), variant: "destructive" }),
   });
 
   const updatePaymentMutation = useMutation({

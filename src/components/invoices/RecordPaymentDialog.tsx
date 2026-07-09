@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionErrorMessage } from "@/lib/edgeFunctionError";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -52,7 +53,11 @@ export default function RecordPaymentDialog({ open, onOpenChange, invoice }: Rec
         }
         throw new Error("Failed to create payment link");
       } catch (err: any) {
-        toast({ title: "Error", description: err.message, variant: "destructive" });
+        toast({
+          title: "Error",
+          description: await getEdgeFunctionErrorMessage(err, "Failed to create payment link"),
+          variant: "destructive",
+        });
       } finally {
         setStripeProcessing(false);
       }

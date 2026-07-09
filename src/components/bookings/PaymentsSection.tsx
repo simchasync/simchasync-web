@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionErrorMessage } from "@/lib/edgeFunctionError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,7 +86,7 @@ export default function PaymentsSection({ eventId, canWrite, invoiceId }: Props)
       setAmount(""); setNotes("");
       toast({ title: "Payment recorded" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: async (e: Error) => toast({ title: "Error", description: await getEdgeFunctionErrorMessage(e, e.message), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
