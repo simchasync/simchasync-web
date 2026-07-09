@@ -386,19 +386,25 @@ function FeaturesSection({
           {items.slice(0, 4).map((item, i) => {
             const Icon = FEATURE_ICONS[i];
             const tags = TAGS[i];
+            const isAI = /^ai/i.test(item.title);
             return (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 40 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.65, delay: 0.15 + i * 0.12, ease: EASE }}
-                className="landing-glass flex flex-col p-6"
+                className={`${isAI ? "landing-glass-strong" : "landing-glass"} flex flex-col p-6`}
                 style={{ borderRadius: 22, minHeight: 340 }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div
-                    className="landing-glass flex items-center justify-center shrink-0"
-                    style={{ width: 44, height: 44, borderRadius: 12, color: "#C7A155" }}
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      color: isAI ? "#1a0f00" : "#C7A155",
+                      background: isAI ? GOLD : undefined,
+                      boxShadow: isAI ? "0 4px 20px rgba(199,161,85,0.45)" : undefined,
+                    }}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
@@ -417,6 +423,14 @@ function FeaturesSection({
                 <div className="flex-1" />
 
                 <div className="mt-6">
+                  {isAI && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 mb-3 text-[10px] font-bold tracking-wider font-sans"
+                      style={{ background: GOLD, color: "#1a0f00" }}
+                    >
+                      <Sparkles className="h-3 w-3" /> NEW · AI
+                    </span>
+                  )}
                   <h3
                     className="font-serif italic font-bold m-0"
                     style={{ fontSize: "clamp(1.6rem,3vw,2rem)", letterSpacing: "-0.02em", lineHeight: 1, ...goldText }}
