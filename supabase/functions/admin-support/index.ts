@@ -5,6 +5,7 @@ import {
   isAdmin, isSupportAgent,
   auditLog,
 } from "../_shared/admin-helpers.ts";
+import { emailShell, escapeHtml, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = adminCors(req);
@@ -58,7 +59,57 @@ Deno.serve(async (req: Request) => {
         if (error) throw error;
         await adminClient.from("support_tickets").update({ status: "in_progress" }).eq("id", ticket_id).eq("status", "open");
         await auditLog(adminClient, auth.user.id, "reply_to_ticket", undefined, undefined, { ticket_id });
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        // Tell the ticket owner. Never fatal — the reply is already committed, so a mail
+        // outage must not turn a successful reply into a 500 for the admin.
+        let notified = false;
+        let emailSent = false;
+        try {
+          const { data: ticket } = await adminClient
+            .from("support_tickets")
+            .select("subject, tenant_id, user_id")
+            .eq("id", ticket_id)
+            .single();
+
+          if (ticket) {
+            await adminClient.from("notifications").insert({
+              tenant_id: ticket.tenant_id,
+              user_id: ticket.user_id,
+              title: "Support replied to your ticket",
+              message: ticket.subject,
+              type: "support",
+              link: "/app/support",
+            });
+            notified = true;
+
+            const { data: profile } = await adminClient
+              .from("profiles")
+              .select("email")
+              .eq("user_id", ticket.user_id)
+              .maybeSingle();
+
+            if (profile?.email) {
+              const appOrigin = getAppOrigin(req);
+              await sendBrandedEmail(
+                profile.email,
+                `Re: ${ticket.subject}`,
+                emailShell(
+                  "SimchaSync Support replied",
+                  `<p>We've replied to your ticket <strong>${escapeHtml(ticket.subject)}</strong>:</p>` +
+                  `<blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #c9a227;background-color:#faf8f4;color:#555566;">${escapeHtml(message)}</blockquote>` +
+                  `<p>Open your dashboard to read the full conversation or reply.</p>`,
+                  "View Ticket",
+                  `${appOrigin}/app/support`,
+                ),
+              );
+              emailSent = true;
+            }
+          }
+        } catch (notifyErr) {
+          console.error("[admin-support] reply notification failed:", notifyErr);
+        }
+
+        return new Response(JSON.stringify({ success: true, notified, email_sent: emailSent }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       case "update_ticket_status": {
