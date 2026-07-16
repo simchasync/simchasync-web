@@ -16,7 +16,7 @@ interface SubscriptionContextType {
   canceling: boolean;
   loading: boolean;
   workspaceActive: boolean; // true if current workspace has active or valid trial subscription
-  canAccess: (feature: "stripe_connect" | "social_media" | "expenses_profit") => boolean;
+  canAccess: (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries") => boolean;
   refreshSubscription: () => Promise<void>;
   pollUntilSubscribed: (maxAttempts?: number, intervalMs?: number) => Promise<boolean | undefined>;
 }
@@ -243,7 +243,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     };
   }, [tenantId]);
 
-  const canAccess = (feature: "stripe_connect" | "social_media" | "expenses_profit") =>
+  const canAccess = (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries") =>
     canAccessFeature(plan, tier, trialActive, feature);
 
   // Workspace is active if subscribed OR on valid trial. 'none' plan = inactive.
