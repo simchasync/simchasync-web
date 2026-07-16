@@ -121,6 +121,18 @@ export default function BookingRequests() {
           },
         }).catch(console.warn);
       }
+
+      // 5. Send confirmation SMS to client (fire & forget — must not block the accept)
+      if (req.phone) {
+        const parts = [`Hi ${req.name}, your`];
+        if (req.event_type) parts.push(req.event_type);
+        parts.push("booking");
+        if (req.event_date) parts.push(`on ${format(new Date(req.event_date), "MMM d, yyyy")}`);
+        const smsBody = `${parts.join(" ")} is confirmed! We'll be in touch soon.`;
+        supabase.functions.invoke("send-sms", {
+          body: { tenant_id: tenantId, to: req.phone, body: smsBody },
+        }).catch(console.warn);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["booking-requests"] });

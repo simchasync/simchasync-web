@@ -52,6 +52,14 @@ verify_jwt = false
 [functions.colleague-booking-request]
 verify_jwt = false
 
+# Verifies the caller's JWT internally (must be owner/booking_manager of the event's tenant)
+[functions.colleague-event-invite]
+verify_jwt = false
+
+# Verifies the caller's JWT internally (must be owner/booking_manager of the tenant)
+[functions.send-sms]
+verify_jwt = false
+
 # Stripe webhook: called by Stripe with webhook signature, no Supabase JWT
 [functions.stripe-webhook]
 verify_jwt = false

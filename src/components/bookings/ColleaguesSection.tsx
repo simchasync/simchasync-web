@@ -225,10 +225,22 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
         invite_status: values.invite_status ?? "auto_assigned",
       };
 
-      const { error } = await supabase.from("event_colleagues").insert(insertPayload as any);
+      const { data: ecRow, error } = await supabase
+        .from("event_colleagues")
+        .insert(insertPayload as any)
+        .select("id")
+        .single();
       if (error) {
         if (error.code === "23505") throw new Error("This colleague is already assigned to this booking");
         throw error;
+      }
+
+      // Send a booking-specific invite email to the internal colleague (fire & forget —
+      // separate from the workspace invite, which doesn't name the event)
+      if (values.email && ecRow?.id) {
+        supabase.functions.invoke("colleague-event-invite", {
+          body: { event_colleague_id: ecRow.id },
+        }).catch((e) => console.warn("colleague-event-invite failed:", e));
       }
 
       return { status, isInternal: true };
