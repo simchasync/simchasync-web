@@ -8,7 +8,7 @@ import { TrialBanner } from "@/components/TrialBanner";
 import {
   LayoutDashboard, Calendar, Users, FileText, UsersRound, Settings,
   LogOut, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
-  ChevronLeft, ChevronDown, MoreHorizontal,
+  ChevronLeft, ChevronDown, MoreHorizontal, Inbox,
 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const allNavItems = [
   { key: "invoices", path: "/app/invoices", icon: FileText, roles: ["owner"] },
   { key: "agents", path: "/app/agents", icon: UserCheck, roles: ["owner"] },
   { key: "finance", path: "/app/finance", icon: BarChart3, roles: ["owner"] },
+  { key: "inquiries", path: "/app/inquiries", icon: Inbox, roles: ["owner", "booking_manager"] },
   { key: "team", path: "/app/team", icon: UsersRound, roles: ["owner"] },
   { key: "social", path: "/app/social", icon: Share2, roles: ["owner", "social_media_manager"] },
   { key: "support", path: "/app/support", icon: HelpCircle, roles: ["owner", "social_media_manager", "booking_manager"] },
@@ -46,13 +47,16 @@ export default function AppShell() {
 
   // Finance reports + agent commissions are Pro/Premium features — hidden on the Lite plan
   const canSeeFinance = canAccess("expenses_profit");
+  // Customer Inquiries is Premium-only — hidden on Lite and Pro
+  const canSeeInquiries = canAccess("customer_inquiries");
   const filteredNavItems = useMemo(
     () => allNavItems.filter(
       (item) =>
         (!role || (item.roles as readonly string[]).includes(role)) &&
-        ((item.key !== "finance" && item.key !== "agents") || canSeeFinance)
+        ((item.key !== "finance" && item.key !== "agents") || canSeeFinance) &&
+        (item.key !== "inquiries" || canSeeInquiries)
     ),
-    [role, canSeeFinance]
+    [role, canSeeFinance, canSeeInquiries]
   );
   const navItems = useMemo(
     () => workspaceActive ? filteredNavItems : [],
