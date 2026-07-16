@@ -53,7 +53,7 @@ export const yi = {
     },
   },
   app: {
-    nav: { dashboard: "דעשבאָרד", bookings: "באָקינגס", clients: "קליענטן", invoices: "חשבונות", team: "צוות", settings: "אײַנשטעלונגען", social: "סאָציאַלע מעדיאַ", support: "שטיצע", bookingPage: "באָקינג בלאַט", agents: "אגענטן", finance: "פֿינאַנצן" },
+    nav: { dashboard: "דעשבאָרד", bookings: "באָקינגס", clients: "קליענטן", invoices: "חשבונות", team: "צוות", settings: "אײַנשטעלונגען", social: "סאָציאַלע מעדיאַ", support: "שטיצע", bookingPage: "באָקינג בלאַט", agents: "אגענטן", finance: "פֿינאַנצן", inquiries: "קונים אָנפֿראַגעס" },
     languageBanner: "איצט אויף ייִדיש",
     languageBannerHint: "איר קענט ביטן שפּראַך אין אײַנשטעלונגען",
     theme: {
@@ -134,6 +134,17 @@ export const yi = {
       confirmDeleteTitle: "אויסמעקן דעם באָקינג?",
       confirmDeleteDescription:
         "דער באָקינג וועט בלייבן אויסגעמעקט. פֿאַרבונדענע רעקאָרדס קענען ליידן. אומקער ניט מעגלעך.",
+    },
+    inquiries: {
+      title: "קונים אָנפֿראַגעס",
+      addInquiry: "צוגעבן אָנפֿרעג",
+      manualBadge: "מאַנועל",
+      moveTo: "אַריבערפֿירן צו",
+      overdue: "פֿאַרשפּעטיקט",
+      noInquiries: "קיין אָנפֿראַגעס דאָ",
+      premiumTitle: "קונים אָנפֿראַגעס איז אַ פּרעמיום שטריך",
+      premiumHint: "אַרויפֿהייבן צו פּרעמיום צו נאָכפֿאָלגן אָנפֿראַגעס אויף אַ טאָוול און באַקומען דערמאָנונגען.",
+      upgradeButton: "אַרויפֿהייבן צו פּרעמיום",
     },
     clients: {
       title: "קליענטן", newClient: "נײַער קליענט", name: "נאָמען", email: "אימעיל", phone: "טעלעפֿאָן", notes: "באַמערקונגען",

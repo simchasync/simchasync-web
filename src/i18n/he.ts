@@ -53,7 +53,7 @@ export const he = {
     },
   },
   app: {
-    nav: { dashboard: "לוח בקרה", bookings: "הזמנות", clients: "לקוחות", invoices: "חשבוניות", team: "צוות", settings: "הגדרות", social: "מדיה חברתית", support: "תמיכה", bookingPage: "דף הזמנה", agents: "סוכנים", finance: "כספים" },
+    nav: { dashboard: "לוח בקרה", bookings: "הזמנות", clients: "לקוחות", invoices: "חשבוניות", team: "צוות", settings: "הגדרות", social: "מדיה חברתית", support: "תמיכה", bookingPage: "דף הזמנה", agents: "סוכנים", finance: "כספים", inquiries: "פניות לקוחות" },
     languageBanner: "כרגע באנגלית",
     languageBannerHint: "ניתן לעבור לעברית בהגדרות",
     theme: {
@@ -134,6 +134,17 @@ export const he = {
       confirmDeleteTitle: "למחוק הזמנה זו?",
       confirmDeleteDescription:
         "ההזמנה תימחק לצמיתות. רשומות קשורות עשויות להיפגע. לא ניתן לבטל פעולה זו.",
+    },
+    inquiries: {
+      title: "פניות לקוחות",
+      addInquiry: "הוסף פנייה",
+      manualBadge: "ידני",
+      moveTo: "העבר אל",
+      overdue: "באיחור",
+      noInquiries: "אין פניות כאן",
+      premiumTitle: "פניות לקוחות היא תכונת פרימיום",
+      premiumHint: "שדרג לפרימיום כדי לעקוב אחר פניות בלוח ולקבל תזכורות מעקב.",
+      upgradeButton: "שדרג לפרימיום",
     },
     clients: {
       title: "לקוחות", newClient: "לקוח חדש", name: "שם", email: "אימייל", phone: "טלפון", notes: "הערות",

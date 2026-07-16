@@ -68,6 +68,7 @@ export const en = {
       bookingPage: "Booking Page",
       agents: "Agents",
       finance: "Finance",
+      inquiries: "Inquiries",
     },
     languageBanner: "Currently in English",
     languageBannerHint: "You can switch to Hebrew (עברית) in Settings",
@@ -202,6 +203,17 @@ export const en = {
       confirmDeleteTitle: "Delete this booking?",
       confirmDeleteDescription:
         "This booking will be permanently removed. Related records may be affected. This cannot be undone.",
+    },
+    inquiries: {
+      title: "Customer Inquiries",
+      addInquiry: "Add Inquiry",
+      manualBadge: "Manual",
+      moveTo: "Move to",
+      overdue: "Overdue",
+      noInquiries: "No inquiries here",
+      premiumTitle: "Customer Inquiries is a Premium feature",
+      premiumHint: "Upgrade to Premium to track inquiries on a board and get follow-up reminders.",
+      upgradeButton: "Upgrade to Premium",
     },
     clients: {
       title: "Clients",
