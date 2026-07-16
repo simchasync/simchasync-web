@@ -56,6 +56,10 @@ verify_jwt = false
 [functions.colleague-event-invite]
 verify_jwt = false
 
+# Triggered daily by an external cron ping with a static Bearer secret
+[functions.send-inquiry-reminders]
+verify_jwt = false
+
 # Verifies the caller's JWT internally (must be owner/booking_manager of the tenant)
 [functions.send-sms]
 verify_jwt = false
