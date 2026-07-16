@@ -39,6 +39,7 @@ const UpgradePage = lazy(() => import("./pages/app/UpgradePage"));
 const LandingPageEditor = lazy(() => import("./pages/app/LandingPageEditor"));
 const Agents = lazy(() => import("./pages/app/Agents"));
 const Finance = lazy(() => import("./pages/app/Finance"));
+const Inquiries = lazy(() => import("./pages/app/Inquiries"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminShell = lazy(() => import("./pages/admin/AdminShell"));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
@@ -126,6 +127,7 @@ const App = () => (
                         <Route path="booking-page" element={<LandingPageEditor />} />
                         <Route path="agents" element={<Agents />} />
                         <Route path="finance" element={<Finance />} />
+                        <Route path="inquiries" element={<Inquiries />} />
                       </Route>
                       <Route path="/admin" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminShell />}>
