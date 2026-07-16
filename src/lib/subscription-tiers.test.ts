@@ -46,3 +46,18 @@ describe("canAccessFeature", () => {
     expect(canAccessFeature("lite", "lite", false, "social_media")).toBe(false);
   });
 });
+
+describe("canAccessFeature customer_inquiries gate (Premium only)", () => {
+  it("grants during an active trial", () => {
+    expect(canAccessFeature("trial", null, true, "customer_inquiries")).toBe(true);
+  });
+
+  it("grants Premium", () => {
+    expect(canAccessFeature("premium", "premium", false, "customer_inquiries")).toBe(true);
+  });
+
+  it("denies Pro (full) and Lite, unlike the other gated features", () => {
+    expect(canAccessFeature("full", "full", false, "customer_inquiries")).toBe(false);
+    expect(canAccessFeature("lite", "lite", false, "customer_inquiries")).toBe(false);
+  });
+});

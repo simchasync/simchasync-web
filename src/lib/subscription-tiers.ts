@@ -80,11 +80,13 @@ export function canAccessFeature(
   plan: string,
   tier: SubscriptionTier,
   trialActive: boolean,
-  _feature: "stripe_connect" | "social_media" | "expenses_profit"
+  feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries"
 ): boolean {
   // During trial, everything is accessible
   if (plan === "trial" && trialActive) return true;
-  // Pro ("full") and Premium have everything
+  // Customer Inquiries is a Premium-only feature, unlike the others below
+  if (feature === "customer_inquiries") return tier === "premium";
+  // Pro ("full") and Premium have everything else
   if (tier === "full" || tier === "premium") return true;
   // Lite plan only has core features (no stripe_connect, social_media, expenses_profit)
   if (tier === "lite") return false;
