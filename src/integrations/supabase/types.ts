@@ -214,11 +214,14 @@ export type Database = {
           email: string | null
           event_date: string | null
           event_type: string | null
+          follow_up_date: string | null
+          follow_up_reminded_at: string | null
           id: string
           message: string | null
           name: string
           phone: string | null
           price: number | null
+          source: string
           source_colleague_id: string | null
           source_event_id: string | null
           source_tenant_id: string | null
@@ -230,11 +233,14 @@ export type Database = {
           email?: string | null
           event_date?: string | null
           event_type?: string | null
+          follow_up_date?: string | null
+          follow_up_reminded_at?: string | null
           id?: string
           message?: string | null
           name: string
           phone?: string | null
           price?: number | null
+          source?: string
           source_colleague_id?: string | null
           source_event_id?: string | null
           source_tenant_id?: string | null
@@ -246,11 +252,14 @@ export type Database = {
           email?: string | null
           event_date?: string | null
           event_type?: string | null
+          follow_up_date?: string | null
+          follow_up_reminded_at?: string | null
           id?: string
           message?: string | null
           name?: string
           phone?: string | null
           price?: number | null
+          source?: string
           source_colleague_id?: string | null
           source_event_id?: string | null
           source_tenant_id?: string | null
