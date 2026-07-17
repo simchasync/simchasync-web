@@ -208,6 +208,7 @@ export const en = {
       title: "Customer Inquiries",
       addInquiry: "Add Inquiry",
       manualBadge: "Manual",
+      setFollowUp: "Follow-up date",
       moveTo: "Move to",
       overdue: "Overdue",
       noInquiries: "No inquiries here",

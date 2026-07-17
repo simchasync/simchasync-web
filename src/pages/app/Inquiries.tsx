@@ -161,24 +161,31 @@ export default function Inquiries() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {columns.map((col) => (
-          <div key={col.status} className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {col.label} <span className="text-xs font-normal">({col.cards.length})</span>
-            </h2>
-            <div className="space-y-2 min-h-16">
+          <div key={col.status} className="flex flex-col rounded-xl border border-border/60 bg-card/60 p-3">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                {col.label}
+              </h2>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {col.cards.length}
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col gap-2">
               {col.cards.length === 0 && (
-                <p className="text-xs text-muted-foreground/60 py-4 text-center">{b.noInquiries}</p>
+                <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-border/60">
+                  <p className="text-xs text-muted-foreground/60">{b.noInquiries}</p>
+                </div>
               )}
               {col.cards.map((card) => {
                 const overdue = !!card.follow_up_date && card.follow_up_date <= today
                   && card.status !== "booked" && card.status !== "declined";
                 return (
-                  <Card key={card.id} className="animate-row-in">
-                    <CardContent className="p-3 space-y-2">
+                  <Card key={card.id} className="animate-row-in shadow-sm">
+                    <CardContent className="space-y-3 p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm">{card.name}</p>
+                        <p className="font-medium text-sm leading-tight">{card.name}</p>
                         {card.source === "manual" && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{b.manualBadge}</Badge>
+                          <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">{b.manualBadge}</Badge>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -195,11 +202,11 @@ export default function Inquiries() {
                         </Badge>
                       )}
                       {canWrite && (
-                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                <MoveRight className="mr-1 h-3 w-3" /> {b.moveTo}
+                              <Button variant="outline" size="sm" className="h-8 w-full justify-center text-xs">
+                                <MoveRight className="mr-1.5 h-3.5 w-3.5" /> {b.moveTo}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -210,12 +217,15 @@ export default function Inquiries() {
                               ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                          <Input
-                            type="date"
-                            className="h-7 w-32 text-xs"
-                            value={card.follow_up_date ?? ""}
-                            onChange={(e) => setFollowUp.mutate({ id: card.id, date: e.target.value || null })}
-                          />
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-normal text-muted-foreground">{b.setFollowUp}</Label>
+                            <Input
+                              type="date"
+                              className="h-8 w-full text-xs"
+                              value={card.follow_up_date ?? ""}
+                              onChange={(e) => setFollowUp.mutate({ id: card.id, date: e.target.value || null })}
+                            />
+                          </div>
                         </div>
                       )}
                     </CardContent>

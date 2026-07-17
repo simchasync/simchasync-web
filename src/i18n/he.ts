@@ -139,6 +139,7 @@ export const he = {
       title: "פניות לקוחות",
       addInquiry: "הוסף פנייה",
       manualBadge: "ידני",
+      setFollowUp: "תאריך מעקב",
       moveTo: "העבר אל",
       overdue: "באיחור",
       noInquiries: "אין פניות כאן",

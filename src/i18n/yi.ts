@@ -139,6 +139,7 @@ export const yi = {
       title: "קונים אָנפֿראַגעס",
       addInquiry: "צוגעבן אָנפֿרעג",
       manualBadge: "מאַנועל",
+      setFollowUp: "נאָכפֿאָלג טאָג",
       moveTo: "אַריבערפֿירן צו",
       overdue: "פֿאַרשפּעטיקט",
       noInquiries: "קיין אָנפֿראַגעס דאָ",
