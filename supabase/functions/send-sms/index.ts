@@ -7,6 +7,16 @@ const MAX_BODY = 640;
 // ponytail: flat per-tenant cap, revisit with a configurable/tiered limit if legitimate use hits it
 const DAILY_SMS_LIMIT = 50;
 
+const digitsOnly = (phone: string) => phone.replace(/\D/g, "");
+
+/** Tolerates missing/extra country code and free-text formatting differences. */
+function sameNumber(a: string, b: string): boolean {
+  const da = digitsOnly(a);
+  const db = digitsOnly(b);
+  if (!da || !db) return false;
+  return da === db || da.endsWith(db) || db.endsWith(da);
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = buildCorsHeaders(req);
   if (req.method === "OPTIONS") {
@@ -53,6 +63,15 @@ Deno.serve(async (req: Request) => {
 
     if (!memberCheck) {
       return json({ error: "Forbidden: not authorized for this workspace" }, 403);
+    }
+
+    const [{ data: clientMatches }, { data: requestMatches }] = await Promise.all([
+      supabase.from("clients").select("phone").eq("tenant_id", tenant_id).not("phone", "is", null),
+      supabase.from("booking_requests").select("phone").eq("tenant_id", tenant_id).not("phone", "is", null),
+    ]);
+    const knownNumbers = [...(clientMatches ?? []), ...(requestMatches ?? [])].map((r) => r.phone as string);
+    if (!knownNumbers.some((known) => sameNumber(known, String(to)))) {
+      return json({ error: "Forbidden: recipient is not a known contact for this workspace" }, 403);
     }
 
     const todayStart = new Date();

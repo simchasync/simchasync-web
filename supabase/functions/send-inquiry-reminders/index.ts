@@ -1,7 +1,7 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
 import { buildCorsHeaders } from "../_shared/cors.ts";
-import { emailShell, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
+import { emailShell, escapeHtml, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
 
 const INQUIRY_REMINDER_SECRET = Deno.env.get("INQUIRY_REMINDER_SECRET") ?? "";
 
@@ -53,8 +53,8 @@ Deno.serve(async (req) => {
         .in("user_id", userIds);
 
       const eventLine = [
-        inquiry.event_type ? `Event: <strong>${inquiry.event_type}</strong>` : "",
-        inquiry.event_date ? `Date: <strong>${inquiry.event_date}</strong>` : "",
+        inquiry.event_type ? `Event: <strong>${escapeHtml(inquiry.event_type)}</strong>` : "",
+        inquiry.event_date ? `Date: <strong>${escapeHtml(inquiry.event_date)}</strong>` : "",
       ].filter(Boolean).join("<br>");
 
       for (const userId of userIds) {
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
               `Follow-up reminder: ${inquiry.name}`,
               emailShell(
                 "Time to follow up",
-                `<p>You set a follow-up reminder for <strong>${inquiry.name}</strong>.</p><p>${eventLine}</p>`,
+                `<p>You set a follow-up reminder for <strong>${escapeHtml(inquiry.name)}</strong>.</p><p>${eventLine}</p>`,
                 "Open Inquiries",
                 `${appOrigin}/app/inquiries`,
               ),

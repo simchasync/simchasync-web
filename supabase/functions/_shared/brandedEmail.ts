@@ -1,5 +1,17 @@
 /// <reference path="./deno-runtime.d.ts" />
 import { sendSmtpEmail } from "./smtp.ts";
+import { isAllowedOrigin } from "./cors.ts";
+
+/** Escapes user-supplied text before it's interpolated into branded-email HTML —
+ * emails are sent from our domain, so unescaped input becomes live HTML/phishing risk. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 /** Standard SimchaSync-branded email layout: gold header, title, body, CTA button. */
 export function emailShell(title: string, bodyHtml: string, buttonLabel: string, buttonUrl: string): string {
@@ -27,10 +39,13 @@ export function emailShell(title: string, bodyHtml: string, buttonLabel: string,
 </table>`;
 }
 
-/** Prefer the request Origin, fall back to APP_URL, then the production URL. */
+/** Prefer the request Origin — but only when it's on our own allow-list, since
+ * this becomes the CTA link in outbound mail; an arbitrary Origin would let a
+ * caller point our branded email at their own domain. Falls back to APP_URL,
+ * then the production URL. */
 export function getAppOrigin(req: Request): string {
   const origin = req.headers.get("origin");
-  if (origin) return origin;
+  if (origin && isAllowedOrigin(origin)) return origin;
   return Deno.env.get("APP_URL") ?? "https://simchasync-web.vercel.app";
 }
 

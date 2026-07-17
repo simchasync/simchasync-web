@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { ValidationError, parseBody } from "../_shared/validation.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
-import { emailShell, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
+import { emailShell, escapeHtml, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
 
 const bodySchema = z.object({
   event_colleague_id: z.string().uuid("event_colleague_id must be a valid UUID"),
@@ -62,13 +62,13 @@ Deno.serve(async (req) => {
     const email = String(ec.email).trim().toLowerCase();
 
     const { data: tenant } = await admin.from("tenants").select("name").eq("id", tenantId).single();
-    const workspaceName = tenant?.name || "A SimchaSync workspace";
+    const workspaceName = escapeHtml(tenant?.name || "A SimchaSync workspace");
     const appOrigin = getAppOrigin(req);
-    const roleLabel = ec.role_instrument || "Colleague";
+    const roleLabel = escapeHtml(ec.role_instrument || "Colleague");
     const eventLine = [
-      event.event_type ? `Event: <strong>${event.event_type}</strong>` : "",
-      event.event_date ? `Date: <strong>${event.event_date}</strong>` : "",
-      event.venue ? `Venue: <strong>${event.venue}</strong>` : "",
+      event.event_type ? `Event: <strong>${escapeHtml(event.event_type)}</strong>` : "",
+      event.event_date ? `Date: <strong>${escapeHtml(event.event_date)}</strong>` : "",
+      event.venue ? `Venue: <strong>${escapeHtml(event.venue)}</strong>` : "",
       ec.price ? `Your fee: <strong>$${Number(ec.price).toLocaleString()}</strong>` : "",
     ].filter(Boolean).join("<br>");
 
