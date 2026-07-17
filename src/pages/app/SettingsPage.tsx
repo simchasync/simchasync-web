@@ -21,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import { friendlyUploadError } from "@/lib/uploadErrors";
 import { useSearchParams, Link } from "react-router-dom";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
+import { SUBSCRIPTION_TIERS } from "@/lib/subscription-tiers";
 
 export default function SettingsPage() {
   const { t } = useLanguage();
@@ -473,7 +474,7 @@ export default function SettingsPage() {
                     "bg-destructive/10 text-destructive border-destructive/30"
                   }>
                     {subscribed
-                      ? `${tier === "full" ? "Full Platform" : "Lite"} Plan`
+                      ? `${tier === "full" ? SUBSCRIPTION_TIERS.full.name : tier === "premium" ? SUBSCRIPTION_TIERS.premium.name : SUBSCRIPTION_TIERS.lite.name} Plan`
                       : trialActive
                         ? `Trial · ${trialDaysLeft} days left`
                         : "Trial Expired"}
