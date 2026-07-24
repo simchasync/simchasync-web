@@ -412,7 +412,7 @@ function FeaturesSection({
                     {tags.map((tag) => (
                       <span
                         key={tag}
-                        className="landing-glass rounded-full px-2.5 py-1 text-[11px] text-white/65 font-sans whitespace-nowrap"
+                        className="landing-glass rounded-full px-2.5 py-1 text-[11px] text-white/90 font-sans whitespace-nowrap"
                       >
                         {tag}
                       </span>
@@ -644,7 +644,7 @@ function PricingSection({
         >
           Simple, honest pricing
         </h2>
-        <p className="text-[15px] text-white/48 font-sans font-light m-0">
+        <p className="text-[15px] text-white font-sans font-light m-0">
           Start with a free 30-day trial. Full access, no credit card required.
         </p>
       </motion.div>
@@ -680,11 +680,11 @@ function PricingSection({
             )}
 
             <h3 className="font-serif italic font-bold m-0 mb-1.5" style={{ fontSize: "1.6rem", ...goldText }}>{plan.name}</h3>
-            <p className="text-[13px] text-white/45 font-sans font-light m-0 mb-5">{plan.desc}</p>
+            <p className="text-[13px] text-white/70 font-sans font-light m-0 mb-5">{plan.desc}</p>
 
             <div className="mb-6 pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <span className="font-serif italic text-white font-bold" style={{ fontSize: "2.8rem", lineHeight: 1 }}>{plan.price}</span>
-              <span className="text-[14px] text-white/35 font-sans ml-1">{plan.period}</span>
+              <span className="text-[14px] text-white/60 font-sans ml-1">{plan.period}</span>
             </div>
 
             <ul className="flex-1 flex flex-col gap-2.5 m-0 p-0 list-none mb-7">
@@ -695,7 +695,7 @@ function PricingSection({
                   <li
                     key={f}
                     className={`flex items-start gap-2.5 text-[13px] font-sans font-light ${
-                      isComingSoon ? "text-white/30" : "text-white/68"
+                      isComingSoon ? "text-white/55" : "text-white/85"
                     }`}
                   >
                     <Check
