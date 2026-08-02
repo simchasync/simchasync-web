@@ -67,7 +67,6 @@ export default function BackgroundVideo() {
       hls?.destroy();
       video.removeEventListener("playing", onPlay);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

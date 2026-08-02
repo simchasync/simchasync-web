@@ -63,7 +63,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           // Trial workspaces have no Stripe subscription, so product/price are null
           if (data.status === "trial" || data.plan_id === "trial") {
             // Trial confirmed — keep plan as "trial", don't set subscribed
-            console.log("[SubscriptionContext] Trial workspace confirmed via check-subscription");
             return;
           }
 
@@ -73,17 +72,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setSubscriptionEnd(data.subscription_end);
             setTier(detectedTier);
             setPlan(detectedTier);
-            console.log("[SubscriptionContext] Paid subscription confirmed:", detectedTier);
           } else if (data.plan_id && data.plan_id !== "none") {
             // Stripe lookup failed but DB has a plan — use DB plan
             setSubscribed(true);
             setSubscriptionEnd(data.subscription_end);
             setTier(data.plan_id as SubscriptionTier);
             setPlan(data.plan_id);
-            console.log("[SubscriptionContext] Subscription confirmed from DB plan:", data.plan_id);
           }
-        } else if (!dbSubscriptionActive.current) {
-          console.log("[SubscriptionContext] No active subscription for current workspace");
         }
        }
     } catch (e) {
@@ -115,7 +110,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
               setPlan(tenantData.plan);
             }
           }
-          console.log("[SubscriptionContext] Current workspace subscription confirmed after polling");
           return true;
         }
       } catch (e) {
@@ -125,7 +119,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         await new Promise((r) => setTimeout(r, intervalMs));
       }
     }
-    console.log("[SubscriptionContext] Polling exhausted for current workspace");
     return false;
   }, [session?.access_token, tenantId]);
 
@@ -162,7 +155,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (data.stripe_current_period_end) {
           setSubscriptionEnd(data.stripe_current_period_end);
         }
-        console.log("[SubscriptionContext] DB confirms active subscription:", data.plan);
       } else if (data.plan === "trial") {
         // On trial — not subscribed
         setSubscribed(false);
@@ -214,7 +206,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           filter: `id=eq.${tenantId}`,
         },
         (payload) => {
-          console.log("[SubscriptionContext] Tenant updated via realtime:", payload.new);
           const newData = payload.new as any;
           if (newData) {
             setPlan(newData.plan);
