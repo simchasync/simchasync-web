@@ -5,16 +5,17 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import { Shield, Users, CreditCard, UserCog, LogOut, Loader2, TrendingUp, FileText, UserSearch, MessageSquare, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ADMIN_BASE, adminPath } from "@/lib/adminRoute";
 
 const navItems = [
-  { path: "/admin/overview", label: "Overview", icon: LayoutDashboard, requiredPermission: "hasAnyAdminRole" as const },
-  { path: "/admin/tenants", label: "Tenants", icon: Users, requiredPermission: "hasAnyAdminRole" as const },
-  { path: "/admin/users", label: "Users", icon: UserSearch, requiredPermission: "hasAnyAdminRole" as const },
-  { path: "/admin/billing", label: "Billing", icon: CreditCard, requiredPermission: "canManageBilling" as const },
-  { path: "/admin/revenue", label: "Revenue", icon: TrendingUp, requiredPermission: "canManageBilling" as const },
-  { path: "/admin/support-tickets", label: "Support", icon: MessageSquare, requiredPermission: "hasAnyAdminRole" as const },
-  { path: "/admin/audit-log", label: "Audit Log", icon: FileText, requiredPermission: "hasAnyAdminRole" as const },
-  { path: "/admin/admins", label: "Manage Admins", icon: UserCog, requiredPermission: "canManageAdmins" as const },
+  { path: adminPath("overview"), label: "Overview", icon: LayoutDashboard, requiredPermission: "hasAnyAdminRole" as const },
+  { path: adminPath("tenants"), label: "Tenants", icon: Users, requiredPermission: "hasAnyAdminRole" as const },
+  { path: adminPath("users"), label: "Users", icon: UserSearch, requiredPermission: "hasAnyAdminRole" as const },
+  { path: adminPath("billing"), label: "Billing", icon: CreditCard, requiredPermission: "canManageBilling" as const },
+  { path: adminPath("revenue"), label: "Revenue", icon: TrendingUp, requiredPermission: "canManageBilling" as const },
+  { path: adminPath("support-tickets"), label: "Support", icon: MessageSquare, requiredPermission: "hasAnyAdminRole" as const },
+  { path: adminPath("audit-log"), label: "Audit Log", icon: FileText, requiredPermission: "hasAnyAdminRole" as const },
+  { path: adminPath("admins"), label: "Manage Admins", icon: UserCog, requiredPermission: "canManageAdmins" as const },
 ];
 
 export default function AdminShell() {
@@ -26,9 +27,9 @@ export default function AdminShell() {
   useEffect(() => {
     if (!authLoading && !adminRole.loading) {
       if (!user) {
-        navigate("/admin", { replace: true });
+        navigate(ADMIN_BASE, { replace: true });
       } else if (!adminRole.hasAnyAdminRole) {
-        navigate("/admin", { replace: true });
+        navigate(ADMIN_BASE, { replace: true });
       }
     }
   }, [authLoading, adminRole.loading, user, adminRole.hasAnyAdminRole, navigate]);

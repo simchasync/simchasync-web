@@ -31,15 +31,15 @@
       "permanent": false
     },
     {
-      "source": "/admin/:path*",
+      "source": "/mgmt-9f27qk3x/:path*",
       "has": [{ "type": "host", "value": "simchasync.com" }],
-      "destination": "https://pro.simchasync.com/admin/:path*",
+      "destination": "https://pro.simchasync.com/mgmt-9f27qk3x/:path*",
       "permanent": false
     },
     {
-      "source": "/admin/:path*",
+      "source": "/mgmt-9f27qk3x/:path*",
       "has": [{ "type": "host", "value": "www.simchasync.com" }],
-      "destination": "https://pro.simchasync.com/admin/:path*",
+      "destination": "https://pro.simchasync.com/mgmt-9f27qk3x/:path*",
       "permanent": false
     },
     {

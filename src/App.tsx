@@ -14,6 +14,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AuthRedirect from "./components/AuthRedirect";
 import DomainGuard from "./components/DomainGuard";
+import { ADMIN_BASE } from "@/lib/adminRoute";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import Maintenance from "./pages/Maintenance";
@@ -129,8 +130,8 @@ const App = () => (
                         <Route path="finance" element={<Finance />} />
                         <Route path="inquiries" element={<Inquiries />} />
                       </Route>
-                      <Route path="/admin" element={<AdminLogin />} />
-                      <Route path="/admin" element={<AdminShell />}>
+                      <Route path={ADMIN_BASE} element={<AdminLogin />} />
+                      <Route path={ADMIN_BASE} element={<AdminShell />}>
                         <Route path="overview" element={<AdminOverview />} />
                         <Route path="tenants" element={<AdminTenants />} />
                         <Route path="users" element={<AdminUsers />} />

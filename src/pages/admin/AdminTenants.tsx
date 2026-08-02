@@ -30,6 +30,7 @@ import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 
 import { adminAction } from "@/lib/admin-functions";
+import { adminPath } from "@/lib/adminRoute";
 
 const PLAN_PRICES: Record<string, string> = {
   trial: "Trial",
@@ -443,7 +444,7 @@ export default function AdminTenants() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => navigate(`/admin/impersonate/${t.id}`)}
+                                      onClick={() => navigate(adminPath(`impersonate/${t.id}`))}
                                       className="text-amber-700 border-amber-300 hover:bg-amber-500/10"
                                     >
                                       <Eye className="mr-1 h-3.5 w-3.5" /> View as Tenant

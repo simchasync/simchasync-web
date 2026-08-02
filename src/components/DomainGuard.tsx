@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { ADMIN_BASE } from "@/lib/adminRoute";
 
 const APP_DOMAIN = "pro.simchasync.com";
 const MAIN_DOMAIN = "simchasync.com";
 
 // Paths that belong exclusively on pro.simchasync.com
-const APP_PATH_PREFIXES = ["/app", "/auth", "/admin", "/reset-password", "/payment-success", "/payment-cancelled"];
+const APP_PATH_PREFIXES = ["/app", "/auth", ADMIN_BASE, "/reset-password", "/payment-success", "/payment-cancelled"];
 
 // Paths that are public on both domains (don't redirect these)
 const PUBLIC_PATH_PREFIXES = ["/book/"];

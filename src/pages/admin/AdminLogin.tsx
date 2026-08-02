@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { Shield, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ADMIN_BASE, adminPath } from "@/lib/adminRoute";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function AdminLogin() {
   useEffect(() => {
     if (!authLoading && !roleLoading && user) {
       if (hasAnyAdminRole) {
-        navigate("/admin/overview", { replace: true });
+        navigate(adminPath("overview"), { replace: true });
       } else {
         setAccessDenied(true);
       }
@@ -52,14 +53,14 @@ export default function AdminLogin() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        // Return to /admin so the role check + redirect to /admin/overview runs
-        // (or "Access Denied" shows if the Google account isn't an admin).
-        options: { redirectTo: `${window.location.origin}/admin` },
+        // Return to the admin base so the role check + redirect to the overview
+        // runs (or "Access Denied" shows if the Google account isn't an admin).
+        options: { redirectTo: `${window.location.origin}${ADMIN_BASE}` },
       });
       if (error) {
         if (error.code === "validation_failed" && error.message?.includes("Unsupported provider")) {
           throw new Error(
-            "Google auth is not enabled in Supabase. Enable the Google provider in your Supabase Auth settings and add the redirect URL /admin."
+            `Google auth is not enabled in Supabase. Enable the Google provider in your Supabase Auth settings and add the redirect URL ${ADMIN_BASE}.`
           );
         }
         throw error;
