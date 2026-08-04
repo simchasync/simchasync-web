@@ -343,7 +343,7 @@ export default function Dashboard() {
           </section>
 
           {/* Upcoming + Invoices */}
-          <div className="grid gap-3 md:gap-6 md:grid-cols-2">
+          <div className="grid gap-3 md:gap-6 md:grid-cols-2 [&>section]:min-w-0">
             <section>
               <SectionHeader title={d.upcoming} count={upcoming.length} />
               <Card variant="outlined" className="animate-card-in">
