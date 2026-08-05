@@ -35,14 +35,24 @@ describe("canAccessFeature", () => {
     expect(canAccessFeature("trial", null, false, "expenses_profit")).toBe(false);
   });
 
-  it("grants Pro (full) and Premium everything", () => {
+  it("grants Pro (full) and Premium the paid features", () => {
     expect(canAccessFeature("full", "full", false, "expenses_profit")).toBe(true);
-    expect(canAccessFeature("premium", "premium", false, "social_media")).toBe(true);
+    expect(canAccessFeature("premium", "premium", false, "stripe_connect")).toBe(true);
+    expect(canAccessFeature("full", "full", false, "team_invites")).toBe(true);
   });
 
-  it("denies Lite the gated features", () => {
+  it("denies Lite the gated features (incl. team invites)", () => {
     expect(canAccessFeature("lite", "lite", false, "expenses_profit")).toBe(false);
     expect(canAccessFeature("lite", "lite", false, "stripe_connect")).toBe(false);
+    expect(canAccessFeature("lite", "lite", false, "team_invites")).toBe(false);
+  });
+});
+
+describe("canAccessFeature social_media gate (parked / disabled)", () => {
+  it("is off for every plan, including active trial and Premium", () => {
+    expect(canAccessFeature("trial", null, true, "social_media")).toBe(false);
+    expect(canAccessFeature("full", "full", false, "social_media")).toBe(false);
+    expect(canAccessFeature("premium", "premium", false, "social_media")).toBe(false);
     expect(canAccessFeature("lite", "lite", false, "social_media")).toBe(false);
   });
 });

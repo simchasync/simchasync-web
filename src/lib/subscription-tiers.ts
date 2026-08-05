@@ -12,7 +12,6 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       "Booking management",
       "Client CRM",
-      "Team invites",
       "Invoice generation & sending",
       "Calendar sync",
       "Hebrew dates & RTL support",
@@ -44,9 +43,6 @@ export const SUBSCRIPTION_TIERS = {
     product_id: "prod_Uii1ZCGj6zyTiZ",
     features: [
       "Everything in Pro",
-      "Social media management — Coming Soon",
-      "Multi-platform posting — Coming Soon",
-      "Social media analytics — Coming Soon",
       "Priority support",
       "Early access to new features",
     ],
@@ -80,15 +76,18 @@ export function canAccessFeature(
   plan: string,
   tier: SubscriptionTier,
   trialActive: boolean,
-  feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries"
+  feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries" | "team_invites"
 ): boolean {
-  // During trial, everything is accessible
+  // Social media is parked (kept in drafts, not shipped to production) — off for
+  // every plan, including trial.
+  if (feature === "social_media") return false;
+  // During trial, everything else is accessible
   if (plan === "trial" && trialActive) return true;
   // Customer Inquiries is a Premium-only feature, unlike the others below
   if (feature === "customer_inquiries") return tier === "premium";
-  // Pro ("full") and Premium have everything else
+  // Pro ("full") and Premium have everything else (incl. team invites)
   if (tier === "full" || tier === "premium") return true;
-  // Lite plan only has core features (no stripe_connect, social_media, expenses_profit)
+  // Lite plan only has core features (no team invites, stripe_connect, expenses_profit)
   if (tier === "lite") return false;
   return false;
 }

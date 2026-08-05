@@ -49,14 +49,20 @@ export default function AppShell() {
   const canSeeFinance = canAccess("expenses_profit");
   // Customer Inquiries is Premium-only — hidden on Lite and Pro
   const canSeeInquiries = canAccess("customer_inquiries");
+  // Team invites are Pro/Premium — hidden on Lite
+  const canSeeTeam = canAccess("team_invites");
+  // Social Media is parked (kept in drafts) — hidden for everyone for now
+  const canSeeSocial = canAccess("social_media");
   const filteredNavItems = useMemo(
     () => allNavItems.filter(
       (item) =>
         (!role || (item.roles as readonly string[]).includes(role)) &&
         ((item.key !== "finance" && item.key !== "agents") || canSeeFinance) &&
-        (item.key !== "inquiries" || canSeeInquiries)
+        (item.key !== "inquiries" || canSeeInquiries) &&
+        (item.key !== "team" || canSeeTeam) &&
+        (item.key !== "social" || canSeeSocial)
     ),
-    [role, canSeeFinance, canSeeInquiries]
+    [role, canSeeFinance, canSeeInquiries, canSeeTeam, canSeeSocial]
   );
   const navItems = useMemo(
     () => workspaceActive ? filteredNavItems : [],

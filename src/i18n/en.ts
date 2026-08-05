@@ -30,7 +30,7 @@ export const en = {
           price: "$29.99",
           period: "/month",
           desc: "Everything you need to run your bookings.",
-          features: ["Booking management", "Client CRM", "Team invites", "Invoice generation & sending", "Calendar sync", "Hebrew dates & RTL support", "File uploads"],
+          features: ["Booking management", "Client CRM", "Invoice generation & sending", "Calendar sync", "Hebrew dates & RTL support", "File uploads"],
           cta: "Start Free Trial",
         },
         {
@@ -47,7 +47,7 @@ export const en = {
           price: "$99.99",
           period: "/month",
           desc: "Scale with social tools and priority support.",
-          features: ["Everything in Pro", "Social media management — Coming Soon", "Multi-platform posting — Coming Soon", "Social media analytics — Coming Soon", "Priority support", "Early access to new features"],
+          features: ["Everything in Pro", "Priority support", "Early access to new features"],
           cta: "Start Free Trial",
         },
       ],
