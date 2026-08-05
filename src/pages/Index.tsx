@@ -360,19 +360,13 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
 // ── Social proof strip ────────────────────────────────────────────────────────
 
 function SocialProof() {
-  const names = ["Neginah", "Aaron Teitelbaum", "Freilach", "Shloime Daskal", "A.K.A. Music"];
   return (
-    <section aria-label="Trusted by" className="relative z-10 border-y border-white/10 bg-[#080808] py-11">
+    <section aria-label="Trusted by" className="relative z-10 border-y border-white/10 bg-[#080808] py-8">
       <div className="mx-auto max-w-6xl px-6 text-center">
-        <p className="mb-7 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-sans">
+        <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-sans">
           <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#D9B36B" }}>Trusted by</span>
-          <span className="text-[15px] sm:text-base text-white/75">2,000+ musicians &amp; families across North America &amp; Israel</span>
+          <span className="text-[15px] sm:text-base text-white/75">musicians across North America &amp; Israel</span>
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-8 sm:gap-x-12 gap-y-4">
-          {names.map((n) => (
-            <span key={n} className="font-serif italic text-xl sm:text-2xl text-white/80 transition-colors hover:text-white">{n}</span>
-          ))}
-        </div>
       </div>
     </section>
   );
