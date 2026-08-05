@@ -26,6 +26,8 @@ export const SUBSCRIPTION_TIERS = {
     product_id: "prod_Uii1ZvEY5zNx38",
     features: [
       "Everything in Lite",
+      "Invite up to 3 people",
+      "Booking page with AI features",
       "Accept credit card payments (Stripe)",
       "Payment links & tracking",
       "Expense tracking",
@@ -43,6 +45,7 @@ export const SUBSCRIPTION_TIERS = {
     product_id: "prod_Uii1ZCGj6zyTiZ",
     features: [
       "Everything in Pro",
+      "Invite up to 5 people",
       "Priority support",
       "Early access to new features",
     ],
@@ -72,17 +75,39 @@ export function getTrialDays(): number {
   return TRIAL_DAYS;
 }
 
+export type PlanFeature =
+  | "stripe_connect"
+  | "social_media"
+  | "expenses_profit"
+  | "customer_inquiries"
+  | "team_invites"
+  | "booking_page";
+
+// Team-member cap by plan: Pro can invite up to 3 teammates, Premium up to 5,
+// everything else (Lite / trial / none) can't invite. The trial mirrors Lite, so
+// no invites. The count is "additional teammates" beyond the owner.
+export const PRO_TEAM_LIMIT = 3;
+export const PREMIUM_TEAM_LIMIT = 5;
+export function teamMemberLimit(tier: SubscriptionTier, plan: string, trialActive: boolean): number {
+  if (plan === "trial" && trialActive) return 0;
+  if (tier === "premium") return PREMIUM_TEAM_LIMIT;
+  if (tier === "full") return PRO_TEAM_LIMIT;
+  return 0;
+}
+
 export function canAccessFeature(
   plan: string,
   tier: SubscriptionTier,
   trialActive: boolean,
-  feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries" | "team_invites"
+  feature: PlanFeature
 ): boolean {
   // Social media is parked (kept in drafts, not shipped to production) — off for
   // every plan, including trial.
   if (feature === "social_media") return false;
-  // During trial, everything else is accessible
-  if (plan === "trial" && trialActive) return true;
+  // The free trial mirrors the Lite plan: core features only, advanced ones
+  // (stripe_connect, expenses_profit, customer_inquiries, team_invites,
+  // booking_page) stay locked until the user subscribes to Pro/Premium.
+  if (plan === "trial" && trialActive) return false;
   // Customer Inquiries is a Premium-only feature, unlike the others below
   if (feature === "customer_inquiries") return tier === "premium";
   // Pro ("full") and Premium have everything else (incl. team invites)

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { supabase } from "@/integrations/supabase/client";
-import { getTierFromProductId, SubscriptionTier, canAccessFeature } from "@/lib/subscription-tiers";
+import { getTierFromProductId, SubscriptionTier, canAccessFeature, type PlanFeature } from "@/lib/subscription-tiers";
 
 interface SubscriptionContextType {
   plan: string; // 'trial' | 'lite' | 'full' | 'none'
@@ -16,7 +16,7 @@ interface SubscriptionContextType {
   canceling: boolean;
   loading: boolean;
   workspaceActive: boolean; // true if current workspace has active or valid trial subscription
-  canAccess: (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries" | "team_invites") => boolean;
+  canAccess: (feature: PlanFeature) => boolean;
   refreshSubscription: () => Promise<void>;
   pollUntilSubscribed: (maxAttempts?: number, intervalMs?: number) => Promise<boolean | undefined>;
 }
@@ -234,7 +234,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     };
   }, [tenantId]);
 
-  const canAccess = (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries" | "team_invites") =>
+  const canAccess = (feature: PlanFeature) =>
     canAccessFeature(plan, tier, trialActive, feature);
 
   // Workspace is active if subscribed OR on valid trial. 'none' plan = inactive.

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 const mockUseAuth = vi.fn();
@@ -21,6 +21,12 @@ const en = {
       support: "Support",
       bookingPage: "Booking Page",
       settings: "Settings",
+    },
+    upgrade: {
+      lockedTitle: "Upgrade to unlock {feature}",
+      lockedDescription: "{feature} isn't included in your current plan.",
+      lockedViewPlans: "View plans",
+      lockedDismiss: "Not now",
     },
   },
 };
@@ -112,16 +118,23 @@ describe("AppShell", () => {
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
   });
 
-  it("hides Finance and Agents for an owner without expenses_profit access", () => {
+  it("shows Finance and Agents as locked for an owner without expenses_profit access, and opens the upgrade modal on click", () => {
     mockUseSubscription.mockReturnValue({
       loading: false,
       workspaceActive: true,
       canAccess: (feature: string) => feature !== "expenses_profit",
     });
     renderAt("/app");
-    expect(screen.queryByText("Finance")).not.toBeInTheDocument();
-    expect(screen.queryByText("Agents")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Bookings").length).toBeGreaterThan(0);
+    // Expand the Advanced section where the plan-gated items live
+    fireEvent.click(screen.getByRole("button", { name: /Advanced/i }));
+    // They are shown (locked), not hidden
+    expect(screen.getByText("Finance")).toBeInTheDocument();
+    const agents = screen.getByText("Agents");
+    expect(agents).toBeInTheDocument();
+    // Clicking a locked item opens the upgrade prompt instead of navigating
+    fireEvent.click(agents);
+    expect(screen.getByText("Upgrade to unlock Agents")).toBeInTheDocument();
+    expect(screen.getByTestId("page")).toHaveTextContent("dashboard page");
   });
 
   it("shows the TrialBanner for an owner on an active workspace", () => {

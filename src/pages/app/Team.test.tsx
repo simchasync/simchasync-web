@@ -26,6 +26,18 @@ vi.mock("@/hooks/use-toast", () => ({
   toast: (...args: unknown[]) => mockToast(...args),
 }));
 
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+}));
+
+// Default to Premium (unlimited invites) so the invite flow is unrestricted;
+// individual tests override to exercise the plan cap.
+const mockUseSubscription = vi.fn();
+vi.mock("@/contexts/SubscriptionContext", () => ({
+  useSubscription: () => mockUseSubscription(),
+}));
+
 type Builder = {
   select: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
@@ -126,6 +138,9 @@ beforeEach(() => {
   builders = [];
   mockToast.mockReset();
   mockUseTenantId.mockReset();
+  mockNavigate.mockReset();
+  mockUseSubscription.mockReset();
+  mockUseSubscription.mockReturnValue({ tier: "premium", plan: "premium", trialActive: false });
 
   mockUseTenantId.mockReturnValue({
     tenantId: "tenant-1",

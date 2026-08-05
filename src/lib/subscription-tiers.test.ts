@@ -26,9 +26,11 @@ describe("getTierFromProductId", () => {
 });
 
 describe("canAccessFeature", () => {
-  it("grants everything during an active trial", () => {
-    expect(canAccessFeature("trial", null, true, "expenses_profit")).toBe(true);
-    expect(canAccessFeature("trial", null, true, "stripe_connect")).toBe(true);
+  it("mirrors Lite during an active trial — advanced features stay locked", () => {
+    expect(canAccessFeature("trial", null, true, "expenses_profit")).toBe(false);
+    expect(canAccessFeature("trial", null, true, "stripe_connect")).toBe(false);
+    expect(canAccessFeature("trial", null, true, "team_invites")).toBe(false);
+    expect(canAccessFeature("trial", null, true, "booking_page")).toBe(false);
   });
 
   it("denies after the trial expires", () => {
@@ -58,8 +60,8 @@ describe("canAccessFeature social_media gate (parked / disabled)", () => {
 });
 
 describe("canAccessFeature customer_inquiries gate (Premium only)", () => {
-  it("grants during an active trial", () => {
-    expect(canAccessFeature("trial", null, true, "customer_inquiries")).toBe(true);
+  it("stays locked during an active trial (trial mirrors Lite)", () => {
+    expect(canAccessFeature("trial", null, true, "customer_inquiries")).toBe(false);
   });
 
   it("grants Premium", () => {
