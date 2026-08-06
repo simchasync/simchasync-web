@@ -4,7 +4,7 @@ project_id = "qxcatdirkfbqitvkuvbu"
 # compares the WHOLE [auth] section, so unset fields get reset to CLI defaults.
 [auth]
 site_url = "https://simchasync-web.vercel.app"
-additional_redirect_urls = ["https://simchasync-web.vercel.app/auth/phone", "http://localhost:8080/auth/phone", "https://simchasync-web.vercel.app/admin", "http://localhost:8080/admin"]
+additional_redirect_urls = ["http://localhost:8080/auth/phone", "http://localhost:8080/mgmt-9f27qk3x", "https://pro.simchasync.com/**", "https://simchasync.com/**", "simchasync://reset-password"]
 
 [auth.mfa.totp]
 enroll_enabled = true

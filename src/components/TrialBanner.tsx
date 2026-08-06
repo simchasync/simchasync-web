@@ -11,7 +11,6 @@ export function TrialBanner() {
   if (loading || subscribed || plan !== "trial") return null;
 
   const handleViewPlans = () => {
-    console.log("[TrialBanner] ViewPlansTapped");
     navigate("/app/upgrade");
   };
 

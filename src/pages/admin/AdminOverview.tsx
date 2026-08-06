@@ -11,6 +11,7 @@ import { format, addDays, isBefore } from "date-fns";
 import { adminAction } from "@/lib/admin-functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { adminPath } from "@/lib/adminRoute";
 
 const REVENUE_WINDOW_DAYS = 30;
 
@@ -139,7 +140,7 @@ export default function AdminOverview() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="font-display text-lg">Revenue · last {REVENUE_WINDOW_DAYS} days</CardTitle>
-                  <Link to="/admin/revenue" className="text-sm text-primary inline-flex items-center gap-1 hover:underline">
+                  <Link to={adminPath("revenue")} className="text-sm text-primary inline-flex items-center gap-1 hover:underline">
                     Full report <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </CardHeader>
@@ -171,7 +172,7 @@ export default function AdminOverview() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="font-display text-lg">Recent Signups</CardTitle>
-              <Link to="/admin/users" className="text-sm text-primary inline-flex items-center gap-1 hover:underline">
+              <Link to={adminPath("users")} className="text-sm text-primary inline-flex items-center gap-1 hover:underline">
                 All users <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </CardHeader>

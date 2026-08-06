@@ -9,6 +9,7 @@ import { ValidationError, parseBody } from "../_shared/validation.ts";
 import { sendSmtpEmail } from "../_shared/smtp.ts";
 import { InviteEmail } from "../_shared/email-templates/invite.tsx";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { teamMemberLimitForPlan } from "../_shared/pricing.ts";
 
 const inviteSchema = z.object({
   email: z.string().email("email must be a valid email address"),
@@ -203,7 +204,7 @@ Deno.serve(async (req) => {
 
     const { data: tenantData, error: tenantError } = await supabase
       .from("tenants")
-      .select("name")
+      .select("name, plan")
       .eq("id", tenant_id)
       .single();
 
@@ -212,6 +213,28 @@ Deno.serve(async (req) => {
     }
 
     const tenantName = tenantData.name || "your workspace";
+
+    // Server-side team-invite cap (mirrors the UI in src/pages/app/Team.tsx).
+    // Every member other than the owner occupies a paid seat; a new membership
+    // may only be created while the tenant is under its plan's limit.
+    const teamLimit = teamMemberLimitForPlan((tenantData as { plan?: string }).plan);
+    const { count: seatCount } = await supabase
+      .from("tenant_members")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant_id)
+      .neq("role", "owner");
+    const atTeamLimit = (seatCount ?? 0) >= teamLimit;
+    const teamLimitResponse = () =>
+      json(
+        {
+          error:
+            teamLimit === 0
+              ? "Your current plan doesn't include team invites. Upgrade to Pro or Premium to invite people."
+              : `Your plan allows up to ${teamLimit} team member${teamLimit === 1 ? "" : "s"}. Upgrade your plan to invite more.`,
+          code: "team_limit_reached",
+        },
+        403,
+      );
     const appOrigin = resolveAppOrigin(req);
 
     const { data: inviterProfile } = await supabase
@@ -261,6 +284,8 @@ Deno.serve(async (req) => {
       }
 
       if (!existingMembership) {
+        // Adding a brand-new seat for an existing user — enforce the plan cap.
+        if (atTeamLimit) return teamLimitResponse();
         const { error: insertErr } = await supabase.from("tenant_members").insert({
           tenant_id,
           user_id: existingUser.id,
@@ -334,7 +359,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // New user: create the account + link silently, then send the branded email
+    // New user: a new account means a new seat — enforce the plan cap first.
+    if (atTeamLimit) return teamLimitResponse();
+
+    // Create the account + link silently, then send the branded email
     const { data: inviteLinkData, error: inviteErr } = await supabase.auth.admin.generateLink({
       type: "invite",
       email,

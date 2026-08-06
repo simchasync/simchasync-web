@@ -112,12 +112,6 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
       // EXTERNAL FLOW — COMPLETELY DECOUPLED FROM WORKSPACE SYSTEM
       // ═══════════════════════════════════════════════════════════
       if (isExternal) {
-        console.log("[EXTERNAL_FLOW] external_flow_triggered = true", {
-          colleague_id: values.colleague_id,
-          email: values.email,
-          event_id: eventId,
-        });
-
         // GUARD: BLOCK any workspace/team creation for externals
         // External colleagues are NEVER added as workspace members
         // External colleagues are NEVER assigned bookings directly
@@ -299,7 +293,6 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
       // If external with a linked booking_request, delete that first
       if (isExt && ec?.booking_request_id) {
         await supabase.from("booking_requests").delete().eq("id", ec.booking_request_id);
-        console.log("[EXTERNAL_FLOW] Deleted linked booking_request", { booking_request_id: ec.booking_request_id });
       }
 
       const { error } = await supabase.from("event_colleagues").delete().eq("id", id);
@@ -380,14 +373,6 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     // GUARD: External colleagues NEVER get auto_assigned or workspace access
     const isExt = colleagueType === "external";
     const inviteStatus = isExt ? "pending" : (autoAssign ? "auto_assigned" : "pending");
-
-    // GUARD: Log and validate
-    if (isExt) {
-      console.log("[EXTERNAL_GUARD] Blocking direct assignment. Using booking_request flow.", {
-        colleague: selectedColleague.full_name,
-        email: selectedColleague.email,
-      });
-    }
 
     addMutation.mutate({
       name: selectedColleague.full_name,

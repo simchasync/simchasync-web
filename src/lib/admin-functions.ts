@@ -34,7 +34,11 @@ const ACTION_ROUTING: Record<string, string> = {
 };
 
 export function getFunctionName(action: string): string {
-  return ACTION_ROUTING[action] || "admin-manage-tenant";
+  const functionName = ACTION_ROUTING[action];
+  if (!functionName) {
+    throw new Error(`Unknown admin action: ${action}`);
+  }
+  return functionName;
 }
 
 export function adminAction(action: string, body: Record<string, any>) {

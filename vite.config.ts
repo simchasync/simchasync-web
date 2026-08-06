@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "SimchaSync",
         short_name: "SimchaSync",
-        description: "Events management for Artists",
+        description: "Booking and event management for simcha musicians and entertainers.",
         theme_color: "#c5922e",
         background_color: "#1a1e2e",
         display: "standalone",

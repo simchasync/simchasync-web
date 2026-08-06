@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /payment-success
+Disallow: /payment-cancelled
+
+Sitemap: https://www.simchasync.com/sitemap.xml

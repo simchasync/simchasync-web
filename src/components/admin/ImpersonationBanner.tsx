@@ -1,6 +1,7 @@
 import { Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { adminPath } from "@/lib/adminRoute";
 
 interface ImpersonationBannerProps {
   tenantName: string;
@@ -21,7 +22,7 @@ export default function ImpersonationBanner({ tenantName }: ImpersonationBannerP
         size="sm"
         variant="outline"
         className="h-7 border-amber-400 text-amber-800 hover:bg-amber-500/20 dark:text-amber-300"
-        onClick={() => navigate("/admin/tenants")}
+        onClick={() => navigate(adminPath("tenants"))}
       >
         <X className="mr-1 h-3 w-3" /> Exit
       </Button>

@@ -17,10 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle, MailOpen } from "lucide-react";
+import { Plus, Trash2, UsersRound, Users, Pencil, LogOut, AlertTriangle, MailOpen, Lock } from "lucide-react";
 import { StatCard, SectionHeader } from "@/components/ui/stat-card";
 import { toast } from "@/hooks/use-toast";
 import type { TenantRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { teamMemberLimit } from "@/lib/subscription-tiers";
 
 type InvitationStatus = "invited" | "accepted";
 
@@ -42,6 +45,8 @@ export default function Team() {
   const { tenantId, userTenants, switchTenant } = useTenantId();
   const queryClient = useQueryClient();
   const tm = t.app.team;
+  const navigate = useNavigate();
+  const { tier, plan, trialActive } = useSubscription();
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -124,6 +129,12 @@ export default function Team() {
   const teammates = members.filter((m) => m.role !== "member");
   const currentUserRole = members.find((m) => m.user_id === user?.id)?.role;
   const isOwner = currentUserRole === "owner";
+
+  // Team-invite cap: Pro can invite up to 3 people, Premium/trial unlimited.
+  // "invited" = teammates other than the owner.
+  const teamLimit = teamMemberLimit(tier, plan, trialActive);
+  const invitedCount = teammates.filter((m) => m.role !== "owner").length;
+  const atTeamLimit = invitedCount >= teamLimit;
 
   const [colleagueSearch, setColleagueSearch] = useState("");
   const [colleagueSort, setColleagueSort] = useState<"name_asc" | "name_desc" | "assigned_desc">("assigned_desc");
@@ -428,9 +439,26 @@ export default function Team() {
               Internal staff who manage the platform. <strong>Admin</strong> = full access. <strong>Booking Manager</strong> = bookings &amp; clients only.
             </p>
             {isOwner && (
-              <Button onClick={() => setInviteOpen(true)} className="w-full sm:w-auto shrink-0 bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
-                <Plus className="mr-2 h-4 w-4" /> {tm.invite}
-              </Button>
+              <div className="flex flex-col items-stretch gap-1 sm:items-end">
+                {atTeamLimit ? (
+                  <Button
+                    onClick={() => navigate("/app/upgrade")}
+                    variant="outline"
+                    className="w-full sm:w-auto shrink-0 border-primary/40 text-primary"
+                  >
+                    <Lock className="mr-2 h-4 w-4" /> Upgrade to invite more
+                  </Button>
+                ) : (
+                  <Button onClick={() => setInviteOpen(true)} className="w-full sm:w-auto shrink-0 bg-gradient-gold text-primary-foreground font-semibold shadow-gold">
+                    <Plus className="mr-2 h-4 w-4" /> {tm.invite}
+                  </Button>
+                )}
+                {Number.isFinite(teamLimit) && (
+                  <span className="text-[11px] text-muted-foreground text-center sm:text-right">
+                    {invitedCount} of {teamLimit} team members used
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

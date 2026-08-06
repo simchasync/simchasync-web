@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Check, Crown, Zap, Gem, ExternalLink, ArrowLeft,
-  Clock, AlertCircle, Loader2, ShieldCheck,
+  Clock, AlertCircle, Loader2, ShieldCheck, Building2, Mail,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -386,6 +386,62 @@ function PlanCard({
   );
 }
 
+// Sales inbox for the custom Enterprise plan (matches the marketing footer).
+const ENTERPRISE_CONTACT = "simchasync@gmail.com";
+
+// Static "talk to us" card for tailored enterprise deals — no Stripe price, so it
+// sits alongside the purchasable tiers with a Contact Us mailto instead of checkout.
+function EnterpriseCard() {
+  const { t } = useLanguage();
+  const u = t.app.upgrade;
+
+  return (
+    <motion.div
+      variants={scaleIn}
+      className="flex"
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+    >
+      <Card className="relative flex h-full w-full flex-col border-border/60 bg-gradient-to-b from-muted/40 to-transparent transition-shadow duration-300 hover:shadow-sm">
+        <CardContent className="flex flex-1 flex-col p-6">
+          {/* Icon + name + tagline */}
+          <div className="mb-5">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted/60">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-display text-base font-semibold">{u.enterpriseName}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{u.enterpriseTagline}</p>
+          </div>
+
+          {/* Price */}
+          <div className="mb-5 border-b border-border/50 pb-5">
+            <div className="flex items-baseline gap-1">
+              <span className="font-display text-3xl font-bold tracking-tight text-foreground">
+                {u.enterprisePrice}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground/70">{u.enterpriseTagline}</p>
+          </div>
+
+          {/* Features */}
+          <ul className="mb-6 flex flex-1 flex-col gap-2.5">
+            {u.enterpriseFeatures.map((feature) => (
+              <FeatureItem key={feature} feature={feature} />
+            ))}
+          </ul>
+
+          {/* CTA */}
+          <Button asChild variant="outline" className="w-full gap-2 font-semibold transition-all hover:translate-y-[-1px] hover:shadow-md">
+            <a href={`mailto:${ENTERPRISE_CONTACT}?subject=${encodeURIComponent("Enterprise plan enquiry")}`}>
+              <Mail className="h-4 w-4" />
+              {u.contactUs}
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 // ─── Page heading ─────────────────────────────────────────────────────────────
 
 function PageHeading({
@@ -455,7 +511,7 @@ export default function UpgradePage() {
       initial="hidden"
       animate="visible"
       variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
-      className="mx-auto max-w-5xl space-y-6 p-4 md:p-8"
+      className="mx-auto max-w-6xl space-y-6 p-4 md:p-8"
     >
       {/* Back button */}
       <motion.div variants={fadeUp} custom={0}>
@@ -511,7 +567,7 @@ export default function UpgradePage() {
       )}
 
       {/* Plan cards */}
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {tiers.map((tierCard) => (
           <PlanCard
             key={tierCard.key}
@@ -526,6 +582,7 @@ export default function UpgradePage() {
             }
           />
         ))}
+        <EnterpriseCard />
       </div>
 
       {/* Trust bar */}

@@ -37,8 +37,8 @@ describe("getFunctionName", () => {
     expect(getFunctionName(action)).toBe(expected);
   });
 
-  it("falls back to admin-manage-tenant for an unrecognized action", () => {
-    expect(getFunctionName("some_future_action")).toBe("admin-manage-tenant");
+  it("throws for an unrecognized action", () => {
+    expect(() => getFunctionName("some_future_action")).toThrow(/unknown admin action/i);
   });
 });
 
@@ -54,10 +54,8 @@ describe("adminAction", () => {
     });
   });
 
-  it("invokes the fallback function for an unknown action", async () => {
-    await adminAction("mystery_action", { foo: "bar" });
-    expect(mockInvoke).toHaveBeenCalledWith("admin-manage-tenant", {
-      body: { action: "mystery_action", foo: "bar" },
-    });
+  it("throws for an unknown action instead of invoking a function", () => {
+    expect(() => adminAction("mystery_action", { foo: "bar" })).toThrow(/unknown admin action/i);
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 });

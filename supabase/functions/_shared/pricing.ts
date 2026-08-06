@@ -16,5 +16,14 @@ export function getPlanFromPrice(amountCents: number): string {
   return "other";
 }
 
+/** Team-member cap by resolved plan string. Mirrors `teamMemberLimit` in
+ * src/lib/subscription-tiers.ts: Pro ("full") → 3, Premium → 5, everything else
+ * (Lite / trial / none) → 0. The count is "additional members" beyond the owner. */
+export function teamMemberLimitForPlan(plan: string | null | undefined): number {
+  if (plan === "premium") return 5;
+  if (plan === "full") return 3;
+  return 0;
+}
+
 export const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 export const BAN_DURATION_HOURS = "876000h";

@@ -8,10 +8,12 @@ import { TrialBanner } from "@/components/TrialBanner";
 import {
   LayoutDashboard, Calendar, Users, FileText, UsersRound, Settings,
   LogOut, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
-  ChevronLeft, ChevronDown, MoreHorizontal, Inbox,
+  ChevronLeft, ChevronDown, MoreHorizontal, Inbox, Lock,
 } from "lucide-react";
+import type { PlanFeature } from "@/lib/subscription-tiers";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -39,6 +41,17 @@ const allNavItems = [
 
 const PRIMARY_NAV_KEYS = new Set(["dashboard", "bookings", "clients", "invoices"]);
 
+// Nav items that require a paid feature. When the current plan can't access the
+// feature the item is shown but LOCKED — clicking it routes to the upgrade page.
+// (Dashboard/Bookings/Clients/Invoices + Support/Settings are always available.)
+const NAV_FEATURE: Partial<Record<string, PlanFeature>> = {
+  agents: "expenses_profit",
+  finance: "expenses_profit",
+  inquiries: "customer_inquiries",
+  team: "team_invites",
+  bookingPage: "booking_page",
+};
+
 export default function AppShell() {
   const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
@@ -46,18 +59,23 @@ export default function AppShell() {
   const { loading: subLoading, workspaceActive, canAccess } = useSubscription();
 
   // Finance reports + agent commissions are Pro/Premium features — hidden on the Lite plan
-  const canSeeFinance = canAccess("expenses_profit");
-  // Customer Inquiries is Premium-only — hidden on Lite and Pro
-  const canSeeInquiries = canAccess("customer_inquiries");
+  // Social Media is parked (kept in drafts) — hidden for everyone for now.
+  const canSeeSocial = canAccess("social_media");
+  // Show every item the ROLE allows (social stays fully parked). Plan-gated
+  // items still appear — they render locked (see isLocked below).
   const filteredNavItems = useMemo(
     () => allNavItems.filter(
       (item) =>
         (!role || (item.roles as readonly string[]).includes(role)) &&
-        ((item.key !== "finance" && item.key !== "agents") || canSeeFinance) &&
-        (item.key !== "inquiries" || canSeeInquiries)
+        (item.key !== "social" || canSeeSocial)
     ),
-    [role, canSeeFinance, canSeeInquiries]
+    [role, canSeeSocial]
   );
+  // A nav item is locked when its required plan feature isn't on the current plan.
+  const isLocked = useCallback((key: string) => {
+    const feature = NAV_FEATURE[key];
+    return feature ? !canAccess(feature) : false;
+  }, [canAccess]);
   const navItems = useMemo(
     () => workspaceActive ? filteredNavItems : [],
     [workspaceActive, filteredNavItems]
@@ -71,6 +89,8 @@ export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  // Label of the locked feature whose upgrade prompt is showing (null = closed).
+  const [lockedPrompt, setLockedPrompt] = useState<string | null>(null);
 
   const primaryNavItems = useMemo(() => navItems.filter(i => PRIMARY_NAV_KEYS.has(i.key)), [navItems]);
   const advancedNavItems = useMemo(() => navItems.filter(i => !PRIMARY_NAV_KEYS.has(i.key)), [navItems]);
@@ -104,6 +124,16 @@ export default function AppShell() {
     }
   }, [role, location.pathname, navItems, navigate, isActive]);
 
+  // If the user opens a plan-locked area directly (e.g. by URL), send them to
+  // the upgrade page instead of the gated feature.
+  useEffect(() => {
+    if (location.pathname === "/app/upgrade") return;
+    const current = navItems.find((item) => isActive(item.path));
+    if (current && isLocked(current.key)) {
+      navigate("/app/upgrade", { replace: true });
+    }
+  }, [location.pathname, navItems, isActive, isLocked, navigate]);
+
   useEffect(() => {
     if (subLoading) return;
     if (location.pathname === "/app/upgrade") return;
@@ -121,6 +151,62 @@ export default function AppShell() {
   }
 
   if (!user) return null;
+
+  // Renders a nav entry as a normal Link, or — when the plan doesn't include the
+  // feature — as a locked button that opens the upgrade prompt modal.
+  const renderNavLink = (
+    item: (typeof allNavItems)[number],
+    collapsed: boolean,
+    onNavigate?: () => void,
+  ) => {
+    const active = isActive(item.path);
+    const locked = isLocked(item.key);
+    const label = t.app.nav[item.key as keyof typeof t.app.nav];
+    const cls = cn(
+      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 relative",
+      collapsed && "justify-center px-2 py-2",
+      locked
+        ? "text-sidebar-foreground/40 hover:bg-sidebar-accent/50"
+        : active
+          ? "bg-sidebar-primary/15 text-sidebar-primary"
+          : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+    );
+    const body = (
+      <>
+        {active && !locked && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />
+        )}
+        <item.icon className={cn("h-[18px] w-[18px] shrink-0", active && !locked && "text-sidebar-primary")} />
+        {!collapsed && <span className="truncate flex-1">{label}</span>}
+        {!collapsed && locked && <Lock className="h-3.5 w-3.5 shrink-0 opacity-70" />}
+      </>
+    );
+    const el = locked ? (
+      <button
+        key={item.key}
+        type="button"
+        onClick={() => { onNavigate?.(); setLockedPrompt(label); }}
+        className={cn(cls, "w-full text-left")}
+      >
+        {body}
+      </button>
+    ) : (
+      <Link key={item.key} to={item.path} onClick={onNavigate} className={cls}>
+        {body}
+      </Link>
+    );
+    if (collapsed) {
+      return (
+        <Tooltip key={item.key} delayDuration={0}>
+          <TooltipTrigger asChild>{el}</TooltipTrigger>
+          <TooltipContent side="right" className="text-xs">
+            {locked ? `${label} · Upgrade to unlock` : label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return el;
+  };
 
   return (
     <MuiThemeBridge>
@@ -154,41 +240,7 @@ export default function AppShell() {
               Workspace inactive
             </div>
           )}
-          {(collapsed ? navItems : primaryNavItems).map((item) => {
-            const active = isActive(item.path);
-            const linkContent = (
-              <Link
-                key={item.key}
-                to={item.path}
-                className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200 relative",
-                  active
-                    ? "bg-sidebar-primary/15 text-sidebar-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />
-                )}
-                <item.icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-sidebar-primary")} />
-                {!collapsed && (
-                  <span className="truncate">{t.app.nav[item.key as keyof typeof t.app.nav]}</span>
-                )}
-              </Link>
-            );
-
-            if (collapsed) {
-              return (
-                <Tooltip key={item.key} delayDuration={0}>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right" className="text-xs">
-                    {t.app.nav[item.key as keyof typeof t.app.nav]}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-            return linkContent;
-          })}
+          {(collapsed ? navItems : primaryNavItems).map((item) => renderNavLink(item, collapsed))}
 
           {/* Advanced section — desktop expanded only */}
           {!collapsed && advancedNavItems.length > 0 && (
@@ -200,25 +252,7 @@ export default function AppShell() {
                 <span>Advanced</span>
                 <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", advancedOpen && "rotate-180")} />
               </button>
-              {advancedOpen && advancedNavItems.map((item) => {
-                const active = isActive(item.path);
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200 relative",
-                      active
-                        ? "bg-sidebar-primary/15 text-sidebar-primary"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                  >
-                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
-                    <item.icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-sidebar-primary")} />
-                    <span className="truncate">{t.app.nav[item.key as keyof typeof t.app.nav]}</span>
-                  </Link>
-                );
-              })}
+              {advancedOpen && advancedNavItems.map((item) => renderNavLink(item, false))}
             </div>
           )}
         </nav>
@@ -281,26 +315,7 @@ export default function AppShell() {
               <WorkspaceSwitcher />
             </div>
             <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-              {primaryNavItems.map((item) => {
-                const active = isActive(item.path);
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 relative",
-                      active
-                        ? "bg-sidebar-primary/15 text-sidebar-primary"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                  >
-                    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
-                    <item.icon className={cn("h-[18px] w-[18px]", active && "text-sidebar-primary")} />
-                    {t.app.nav[item.key as keyof typeof t.app.nav]}
-                  </Link>
-                );
-              })}
+              {primaryNavItems.map((item) => renderNavLink(item, false, () => setSidebarOpen(false)))}
               {advancedNavItems.length > 0 && (
                 <div className="mt-2">
                   <button
@@ -310,26 +325,7 @@ export default function AppShell() {
                     <span>Advanced</span>
                     <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", advancedOpen && "rotate-180")} />
                   </button>
-                  {advancedOpen && advancedNavItems.map((item) => {
-                    const active = isActive(item.path);
-                    return (
-                      <Link
-                        key={item.key}
-                        to={item.path}
-                        onClick={() => setSidebarOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200 relative",
-                          active
-                            ? "bg-sidebar-primary/15 text-sidebar-primary"
-                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                        )}
-                      >
-                        {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-sidebar-primary" />}
-                        <item.icon className={cn("h-[18px] w-[18px]", active && "text-sidebar-primary")} />
-                        {t.app.nav[item.key as keyof typeof t.app.nav]}
-                      </Link>
-                    );
-                  })}
+                  {advancedOpen && advancedNavItems.map((item) => renderNavLink(item, false, () => setSidebarOpen(false)))}
                 </div>
               )}
             </nav>
@@ -377,7 +373,7 @@ export default function AppShell() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">
           <PageTransition>
             <Outlet />
           </PageTransition>
@@ -421,6 +417,29 @@ export default function AppShell() {
 
         <PWAInstallPrompt />
       </div>
+
+      {/* Upgrade prompt — shown when a locked (plan-gated) nav item is clicked */}
+      <Dialog open={lockedPrompt !== null} onOpenChange={(open) => { if (!open) setLockedPrompt(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <Lock className="h-5 w-5 text-primary" />
+            </div>
+            <DialogTitle>{t.app.upgrade.lockedTitle.replace("{feature}", lockedPrompt ?? "")}</DialogTitle>
+            <DialogDescription>
+              {t.app.upgrade.lockedDescription.replace("{feature}", lockedPrompt ?? "")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setLockedPrompt(null)}>
+              {t.app.upgrade.lockedDismiss}
+            </Button>
+            <Button onClick={() => { setLockedPrompt(null); navigate("/app/upgrade"); }}>
+              {t.app.upgrade.lockedViewPlans}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </MuiThemeBridge>
   );

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { supabase } from "@/integrations/supabase/client";
-import { getTierFromProductId, SubscriptionTier, canAccessFeature } from "@/lib/subscription-tiers";
+import { getTierFromProductId, SubscriptionTier, canAccessFeature, type PlanFeature } from "@/lib/subscription-tiers";
 
 interface SubscriptionContextType {
   plan: string; // 'trial' | 'lite' | 'full' | 'none'
@@ -16,7 +16,7 @@ interface SubscriptionContextType {
   canceling: boolean;
   loading: boolean;
   workspaceActive: boolean; // true if current workspace has active or valid trial subscription
-  canAccess: (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries") => boolean;
+  canAccess: (feature: PlanFeature) => boolean;
   refreshSubscription: () => Promise<void>;
   pollUntilSubscribed: (maxAttempts?: number, intervalMs?: number) => Promise<boolean | undefined>;
 }
@@ -63,7 +63,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           // Trial workspaces have no Stripe subscription, so product/price are null
           if (data.status === "trial" || data.plan_id === "trial") {
             // Trial confirmed — keep plan as "trial", don't set subscribed
-            console.log("[SubscriptionContext] Trial workspace confirmed via check-subscription");
             return;
           }
 
@@ -73,17 +72,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setSubscriptionEnd(data.subscription_end);
             setTier(detectedTier);
             setPlan(detectedTier);
-            console.log("[SubscriptionContext] Paid subscription confirmed:", detectedTier);
           } else if (data.plan_id && data.plan_id !== "none") {
             // Stripe lookup failed but DB has a plan — use DB plan
             setSubscribed(true);
             setSubscriptionEnd(data.subscription_end);
             setTier(data.plan_id as SubscriptionTier);
             setPlan(data.plan_id);
-            console.log("[SubscriptionContext] Subscription confirmed from DB plan:", data.plan_id);
           }
-        } else if (!dbSubscriptionActive.current) {
-          console.log("[SubscriptionContext] No active subscription for current workspace");
         }
        }
     } catch (e) {
@@ -115,7 +110,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
               setPlan(tenantData.plan);
             }
           }
-          console.log("[SubscriptionContext] Current workspace subscription confirmed after polling");
           return true;
         }
       } catch (e) {
@@ -125,7 +119,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         await new Promise((r) => setTimeout(r, intervalMs));
       }
     }
-    console.log("[SubscriptionContext] Polling exhausted for current workspace");
     return false;
   }, [session?.access_token, tenantId]);
 
@@ -162,7 +155,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (data.stripe_current_period_end) {
           setSubscriptionEnd(data.stripe_current_period_end);
         }
-        console.log("[SubscriptionContext] DB confirms active subscription:", data.plan);
       } else if (data.plan === "trial") {
         // On trial — not subscribed
         setSubscribed(false);
@@ -214,7 +206,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           filter: `id=eq.${tenantId}`,
         },
         (payload) => {
-          console.log("[SubscriptionContext] Tenant updated via realtime:", payload.new);
           const newData = payload.new as any;
           if (newData) {
             setPlan(newData.plan);
@@ -243,7 +234,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     };
   }, [tenantId]);
 
-  const canAccess = (feature: "stripe_connect" | "social_media" | "expenses_profit" | "customer_inquiries") =>
+  const canAccess = (feature: PlanFeature) =>
     canAccessFeature(plan, tier, trialActive, feature);
 
   // Workspace is active if subscribed OR on valid trial. 'none' plan = inactive.
