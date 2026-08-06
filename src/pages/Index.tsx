@@ -105,6 +105,7 @@ const NAV_LINKS = [
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -114,6 +115,19 @@ function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // On mobile the client wants the glass "pill" navbar to stay visible at all
+  // times, not only after scrolling (matches Tailwind's md breakpoint at 768px).
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Pill (glass) styling: always on mobile, scroll-triggered on desktop.
+  const pill = scrolled || isMobile;
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -122,10 +136,10 @@ function Navbar() {
   }, [open]);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "py-2" : "py-4"}`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${pill ? "py-2" : "py-4"}`}>
       <nav
         aria-label="Primary"
-        className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 md:px-6 transition-all duration-300 ${scrolled ? "landing-glass-strong mt-0 rounded-full py-2" : "mt-2 py-1"}`}
+        className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 md:px-6 transition-all duration-300 ${pill ? "landing-glass-strong mt-0 rounded-full py-2" : "mt-2 py-1"}`}
       >
         <Link to="/" className={`shrink-0 rounded-full transition-opacity hover:opacity-80 ${FOCUS}`} aria-label="SimchaSync home">
           <BrandLogo size="sm" />
@@ -331,7 +345,6 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
             >
               {[
                 { value: "$29.99/mo", label: "Starting price · cancel anytime" },
-                { value: "2,000+", label: "Families across North America & Israel" },
               ].map(({ value, label }) => (
                 <div key={value} className="landing-glass rounded-[1.25rem] px-7 py-5 text-left" style={{ minWidth: 190 }}>
                   <p className="font-serif italic font-bold leading-none mb-2" style={{ fontSize: "1.9rem", ...goldText }}>{value}</p>
@@ -823,7 +836,7 @@ function FinalCTA() {
           Ready to make every <span style={goldText}>simcha</span> easier?
         </h2>
         <p className="relative text-white/60 font-sans font-light text-[16px] sm:text-[17px] mb-8 mx-auto" style={{ maxWidth: "44ch" }}>
-          Join 2,000+ performers who run their music business on SimchaSync.
+          Join the performers who run their music business on SimchaSync.
         </p>
         <Link to="/auth/register" className={`relative inline-flex items-center justify-center gap-2 rounded-full px-9 py-4 text-base font-semibold font-sans transition-transform hover:-translate-y-0.5 ${FOCUS}`} style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 10px 40px rgba(199,161,85,0.45)" }}>
           Start your free 30-day trial <ArrowRight className="h-5 w-5" />
