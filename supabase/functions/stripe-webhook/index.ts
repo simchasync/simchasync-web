@@ -87,6 +87,23 @@ async function isManualOverride(supabase: any, tenantId: string): Promise<boolea
   return data?.is_manual_override === true;
 }
 
+// Stripe removed `current_period_end` from the Subscription object in newer API
+// versions — it now lives on each subscription item. Read the item first, fall
+// back to the legacy top-level field, and never build an invalid Date (return
+// null instead). An undefined value here is what threw "Invalid time value" and
+// made the webhook 500 on every checkout.session.completed / subscription event.
+function periodEndISO(
+  subscription: Stripe.Subscription,
+  item?: Stripe.SubscriptionItem,
+): string | null {
+  const raw =
+    (item as unknown as { current_period_end?: number } | undefined)?.current_period_end ??
+    (subscription as unknown as { current_period_end?: number }).current_period_end;
+  return typeof raw === "number" && Number.isFinite(raw)
+    ? new Date(raw * 1000).toISOString()
+    : null;
+}
+
 async function syncSubscriptionToTenant(
   supabase: any,
   tenantId: string,
@@ -97,6 +114,7 @@ async function syncSubscriptionToTenant(
   const item = subscription.items.data[0];
   const mrrCents = item ? (item.price.unit_amount || 0) : 0;
   const plan = subscription.status === "active" ? getPlanFromPrice(item?.price.unit_amount || 0) : null;
+  const periodEnd = periodEndISO(subscription, item);
 
   await supabase
     .from("workspace_subscriptions")
@@ -106,7 +124,7 @@ async function syncSubscriptionToTenant(
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
       plan_id: plan,
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_end: periodEnd,
       workspace_limits: subscription.status === "active"
         ? null
         : undefined,
@@ -136,7 +154,7 @@ async function syncSubscriptionToTenant(
       stripe_subscription_id: subscription.id,
       stripe_subscription_status: subscription.status,
       stripe_plan_price_id: item?.price.id || null,
-      stripe_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      stripe_current_period_end: periodEnd,
       stripe_mrr_cents: mrrCents,
       last_synced_at: new Date().toISOString(),
       plan: plan ?? "none",
