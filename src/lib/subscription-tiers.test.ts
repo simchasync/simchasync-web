@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SUBSCRIPTION_TIERS, getTierFromProductId, canAccessFeature } from "./subscription-tiers";
+import { SUBSCRIPTION_TIERS, getTierFromProductId, canAccessFeature, teamMemberLimit } from "./subscription-tiers";
 
 describe("getTierFromProductId", () => {
   it("detects tiers by product id", () => {
@@ -71,5 +71,21 @@ describe("canAccessFeature customer_inquiries gate (Premium only)", () => {
   it("denies Pro (full) and Lite, unlike the other gated features", () => {
     expect(canAccessFeature("full", "full", false, "customer_inquiries")).toBe(false);
     expect(canAccessFeature("lite", "lite", false, "customer_inquiries")).toBe(false);
+  });
+});
+
+describe("teamMemberLimit", () => {
+  it("lets Pro (full) invite up to 3 teammates", () => {
+    expect(teamMemberLimit("full", "full", false)).toBe(3);
+  });
+
+  it("lets Premium invite up to 5 teammates", () => {
+    expect(teamMemberLimit("premium", "premium", false)).toBe(5);
+  });
+
+  it("gives Lite, trial, and unsubscribed workspaces no invites", () => {
+    expect(teamMemberLimit("lite", "lite", false)).toBe(0);
+    expect(teamMemberLimit(null, "trial", true)).toBe(0);
+    expect(teamMemberLimit(null, "none", false)).toBe(0);
   });
 });
