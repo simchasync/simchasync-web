@@ -331,7 +331,6 @@ function Hero({ subtitle, cta, ctaSecondary }: { subtitle: string; cta: string; 
             >
               {[
                 { value: "$29.99/mo", label: "Starting price · cancel anytime" },
-                { value: "2,000+", label: "Families across North America & Israel" },
               ].map(({ value, label }) => (
                 <div key={value} className="landing-glass rounded-[1.25rem] px-7 py-5 text-left" style={{ minWidth: 190 }}>
                   <p className="font-serif italic font-bold leading-none mb-2" style={{ fontSize: "1.9rem", ...goldText }}>{value}</p>
@@ -823,7 +822,7 @@ function FinalCTA() {
           Ready to make every <span style={goldText}>simcha</span> easier?
         </h2>
         <p className="relative text-white/60 font-sans font-light text-[16px] sm:text-[17px] mb-8 mx-auto" style={{ maxWidth: "44ch" }}>
-          Join 2,000+ performers who run their music business on SimchaSync.
+          Join the performers who run their music business on SimchaSync.
         </p>
         <Link to="/auth/register" className={`relative inline-flex items-center justify-center gap-2 rounded-full px-9 py-4 text-base font-semibold font-sans transition-transform hover:-translate-y-0.5 ${FOCUS}`} style={{ background: GOLD, color: "#1a0f00", boxShadow: "0 10px 40px rgba(199,161,85,0.45)" }}>
           Start your free 30-day trial <ArrowRight className="h-5 w-5" />
