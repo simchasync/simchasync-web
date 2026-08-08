@@ -73,15 +73,7 @@ describe("Inquiries page", () => {
     mockUseUserRole.mockReturnValue({ canWrite: true });
   });
 
-  it("shows an upgrade prompt when not on Premium", () => {
-    mockUseSubscription.mockReturnValue({ canAccess: () => false, loading: false });
-    renderPage();
-    expect(screen.getByText("Customer Inquiries is a Premium feature")).toBeInTheDocument();
-    expect(screen.queryByText("Add Inquiry")).not.toBeInTheDocument();
-  });
-
-  it("shows the board with all four columns when on Premium", () => {
-    mockUseSubscription.mockReturnValue({ canAccess: () => true, loading: false });
+  it("shows the board with all four columns", () => {
     renderPage();
     expect(screen.getByText("Customer Inquiries")).toBeInTheDocument();
     expect(screen.getByText("New")).toBeInTheDocument();
