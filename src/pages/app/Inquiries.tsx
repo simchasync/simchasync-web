@@ -2,11 +2,9 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +16,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Crown, Plus, MoveRight, CalendarClock } from "lucide-react";
+import { Plus, MoveRight, CalendarClock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { BOOKING_REQUEST_STATUSES, type BookingRequestStatus } from "@/lib/bookingRequestStatuses";
@@ -39,18 +37,14 @@ type Inquiry = {
 
 const emptyForm = { name: "", email: "", phone: "", event_type: "", event_date: "", message: "" };
 
-export default function Inquiries() {
+export default function Inquiries({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useLanguage();
   const b = t.app.inquiries;
   const { tenantId } = useTenantId();
   const { canWrite } = useUserRole();
-  const { canAccess, loading: subLoading } = useSubscription();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
-
-  const hasAccess = canAccess("customer_inquiries");
 
   const { data: inquiries = [] } = useQuery({
     queryKey: ["inquiries", tenantId],
@@ -63,7 +57,7 @@ export default function Inquiries() {
       if (error) throw error;
       return data as Inquiry[];
     },
-    enabled: !!tenantId && hasAccess,
+    enabled: !!tenantId,
   });
 
   useRealtimeInvalidate({
@@ -71,7 +65,7 @@ export default function Inquiries() {
     table: "booking_requests",
     filter: `tenant_id=eq.${tenantId}`,
     queryKey: ["inquiries", tenantId],
-    enabled: !!tenantId && hasAccess,
+    enabled: !!tenantId,
   });
 
   const moveTo = useMutation({
@@ -119,28 +113,6 @@ export default function Inquiries() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  if (!subLoading && !hasAccess) {
-    return (
-      <div className="p-4 md:p-8 max-w-2xl mx-auto">
-        <Card className="animate-card-in">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <Crown className="h-7 w-7 text-primary" />
-            </div>
-            <p className="font-display text-lg font-semibold">{b.premiumTitle}</p>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">{b.premiumHint}</p>
-            <Button
-              className="mt-5 bg-gradient-gold text-primary-foreground font-semibold shadow-gold"
-              onClick={() => navigate("/app/upgrade")}
-            >
-              <Crown className="mr-2 h-4 w-4" /> {b.upgradeButton}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const today = format(new Date(), "yyyy-MM-dd");
   const columns = BOOKING_REQUEST_STATUSES.map((status) => ({
     status,
@@ -149,11 +121,11 @@ export default function Inquiries() {
   }));
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+    <div className={embedded ? "space-y-4" : "p-4 md:p-6 space-y-4 max-w-7xl mx-auto"}>
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{b.title}</h1>
+        {!embedded && <h1 className="font-display text-2xl font-bold md:text-3xl tracking-tight">{b.title}</h1>}
         {canWrite && (
-          <Button onClick={() => setAddOpen(true)}>
+          <Button onClick={() => setAddOpen(true)} className={embedded ? "ml-auto" : ""}>
             <Plus className="mr-1.5 h-4 w-4" /> {b.addInquiry}
           </Button>
         )}

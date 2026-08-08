@@ -104,12 +104,13 @@ export function canAccessFeature(
   // Social media is parked (kept in drafts, not shipped to production) — off for
   // every plan, including trial.
   if (feature === "social_media") return false;
+  // Customer Inquiries is available on every plan (Lite/starter and up, and
+  // during the trial) — it lives on the Bookings page, not behind a paid gate.
+  if (feature === "customer_inquiries") return true;
   // The free trial mirrors the Lite plan: core features only, advanced ones
-  // (stripe_connect, expenses_profit, customer_inquiries, team_invites,
-  // booking_page) stay locked until the user subscribes to Pro/Premium.
+  // (stripe_connect, expenses_profit, team_invites, booking_page) stay locked
+  // until the user subscribes to Pro/Premium.
   if (plan === "trial" && trialActive) return false;
-  // Customer Inquiries is a Premium-only feature, unlike the others below
-  if (feature === "customer_inquiries") return tier === "premium";
   // Pro ("full") and Premium have everything else (incl. team invites)
   if (tier === "full" || tier === "premium") return true;
   // Lite plan only has core features (no team invites, stripe_connect, expenses_profit)

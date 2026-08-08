@@ -8,7 +8,7 @@ import { TrialBanner } from "@/components/TrialBanner";
 import {
   LayoutDashboard, Calendar, Users, FileText, UsersRound, Settings,
   LogOut, Menu, X, Share2, HelpCircle, Paintbrush, UserCheck, BarChart3,
-  ChevronLeft, ChevronDown, MoreHorizontal, Inbox, Lock,
+  ChevronLeft, ChevronDown, MoreHorizontal, Lock,
 } from "lucide-react";
 import type { PlanFeature } from "@/lib/subscription-tiers";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
@@ -31,7 +31,6 @@ const allNavItems = [
   { key: "invoices", path: "/app/invoices", icon: FileText, roles: ["owner"] },
   { key: "agents", path: "/app/agents", icon: UserCheck, roles: ["owner"] },
   { key: "finance", path: "/app/finance", icon: BarChart3, roles: ["owner"] },
-  { key: "inquiries", path: "/app/inquiries", icon: Inbox, roles: ["owner", "booking_manager"] },
   { key: "team", path: "/app/team", icon: UsersRound, roles: ["owner"] },
   { key: "social", path: "/app/social", icon: Share2, roles: ["owner", "social_media_manager"] },
   { key: "support", path: "/app/support", icon: HelpCircle, roles: ["owner", "social_media_manager", "booking_manager"] },
@@ -47,7 +46,6 @@ const PRIMARY_NAV_KEYS = new Set(["dashboard", "bookings", "clients", "invoices"
 const NAV_FEATURE: Partial<Record<string, PlanFeature>> = {
   agents: "expenses_profit",
   finance: "expenses_profit",
-  inquiries: "customer_inquiries",
   team: "team_invites",
   bookingPage: "booking_page",
 };

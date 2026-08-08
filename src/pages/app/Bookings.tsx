@@ -27,7 +27,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List, MapPin, BarChart3, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Pencil, Trash2, FileText, UserPlus, Eye, DollarSign, History, CalendarDays, List, MapPin, BarChart3, AlertCircle, ChevronLeft, ChevronRight, Inbox } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -35,6 +35,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BookingRequests, { useBookingRequestCount } from "@/components/BookingRequests";
+import Inquiries from "@/pages/app/Inquiries";
 import AgentAssignmentSection from "@/components/bookings/AgentAssignmentSection";
 import InlineClientDialog from "@/components/bookings/InlineClientDialog";
 import PaymentsSection from "@/components/bookings/PaymentsSection";
@@ -544,6 +545,9 @@ export default function Bookings() {
               )}
             </TabsTrigger>
           )}
+          {role !== "member" && (
+            <TabsTrigger value="inquiries"><Inbox className="mr-1.5 h-3.5 w-3.5" />{t.app.nav.inquiries}</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="events" className="space-y-4">
@@ -833,6 +837,12 @@ export default function Bookings() {
         {role !== "member" && (
           <TabsContent value="requests">
             <BookingRequests />
+          </TabsContent>
+        )}
+
+        {role !== "member" && (
+          <TabsContent value="inquiries">
+            <Inquiries embedded />
           </TabsContent>
         )}
       </Tabs>

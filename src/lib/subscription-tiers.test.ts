@@ -59,18 +59,12 @@ describe("canAccessFeature social_media gate (parked / disabled)", () => {
   });
 });
 
-describe("canAccessFeature customer_inquiries gate (Premium only)", () => {
-  it("stays locked during an active trial (trial mirrors Lite)", () => {
-    expect(canAccessFeature("trial", null, true, "customer_inquiries")).toBe(false);
-  });
-
-  it("grants Premium", () => {
+describe("canAccessFeature customer_inquiries (available on every plan)", () => {
+  it("is available on Lite, Pro, Premium, and during an active trial", () => {
+    expect(canAccessFeature("lite", "lite", false, "customer_inquiries")).toBe(true);
+    expect(canAccessFeature("full", "full", false, "customer_inquiries")).toBe(true);
     expect(canAccessFeature("premium", "premium", false, "customer_inquiries")).toBe(true);
-  });
-
-  it("denies Pro (full) and Lite, unlike the other gated features", () => {
-    expect(canAccessFeature("full", "full", false, "customer_inquiries")).toBe(false);
-    expect(canAccessFeature("lite", "lite", false, "customer_inquiries")).toBe(false);
+    expect(canAccessFeature("trial", null, true, "customer_inquiries")).toBe(true);
   });
 });
 
