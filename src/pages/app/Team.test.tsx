@@ -116,7 +116,7 @@ function makeColleague(overrides: Record<string, unknown> = {}) {
     full_name: "DJ Sam",
     role_instrument: "DJ",
     phone: null,
-    email: null,
+    email: "sam@example.com",
     notes: null,
     default_price: 0,
     ...overrides,
@@ -257,6 +257,7 @@ describe("Team", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Add Colleague/i }));
     fireEvent.change(screen.getByLabelText("Full Name *"), { target: { value: "New DJ" } });
+    fireEvent.change(screen.getByLabelText("Email *"), { target: { value: "newdj@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "Add Colleague" }));
 
     await waitFor(() => {

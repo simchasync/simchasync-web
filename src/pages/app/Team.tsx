@@ -763,8 +763,8 @@ export default function Team() {
                 <Input id="colleague-phone" value={colleagueForm.phone} onChange={(e) => setColleagueForm({ ...colleagueForm, phone: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="colleague-email">Email</Label>
-                <Input id="colleague-email" value={colleagueForm.email} onChange={(e) => setColleagueForm({ ...colleagueForm, email: e.target.value })} />
+                <Label htmlFor="colleague-email">Email *</Label>
+                <Input id="colleague-email" type="email" required value={colleagueForm.email} onChange={(e) => setColleagueForm({ ...colleagueForm, email: e.target.value })} placeholder="name@example.com" />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -775,7 +775,11 @@ export default function Team() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setColleagueDialogOpen(false)}>Cancel</Button>
             <Button
-              disabled={!colleagueForm.full_name.trim() || saveColleagueMutation.isPending}
+              disabled={
+                !colleagueForm.full_name.trim() ||
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(colleagueForm.email.trim()) ||
+                saveColleagueMutation.isPending
+              }
               onClick={() => saveColleagueMutation.mutate(colleagueForm)}
             >
               {saveColleagueMutation.isPending ? "Saving..." : editingColleague ? "Update" : "Add Colleague"}
