@@ -86,10 +86,18 @@ Deno.serve(async (req) => {
       ec.price ? `Offered: <strong>$${Number(ec.price).toLocaleString()}</strong>` : "",
     ].filter(Boolean).join("<br>");
 
-    // Does this email belong to a platform user?
-    const { data: usersData, error: usersError } = await admin.auth.admin.listUsers();
-    if (usersError) throw usersError;
-    const existingUser = usersData?.users?.find((u) => u.email?.toLowerCase() === email);
+    // Does this email belong to a platform user? Look it up via profiles rather
+    // than admin.auth.admin.listUsers(): listUsers() only returns the first page
+    // (~50 users), so it silently misses existing users and sends them down the
+    // "new account" branch — which then 500s on generateLink for an email that is
+    // already registered, showing "couldn't send the notification" even though a
+    // prior invite went out.
+    const { data: existingProfile } = await admin
+      .from("profiles")
+      .select("user_id")
+      .ilike("email", email)
+      .maybeSingle();
+    const existingUser = existingProfile ? { id: existingProfile.user_id as string } : null;
 
     if (existingUser) {
       // Their workspace (if any)
