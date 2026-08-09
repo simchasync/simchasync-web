@@ -244,12 +244,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const inviterName = inviterProfile?.full_name || undefined;
 
-    const { data: existingUsersData, error: usersError } = await supabase.auth.admin.listUsers();
-    if (usersError) throw usersError;
-
-    const existingUser = existingUsersData?.users?.find(
-      (user) => user.email?.toLowerCase() === email.toLowerCase(),
-    );
+    // Reliable existing-user lookup via profiles. admin.auth.admin.listUsers()
+    // only returns the first page (~50 users), so it misses existing users and
+    // then tries to invite an already-registered email, which throws and 500s.
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("user_id, full_name")
+      .ilike("email", email)
+      .maybeSingle();
+    const existingUser = existingProfile
+      ? { id: existingProfile.user_id as string, user_metadata: { full_name: existingProfile.full_name as string | null } }
+      : null;
 
     if (existingUser && existingUser.id === caller.id) {
       return json({ error: "You cannot invite yourself — you are already a member of this workspace." }, 400);
