@@ -2,6 +2,11 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
+
+// Auto sign-out after this much inactivity (no mouse/keyboard/touch/scroll).
+const IDLE_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
+const IDLE_ACTIVITY_KEY = "ss:last-activity";
 
 interface AuthContextType {
   user: User | null;
@@ -93,6 +98,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearUrlAuthTimeout();
     };
   }, [ensureOnboarding]);
+
+  // Auto-logout on inactivity. Activity is shared across tabs via localStorage,
+  // so being active in any tab keeps the whole session alive; once every tab has
+  // been idle for IDLE_LIMIT_MS the user is signed out.
+  useEffect(() => {
+    if (!user) return;
+
+    let lastWrite = 0;
+    const markActive = () => {
+      const now = Date.now();
+      if (now - lastWrite > 5_000) {
+        lastWrite = now;
+        try { localStorage.setItem(IDLE_ACTIVITY_KEY, String(now)); } catch { /* ignore */ }
+      }
+    };
+    // Seed on mount so a fresh login isn't treated as already idle.
+    try { localStorage.setItem(IDLE_ACTIVITY_KEY, String(Date.now())); } catch { /* ignore */ }
+
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"] as const;
+    events.forEach((e) => window.addEventListener(e, markActive, { passive: true }));
+
+    const interval = setInterval(() => {
+      const last = Number(localStorage.getItem(IDLE_ACTIVITY_KEY)) || Date.now();
+      if (Date.now() - last >= IDLE_LIMIT_MS) {
+        toast({ title: "Signed out", description: "You were signed out after 10 minutes of inactivity." });
+        void supabase.auth.signOut();
+      }
+    }, 30_000);
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, markActive));
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
