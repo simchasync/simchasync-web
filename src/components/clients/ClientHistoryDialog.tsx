@@ -14,9 +14,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   clientId: string;
   clientName: string;
+  /** The booking currently open behind this dialog (if any) — clicking it in the
+   *  list just returns to it instead of stacking a duplicate ViewBookingDialog. */
+  currentEventId?: string;
 }
 
-export default function ClientHistoryDialog({ open, onOpenChange, clientId, clientName }: Props) {
+export default function ClientHistoryDialog({ open, onOpenChange, clientId, clientName, currentEventId }: Props) {
   const { t } = useLanguage();
   const b = t.app.bookings;
   const [viewingEventId, setViewingEventId] = useState<string | null>(null);
@@ -75,14 +78,24 @@ export default function ClientHistoryDialog({ open, onOpenChange, clientId, clie
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {events.map((ev) => (
+                {events.map((ev) => {
+                  const isCurrent = ev.id === currentEventId;
+                  return (
                   <TableRow
                     key={ev.id}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setViewingEventId(ev.id)}
+                    onClick={() => {
+                      // Already viewing this booking — return to it rather than
+                      // opening a second, identical booking dialog on top.
+                      if (isCurrent) onOpenChange(false);
+                      else setViewingEventId(ev.id);
+                    }}
                   >
                     <TableCell className="whitespace-nowrap">{format(new Date(ev.event_date), "MMM d, yyyy")}</TableCell>
-                    <TableCell>{(b.types as any)[ev.event_type] ?? ev.event_type}</TableCell>
+                    <TableCell>
+                      {(b.types as any)[ev.event_type] ?? ev.event_type}
+                      {isCurrent && <Badge variant="outline" className="ml-2 text-[10px]">Current</Badge>}
+                    </TableCell>
                     <TableCell>{ev.venue || ev.location || "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusColor(ev.payment_status)}>
@@ -93,7 +106,8 @@ export default function ClientHistoryDialog({ open, onOpenChange, clientId, clie
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}
