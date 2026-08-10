@@ -532,7 +532,7 @@ export default function Bookings() {
       </div>
 
       <Tabs defaultValue="events" className="space-y-4">
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="events"><List className="mr-1.5 h-3.5 w-3.5" />{b.title}</TabsTrigger>
           <TabsTrigger value="calendar"><CalendarDays className="mr-1.5 h-3.5 w-3.5" />Calendar</TabsTrigger>
           {role !== "member" && (
