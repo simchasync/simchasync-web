@@ -765,6 +765,7 @@ export default function ViewBookingDialog({
           onOpenChange={setHistoryOpen}
           clientId={event.client_id}
           clientName={event.clients?.name ?? "Client"}
+          currentEventId={event.id}
         />
       )}
 

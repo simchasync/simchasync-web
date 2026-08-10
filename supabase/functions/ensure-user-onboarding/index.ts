@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     // a failed notification must never block onboarding.
     if (isNewSignup) {
       try {
-        const notifyTo = Deno.env.get("SIGNUP_NOTIFY_EMAIL") ?? "elideutsch@gmail.com";
+        const notifyTo = Deno.env.get("SIGNUP_NOTIFY_EMAIL") ?? "simchasync@gmail.com";
         await sendBrandedEmail(
           notifyTo,
           `New SimchaSync signup: ${displayName}`,
