@@ -61,6 +61,9 @@ export default function PhoneNumber() {
         data: { phone: phone.trim() },
       });
       if (error) throw error;
+      // Sync the phone into profiles (for the admin panel) and let the backend
+      // send the "new signup" notification now that we have a phone number.
+      await supabase.functions.invoke("ensure-user-onboarding").catch(() => {});
       toast({ title: "Phone saved", description: "Your account setup is complete." });
       navigate("/app", { replace: true });
     } catch (err) {

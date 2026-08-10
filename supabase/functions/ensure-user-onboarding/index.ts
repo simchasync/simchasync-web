@@ -1,6 +1,7 @@
 /// <reference path="../_shared/deno-runtime.d.ts" />
 import { createClient } from "@supabase/supabase-js";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { emailShell, escapeHtml, getAppOrigin, sendBrandedEmail } from "../_shared/brandedEmail.ts";
 
 const slugify = (input: string) =>
   input
@@ -59,21 +60,57 @@ Deno.serve(async (req) => {
     const displayName = String(user.user_metadata?.full_name || user.email || "User");
     const safeEmail = user.email ?? null;
 
+    const metaPhone = String(user.user_metadata?.phone ?? "").trim() || null;
+
     const { data: existingProfile } = await admin
       .from("profiles")
-      .select("id")
+      .select("id, phone")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    // A "new signup" is a genuinely new user, counted once we actually have a
+    // phone: email signups have it immediately; Google users provide it on the
+    // /auth/phone step (which re-runs onboarding).
+    let isNewSignup = false;
     if (!existingProfile) {
       const { error: profileInsertError } = await admin.from("profiles").insert({
         user_id: user.id,
         full_name: displayName,
         email: safeEmail,
-        phone: user.user_metadata?.phone || null,
+        phone: metaPhone,
         has_used_trial: false,
       });
       if (profileInsertError) throw profileInsertError;
+      isNewSignup = !!metaPhone;
+    } else if (!existingProfile.phone && metaPhone) {
+      // Existing profile that just gained a phone (Google user finishing the
+      // phone step) — sync profiles.phone so it shows in the admin panel, and
+      // treat this as the signup moment.
+      await admin.from("profiles").update({ phone: metaPhone }).eq("user_id", user.id);
+      isNewSignup = true;
+    }
+
+    // Notify the team so they can reach out to the new user. Fire-and-forget:
+    // a failed notification must never block onboarding.
+    if (isNewSignup) {
+      try {
+        const notifyTo = Deno.env.get("SIGNUP_NOTIFY_EMAIL") ?? "elideutsch@gmail.com";
+        await sendBrandedEmail(
+          notifyTo,
+          `New SimchaSync signup: ${displayName}`,
+          emailShell(
+            "A new user just signed up",
+            `<p><strong>${escapeHtml(displayName)}</strong> just created a SimchaSync account.</p>` +
+              `<p>Email: <strong>${escapeHtml(safeEmail ?? "—")}</strong><br>` +
+              `Phone: <strong>${escapeHtml(metaPhone ?? "—")}</strong></p>` +
+              `<p>Reach out to welcome them.</p>`,
+            "Open SimchaSync",
+            getAppOrigin(req),
+          ),
+        );
+      } catch (notifyErr) {
+        console.error("[ensure-user-onboarding] signup notification failed:", notifyErr);
+      }
     }
 
     const { data: acceptedCount, error: acceptError } = await admin.rpc(
