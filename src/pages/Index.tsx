@@ -748,14 +748,14 @@ function PricingSection({ plans }: { plans: Plan[] }) {
         <span className="rounded-full px-2 py-0.5 text-[11px] font-bold font-sans" style={{ background: "rgba(43,226,166,0.14)", color: "#2BE2A6" }}>Save 20%</span>
       </div>
 
-      <div className="relative z-10 mx-auto grid gap-6 max-w-[420px] md:max-w-[860px] md:grid-cols-2 xl:max-w-[1360px] xl:grid-cols-4">
+      <div className="relative z-10 mx-auto grid gap-6 max-w-[420px] lg:max-w-[1060px] lg:grid-cols-3">
         {plans.map((plan, i) => (
           <motion.div
             key={plan.name}
             initial={reduce ? false : { opacity: 0, y: 40 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 + i * 0.1, ease: EASE }}
-            className={`relative flex flex-col ${plan.popular ? "landing-glass-strong xl:scale-[1.035]" : "landing-glass"}`}
+            className={`relative flex flex-col ${plan.popular ? "landing-glass-strong lg:scale-[1.035]" : "landing-glass"}`}
             style={{
               borderRadius: 24,
               padding: "34px 28px 28px",

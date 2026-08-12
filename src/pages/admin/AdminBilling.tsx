@@ -19,15 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import {
   Users, CreditCard, AlertTriangle, TrendingUp, Loader2,
-  MoreHorizontal, RefreshCw, DollarSign, ShieldOff,
+  MoreHorizontal, RefreshCw, ShieldOff,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, addDays, isBefore } from "date-fns";
@@ -47,8 +43,6 @@ export default function AdminBilling() {
   const queryClient = useQueryClient();
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [trialDate, setTrialDate] = useState("");
-  const [priceTenant, setPriceTenant] = useState<any | null>(null);
-  const [priceInput, setPriceInput] = useState("");
   const [filter, setFilter] = useState<string | null>(null); // null = all
 
   const { data: tenantsData, isLoading } = useQuery({
@@ -163,14 +157,13 @@ export default function AdminBilling() {
                   <TableHead>Tenant</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Trial Ends</TableHead>
-                  <TableHead>Custom Price</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTenants.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">No tenants match this filter.</TableCell>
+                    <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">No tenants match this filter.</TableCell>
                   </TableRow>
                 )}
                 {filteredTenants.map((t: any) => {
@@ -244,9 +237,6 @@ export default function AdminBilling() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {t.custom_price_cents != null ? `$${(t.custom_price_cents / 100).toFixed(2)}` : "—"}
-                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {trialExpired && (
@@ -262,14 +252,6 @@ export default function AdminBilling() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-52">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setPriceTenant(t);
-                                  setPriceInput(t.custom_price_cents != null ? (t.custom_price_cents / 100).toString() : "");
-                                }}
-                              >
-                                <DollarSign className="h-4 w-4 mr-2" /> Set custom price…
-                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
                                   if (window.confirm(`Resync ${t.name} from Stripe? This pulls the live subscription state.`)) {
@@ -306,63 +288,6 @@ export default function AdminBilling() {
           </Card>
         </>
       )}
-
-      {/* Set / edit custom price */}
-      <Dialog open={!!priceTenant} onOpenChange={(o) => { if (!o) setPriceTenant(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Custom price</DialogTitle>
-            <DialogDescription>{priceTenant?.name}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1">
-            <Label htmlFor="custom-price">Monthly price (USD)</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="custom-price"
-                type="number"
-                min="0"
-                step="0.01"
-                className="pl-8"
-                placeholder="0.00"
-                value={priceInput}
-                onChange={(e) => setPriceInput(e.target.value)}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Leave the field and click Clear to remove the custom price.</p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => {
-                actionMutation.mutate({ action: "set_custom_price", tenant_id: priceTenant.id, custom_price_cents: null });
-                setPriceTenant(null);
-              }}
-              disabled={actionMutation.isPending}
-            >
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                const dollars = Number(priceInput);
-                if (!Number.isFinite(dollars) || dollars < 0) {
-                  toast({ title: "Enter a valid amount", variant: "destructive" });
-                  return;
-                }
-                actionMutation.mutate({
-                  action: "set_custom_price",
-                  tenant_id: priceTenant.id,
-                  custom_price_cents: Math.round(dollars * 100),
-                });
-                setPriceTenant(null);
-              }}
-              disabled={!priceInput || actionMutation.isPending}
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
