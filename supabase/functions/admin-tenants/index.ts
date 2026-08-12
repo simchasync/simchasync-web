@@ -6,6 +6,34 @@ import {
   auditLog, enrichMembersWithProfiles,
 } from "../_shared/admin-helpers.ts";
 
+// Colleagues shown alongside members in the admin tenant view: the address-book
+// `colleagues` table plus internal per-booking collaborators (event_colleagues,
+// type "internal"), keyed by tenant id.
+async function colleaguesByTenant(adminClient: any, tenantIds: string[]): Promise<Record<string, any[]>> {
+  const map: Record<string, any[]> = {};
+  if (tenantIds.length === 0) return map;
+
+  const { data: book } = await adminClient
+    .from("colleagues")
+    .select("id, full_name, email, role_instrument, tenant_id")
+    .in("tenant_id", tenantIds);
+  for (const c of book || []) {
+    (map[c.tenant_id] ||= []).push({ id: c.id, kind: "colleague", name: c.full_name, email: c.email, role: c.role_instrument });
+  }
+
+  const { data: internal } = await adminClient
+    .from("event_colleagues")
+    .select("id, name, email, role_instrument, events!inner(tenant_id)")
+    .eq("colleague_type", "internal")
+    .in("events.tenant_id", tenantIds);
+  for (const c of internal || []) {
+    const tid = (c.events as any)?.tenant_id;
+    if (tid) (map[tid] ||= []).push({ id: c.id, kind: "internal_colleague", name: c.name, email: c.email, role: c.role_instrument });
+  }
+
+  return map;
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = adminCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -33,7 +61,8 @@ Deno.serve(async (req: Request) => {
           const enrichedMembers = await enrichMembersWithProfiles(adminClient, allMembers || []);
           const membersByTenant: Record<string, any[]> = {};
           for (const m of enrichedMembers) { if (!membersByTenant[m.tenant_id]) membersByTenant[m.tenant_id] = []; membersByTenant[m.tenant_id].push(m); }
-          enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [] }));
+          const collByTenant = await colleaguesByTenant(adminClient, tenantIds);
+          enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [], colleagues: collByTenant[t.id] || [] }));
         }
         return new Response(JSON.stringify({ tenants: enrichedTenants, total: count || 0, page, page_size }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -57,7 +86,8 @@ Deno.serve(async (req: Request) => {
         const enrichedMembers = await enrichMembersWithProfiles(adminClient, allMembers || []);
         const membersByTenant: Record<string, any[]> = {};
         for (const m of enrichedMembers) { if (!membersByTenant[m.tenant_id]) membersByTenant[m.tenant_id] = []; membersByTenant[m.tenant_id].push(m); }
-        const enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [] }));
+        const collByTenant = await colleaguesByTenant(adminClient, allIds);
+        const enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [], colleagues: collByTenant[t.id] || [] }));
         return new Response(JSON.stringify({ tenants: enrichedTenants, total: enrichedTenants.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 

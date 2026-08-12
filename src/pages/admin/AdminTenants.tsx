@@ -485,6 +485,26 @@ export default function AdminTenants() {
                                     })}
                                   </div>
                                 </div>
+
+                                {/* Colleagues (address-book + internal per-booking) */}
+                                {(t.colleagues || []).length > 0 && (
+                                  <div>
+                                    <Label className="text-xs font-medium mb-2 block">Colleagues ({(t.colleagues || []).length})</Label>
+                                    <div className="space-y-2">
+                                      {(t.colleagues || []).map((c: any) => (
+                                        <div key={`${c.kind}-${c.id}`} className="flex items-center justify-between rounded-lg border bg-background p-3">
+                                          <div>
+                                            <div className="text-sm font-medium">{c.name || "No name"}</div>
+                                            <div className="text-xs text-muted-foreground">{c.email || c.role || "—"}</div>
+                                          </div>
+                                          <Badge variant="outline" className="text-xs">
+                                            {c.kind === "internal_colleague" ? "internal colleague" : "colleague"}
+                                          </Badge>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
