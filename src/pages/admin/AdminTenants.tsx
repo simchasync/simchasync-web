@@ -23,7 +23,7 @@ import {
 import {
   Search, Plus, ChevronDown, ChevronRight, Users, CalendarDays, Key,
   Loader2, Building2, RefreshCw, CreditCard, Clock, Eye, AlertCircle,
-  ChevronLeft,
+  ChevronLeft, Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -479,6 +479,22 @@ export default function AdminTenants() {
                                                 </Button>
                                               )
                                             )}
+                                            {isAdmin && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 text-xs text-destructive hover:text-destructive"
+                                                disabled={actionMutation.isPending}
+                                                onClick={() => {
+                                                  if (window.confirm(`Remove ${profile?.full_name || profile?.email || "this member"} from the workspace? This cannot be undone.`)) {
+                                                    actionMutation.mutate({ action: "delete_member", member_id: m.id });
+                                                  }
+                                                }}
+                                                title="Remove member"
+                                              >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            )}
                                           </div>
                                         </div>
                                       );
@@ -497,12 +513,49 @@ export default function AdminTenants() {
                                             <div className="text-sm font-medium">{c.name || "No name"}</div>
                                             <div className="text-xs text-muted-foreground">{c.email || c.role || "—"}</div>
                                           </div>
-                                          <Badge variant="outline" className="text-xs">
-                                            {c.kind === "internal_colleague" ? "internal colleague" : "colleague"}
-                                          </Badge>
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {c.kind === "internal_colleague" ? "internal colleague" : "colleague"}
+                                            </Badge>
+                                            {isAdmin && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 text-xs text-destructive hover:text-destructive"
+                                                disabled={actionMutation.isPending}
+                                                onClick={() => {
+                                                  if (window.confirm(`Delete colleague ${c.name || c.email || ""}? This cannot be undone.`)) {
+                                                    actionMutation.mutate({ action: "delete_colleague", colleague_id: c.id, kind: c.kind });
+                                                  }
+                                                }}
+                                                title="Delete colleague"
+                                              >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            )}
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
+                                  </div>
+                                )}
+
+                                {isAdmin && (
+                                  <div className="border-t pt-3">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 text-xs text-destructive hover:text-destructive"
+                                      disabled={actionMutation.isPending}
+                                      onClick={() => {
+                                        if (window.confirm(`PERMANENTLY delete the workspace "${t.name}" and ALL its data (events, invoices, clients, members, colleagues)? Owner logins with no other workspace are also deleted. This cannot be undone.`)) {
+                                          actionMutation.mutate({ action: "delete_tenant", tenant_id: t.id });
+                                        }
+                                      }}
+                                      title="Delete workspace"
+                                    >
+                                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete workspace
+                                    </Button>
                                   </div>
                                 )}
                               </div>

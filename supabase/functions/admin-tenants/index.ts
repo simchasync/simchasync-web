@@ -118,6 +118,49 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ tenant, members, eventsCount: eventsCount || 0, recentEvents: recentEvents || [], invoicesCount: invoicesCount || 0, recentInvoices: recentInvoices || [], clientsCount: clientsCount || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      case "delete_member": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { member_id } = body;
+        if (!member_id) return new Response(JSON.stringify({ error: "Missing member_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { error } = await adminClient.from("tenant_members").delete().eq("id", member_id);
+        if (error) throw error;
+        await auditLog(adminClient, auth.user.id, "delete_member", undefined, undefined, { member_id });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "delete_colleague": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { colleague_id, kind } = body;
+        if (!colleague_id) return new Response(JSON.stringify({ error: "Missing colleague_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const table = kind === "internal_colleague" ? "event_colleagues" : "colleagues";
+        const { error } = await adminClient.from(table).delete().eq("id", colleague_id);
+        if (error) throw error;
+        await auditLog(adminClient, auth.user.id, "delete_colleague", undefined, undefined, { colleague_id, kind });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "delete_tenant": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { tenant_id } = body;
+        if (!tenant_id) return new Response(JSON.stringify({ error: "Missing tenant_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        // Owners of this workspace — their login is removed too if it becomes orphaned.
+        const { data: owners } = await adminClient.from("tenant_members").select("user_id").eq("tenant_id", tenant_id).eq("role", "owner");
+        const ownerIds = [...new Set((owners || []).map((o: any) => o.user_id).filter(Boolean))];
+        // Deleting the tenant cascades all its data (events, invoices, clients, members, subscriptions, …).
+        const { error } = await adminClient.from("tenants").delete().eq("id", tenant_id);
+        if (error) throw error;
+        // Remove each former owner's login only if they no longer belong to any workspace.
+        for (const uid of ownerIds) {
+          const { count } = await adminClient.from("tenant_members").select("id", { count: "exact", head: true }).eq("user_id", uid);
+          if (!count) {
+            try { await adminClient.auth.admin.deleteUser(uid); }
+            catch (delErr) { console.error("[admin-tenants] delete owner auth failed:", delErr); }
+          }
+        }
+        await auditLog(adminClient, auth.user.id, "delete_tenant", tenant_id);
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
