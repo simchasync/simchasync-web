@@ -24,6 +24,7 @@ const ACTION_ROUTING: Record<string, string> = {
   list_all_users: "admin-users",
   // admin-roles
   assign_admin_role: "admin-roles",
+  create_admin: "admin-roles",
   remove_admin_role: "admin-roles",
   list_admin_users: "admin-roles",
   find_user_by_email: "admin-roles",
