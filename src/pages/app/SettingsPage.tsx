@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { User, Building2, Camera, CreditCard, CalendarDays, Copy, ExternalLink, Check, RefreshCw, Link2, FileText, Crown, Info, ChevronDown, Loader2, XCircle, Paintbrush, Trash2, AlertTriangle, Share2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptionDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
@@ -30,7 +29,23 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, refreshSubscription, pollUntilSubscribed } = useSubscription();
   const [syncingSubscription, setSyncingSubscription] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  // Open the Stripe customer portal, where the user can update payment details,
+  // switch plan, or cancel — replacing the standalone cancel action.
+  const handleBillingPortal = async () => {
+    if (!tenantId) return;
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", { body: { tenant_id: tenantId } });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+      else throw new Error("No billing portal URL returned.");
+    } catch (err) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Couldn't open the billing portal.", variant: "destructive" });
+      setPortalLoading(false);
+    }
+  };
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const s = t.app.settings;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -499,14 +514,13 @@ export default function SettingsPage() {
                   {subscribed ? "Manage Subscription" : trialActive ? "View Plans" : "Choose a Plan"}
                 </Link>
               </Button>
-              {subscribed && !canceling && (
-                <Button variant="ghost" onClick={() => setCancelDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Cancel Subscription
+              {subscribed && (
+                <Button variant="outline" onClick={handleBillingPortal} disabled={portalLoading}>
+                  {portalLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
+                  Billing Portal
                 </Button>
               )}
             </div>
-            <CancelSubscriptionDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen} />
           </CardContent>
         </Card>
       )}
