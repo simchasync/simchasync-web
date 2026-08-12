@@ -118,6 +118,35 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ tenant, members, eventsCount: eventsCount || 0, recentEvents: recentEvents || [], invoicesCount: invoicesCount || 0, recentInvoices: recentInvoices || [], clientsCount: clientsCount || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      case "tenant_detail": {
+        if (!isAdmin(userRoles) && !isSupportAgent(userRoles) && !isBillingAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { tenant_id } = body;
+        if (!tenant_id) return new Response(JSON.stringify({ error: "Missing tenant_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: tenant } = await adminClient.from("tenants").select("*").eq("id", tenant_id).single();
+        if (!tenant) return new Response(JSON.stringify({ error: "Tenant not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const c = (r: any) => r?.count || 0;
+        const [landing, packages, eventsCount, invoicesCount, clientsCount, agentsCount, inquiriesCount, colleaguesCount, recentEvents, recentInvoices] = await Promise.all([
+          adminClient.from("tenant_landing_pages").select("tagline, about, services_description, logo_url, hero_image_url, updated_at").eq("tenant_id", tenant_id).maybeSingle(),
+          adminClient.from("tenant_packages").select("id, name, price, is_popular, sort_order").eq("tenant_id", tenant_id).order("sort_order"),
+          adminClient.from("events").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("clients").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("agents").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("booking_requests").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("colleagues").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("events").select("id, event_date, event_type, venue, total_price, payment_status, clients:client_id(name)").eq("tenant_id", tenant_id).order("event_date", { ascending: false }).limit(8),
+          adminClient.from("invoices").select("id, amount, status, created_at, clients:client_id(name)").eq("tenant_id", tenant_id).order("created_at", { ascending: false }).limit(8),
+        ]);
+        await auditLog(adminClient, auth.user.id, "view_tenant_detail", tenant_id);
+        return new Response(JSON.stringify({
+          tenant,
+          bookingPage: { slug: tenant.slug, configured: !!landing.data, ...(landing.data || {}), packages: packages.data || [] },
+          counts: { events: c(eventsCount), invoices: c(invoicesCount), clients: c(clientsCount), agents: c(agentsCount), inquiries: c(inquiriesCount), colleagues: c(colleaguesCount) },
+          recentEvents: recentEvents.data || [],
+          recentInvoices: recentInvoices.data || [],
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       case "delete_member": {
         if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { member_id } = body;

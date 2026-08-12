@@ -6,6 +6,7 @@ const ACTION_ROUTING: Record<string, string> = {
   search_tenants: "admin-tenants",
   update_tenant_notes: "admin-tenants",
   impersonate_tenant: "admin-tenants",
+  tenant_detail: "admin-tenants",
   delete_member: "admin-tenants",
   delete_colleague: "admin-tenants",
   delete_tenant: "admin-tenants",
