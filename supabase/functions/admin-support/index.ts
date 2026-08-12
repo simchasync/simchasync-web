@@ -118,7 +118,43 @@ Deno.serve(async (req: Request) => {
         const { error } = await adminClient.from("support_tickets").update({ status: newStatus }).eq("id", ticket_id);
         if (error) throw error;
         await auditLog(adminClient, auth.user.id, "update_ticket_status", undefined, undefined, { ticket_id, status: newStatus });
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        // On resolve/close, let the customer know (best-effort — never fatal).
+        let emailSent = false;
+        if (newStatus === "resolved" || newStatus === "closed") {
+          try {
+            const { data: ticket } = await adminClient.from("support_tickets").select("subject, tenant_id, user_id").eq("id", ticket_id).single();
+            if (ticket) {
+              await adminClient.from("notifications").insert({
+                tenant_id: ticket.tenant_id,
+                user_id: ticket.user_id,
+                title: "Your support ticket was resolved",
+                message: ticket.subject,
+                type: "support",
+                link: "/app/support",
+              });
+              const { data: profile } = await adminClient.from("profiles").select("email").eq("user_id", ticket.user_id).maybeSingle();
+              if (profile?.email) {
+                const appOrigin = getAppOrigin(req);
+                await sendBrandedEmail(
+                  profile.email,
+                  `Resolved: ${ticket.subject}`,
+                  emailShell(
+                    "Your ticket has been resolved",
+                    `<p>Your support ticket <strong>${escapeHtml(ticket.subject)}</strong> has been marked as resolved.</p>` +
+                    `<p>If you still need help, reply from your dashboard and we'll pick it back up.</p>`,
+                    "View Ticket",
+                    `${appOrigin}/app/support`,
+                  ),
+                );
+                emailSent = true;
+              }
+            }
+          } catch (notifyErr) {
+            console.error("[admin-support] resolve notification failed:", notifyErr);
+          }
+        }
+        return new Response(JSON.stringify({ success: true, email_sent: emailSent }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       default:
