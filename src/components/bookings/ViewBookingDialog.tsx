@@ -318,7 +318,7 @@ export default function ViewBookingDialog({
       )}
 
       <Separator />
-      <SongsSection eventId={event.id} canWrite={editable} />
+      <SongsSection eventId={event.id} canWrite={editable} eventType={event.event_type} />
       <Separator />
       <AttachmentsSection eventId={event.id} canWrite={editable} />
 

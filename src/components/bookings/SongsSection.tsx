@@ -20,13 +20,18 @@ const SEGMENTS: { value: string; labelKey: SegmentLabelKey }[] = [
 interface Props {
   eventId: string;
   canWrite: boolean;
+  eventType?: string;
 }
 
-export default function SongsSection({ eventId, canWrite }: Props) {
+export default function SongsSection({ eventId, canWrite, eventType }: Props) {
   const { t } = useLanguage();
   const sg = t.app.bookings.songs;
   const qc = useQueryClient();
-  const [newSong, setNewSong] = useState({ title: "", artist: "", segment: "chuppah" });
+  const [newSong, setNewSong] = useState({ title: "", artist: "" });
+
+  // Chuppah only applies to weddings — hide that segment for other event types.
+  const segments = SEGMENTS.filter((s) => s.value !== "chuppah" || eventType === "wedding");
+  const defaultSegment = segments[0]?.value ?? "meal";
 
   const { data: songs = [] } = useQuery({
     queryKey: ["event_songs", eventId],
@@ -54,7 +59,7 @@ export default function SongsSection({ eventId, canWrite }: Props) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["event_songs", eventId] });
-      setNewSong({ title: "", artist: "", segment: "chuppah" });
+      setNewSong({ title: "", artist: "" });
       toast({ title: "Song added" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -76,9 +81,9 @@ export default function SongsSection({ eventId, canWrite }: Props) {
       <h4 className="text-sm font-semibold flex items-center gap-1.5">
         <Music className="h-4 w-4" /> {sg.title}
       </h4>
-      <Tabs defaultValue="chuppah" className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
-          {SEGMENTS.map((seg) => {
+      <Tabs defaultValue={defaultSegment} className="w-full">
+        <TabsList className={`w-full grid ${segments.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+          {segments.map((seg) => {
             const count = songs.filter((s: any) => s.segment === seg.value).length;
             return (
               <TabsTrigger key={seg.value} value={seg.value} className="text-xs">
@@ -87,7 +92,7 @@ export default function SongsSection({ eventId, canWrite }: Props) {
             );
           })}
         </TabsList>
-        {SEGMENTS.map((seg) => (
+        {segments.map((seg) => (
           <TabsContent key={seg.value} value={seg.value} className="space-y-2 mt-2">
             {songs
               .filter((s: any) => s.segment === seg.value)
