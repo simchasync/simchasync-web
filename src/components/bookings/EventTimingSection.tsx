@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock } from "lucide-react";
+import { formatTimeUS } from "@/lib/formatTime";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TimingFields {
@@ -47,13 +48,17 @@ export default function EventTimingSection({ eventType, timing, onChange, canWri
         {fields.map((f) => (
           <div key={f.key} className="space-y-1.5">
             <Label className="text-xs">{labels[f.labelKey]}</Label>
-            <Input
-              type="time"
-              value={timing[f.key] || ""}
-              onChange={(e) => onChange({ ...timing, [f.key]: e.target.value })}
-              disabled={!canWrite}
-              className={!canWrite ? "bg-muted" : ""}
-            />
+            {canWrite ? (
+              <Input
+                type="time"
+                value={timing[f.key] || ""}
+                onChange={(e) => onChange({ ...timing, [f.key]: e.target.value })}
+              />
+            ) : (
+              <div className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">
+                {formatTimeUS(timing[f.key]) || "—"}
+              </div>
+            )}
           </div>
         ))}
       </div>

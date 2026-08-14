@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { toHebrewDate } from "@/lib/hebrewDate";
+import { formatTimeUS } from "@/lib/formatTime";
 import { getEventPaymentStatus } from "@/lib/eventPaymentStatus";
 import { computeBalanceDue } from "@/lib/bookingFinancials";
 import { buildNavigationAddress } from "@/lib/utils";
@@ -461,7 +462,7 @@ export default function ViewBookingDialog({
                   : [{ label: b.timing.eventStart, value: event.event_start_time }]
                 ).filter(f => f.value).map(f => (
                   <Field key={f.label} label={f.label}>
-                    <span className="font-medium text-sm">{f.value}</span>
+                    <span className="font-medium text-sm">{formatTimeUS(f.value)}</span>
                   </Field>
                 ))}
               </div>
