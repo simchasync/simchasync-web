@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { getEdgeFunctionErrorMessage } from "@/lib/edgeFunctionError";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface SendInvoiceDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface SendInvoiceDialogProps {
 }
 
 export default function SendInvoiceDialog({ open, onOpenChange, invoice, workspaceName, onSent }: SendInvoiceDialogProps) {
+  const { canAccess } = useSubscription();
   const clientEmail = invoice?.clients?.email || "";
   const clientName = invoice?.clients?.name || "";
   const clientPhone = invoice?.clients?.phone || "";
@@ -49,6 +51,12 @@ export default function SendInvoiceDialog({ open, onOpenChange, invoice, workspa
   const handleSendEmail = async () => {
     setSending(true);
     try {
+      // Pro/Premium with Stripe connected: generate a Stripe payment link first so
+      // the email includes a "Pay online" button. Best-effort — if Stripe isn't
+      // connected the call fails and we simply send without a payment link.
+      if (!paymentUrl && canAccess("stripe_connect")) {
+        await supabase.functions.invoke("create-invoice-payment", { body: { invoice_id: invoice.id } });
+      }
       const { data, error } = await supabase.functions.invoke("send-invoice-email", {
         body: { invoice_id: invoice.id, to_email: email },
       });
