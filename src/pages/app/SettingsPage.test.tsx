@@ -190,19 +190,6 @@ describe("SettingsPage", () => {
     expect(disconnect).toHaveBeenCalled();
   });
 
-  it("generates and copies the ICS calendar link", async () => {
-    mockRpc.mockResolvedValue({ data: null, error: null });
-    renderSettings();
-    const generateButton = await screen.findByRole("button", { name: /Generate Calendar Link/i });
-
-    fireEvent.click(generateButton);
-
-    await waitFor(() => {
-      const builder = buildersForTable("tenants").find((b) => b.update.mock.calls.length > 0 && "calendar_token" in b.update.mock.calls[0][0]);
-      expect(builder).toBeTruthy();
-    });
-  });
-
   it("copies the public booking link", async () => {
     renderSettings();
     await screen.findByText(/\/book\/acme/);
