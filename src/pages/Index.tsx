@@ -451,7 +451,7 @@ const FEATURE_TAGS = [
   ["Hebrew Dates", "Contracts", "Voice Memos", "Venues"],
   ["Client History", "Balances", "Preferences", "CRM"],
   ["Stripe", "PDF Invoices", "Payment Links", "P&L"],
-  ["Caption Writer", "Hashtags", "Booking Chatbot", "Smart Replies"],
+  ["Booking Chatbot", "Smart Answers", "More AI coming soon"],
 ];
 
 function FeaturesSection({ items }: { items: { title: string; desc: string }[] }) {
