@@ -95,6 +95,25 @@ export function teamMemberLimit(tier: SubscriptionTier, plan: string, trialActiv
   return 0;
 }
 
+// A lapsed paid subscription (canceled/past_due) keeps the workspace active for
+// GRACE_DAYS after its last period end, then access is revoked. Never-subscribed
+// workspaces have no period end, so they never get a grace window.
+export const SUBSCRIPTION_GRACE_DAYS = 5;
+export function isInGracePeriod(opts: {
+  subscribed: boolean;
+  trialActive: boolean;
+  subscriptionStatus: string | null;
+  subscriptionEnd: string | null;
+  now?: number;
+  graceDays?: number;
+}): boolean {
+  const { subscribed, trialActive, subscriptionStatus, subscriptionEnd, now = Date.now(), graceDays = SUBSCRIPTION_GRACE_DAYS } = opts;
+  if (subscribed || trialActive) return false;
+  if (subscriptionStatus !== "canceled" && subscriptionStatus !== "past_due") return false;
+  if (!subscriptionEnd) return false;
+  return now < new Date(subscriptionEnd).getTime() + graceDays * 24 * 60 * 60 * 1000;
+}
+
 export function canAccessFeature(
   plan: string,
   tier: SubscriptionTier,

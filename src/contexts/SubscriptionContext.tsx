@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/hooks/useTenantId";
 import { supabase } from "@/integrations/supabase/client";
-import { getTierFromProductId, SubscriptionTier, canAccessFeature, type PlanFeature } from "@/lib/subscription-tiers";
+import { getTierFromProductId, SubscriptionTier, canAccessFeature, isInGracePeriod, type PlanFeature } from "@/lib/subscription-tiers";
 
 interface SubscriptionContextType {
   plan: string; // 'trial' | 'lite' | 'full' | 'none'
@@ -30,9 +30,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [tier, setTier] = useState<SubscriptionTier>(null);
   const [subscribed, setSubscribed] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [tenantFetched, setTenantFetched] = useState(false);
+
+  // A lapsed paid subscription keeps access for this many days past its period end
+  // before the workspace is deactivated.
+  const GRACE_DAYS = 5;
 
   // Track whether DB says this tenant has an active subscription (admin-set or webhook-set)
   const dbSubscriptionActive = useRef(false);
@@ -135,15 +140,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setPlan(data.plan);
       setTrialEndsAt(data.trial_ends_at);
       setCanceling(data.stripe_subscription_status === "canceling");
-
-      // Handle 'none' / 'inactive' plans — workspace not yet subscribed
-      if (data.plan === "none") {
-        setSubscribed(false);
-        setTier(null);
-        dbSubscriptionActive.current = false;
-        setTenantFetched(true);
-        return;
-      }
+      setSubscriptionStatus(data.stripe_subscription_status ?? null);
+      // Preserve the period end even after cancel/past_due so the grace period
+      // (see workspaceActive below) has an anchor to count from.
+      setSubscriptionEnd(data.stripe_current_period_end ?? null);
 
       // DB is the source of truth for subscription status
       const isActiveFromDB = data.stripe_subscription_status === "active" && data.plan !== "trial";
@@ -152,18 +152,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (isActiveFromDB) {
         setSubscribed(true);
         setTier(data.plan as SubscriptionTier);
-        if (data.stripe_current_period_end) {
-          setSubscriptionEnd(data.stripe_current_period_end);
-        }
       } else if (data.plan === "trial") {
-        // On trial — not subscribed
         setSubscribed(false);
         setTier(null);
-        dbSubscriptionActive.current = false;
-      } else if (data.stripe_subscription_status === "canceled" || data.stripe_subscription_status === "past_due") {
+      } else {
+        // Never subscribed ('none') OR a lapsed paid subscription (canceled/past_due).
+        // Recover the last paid tier from the preserved price id so the grace
+        // period keeps the customer's features, not just bare access.
         setSubscribed(false);
-        setCanceling(data.stripe_subscription_status === "canceled");
-        dbSubscriptionActive.current = false;
+        setTier(getTierFromProductId(null, data.stripe_plan_price_id));
       }
     }
     setTenantFetched(true);
@@ -211,18 +208,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setPlan(newData.plan);
             setTrialEndsAt(newData.trial_ends_at);
             setCanceling(newData.stripe_subscription_status === "canceling");
-            
+            setSubscriptionStatus(newData.stripe_subscription_status ?? null);
+            setSubscriptionEnd(newData.stripe_current_period_end ?? null);
+
             const isActive = newData.stripe_subscription_status === "active" && newData.plan !== "trial";
             dbSubscriptionActive.current = isActive;
             if (isActive) {
               setSubscribed(true);
               setTier(newData.plan as SubscriptionTier);
-              if (newData.stripe_current_period_end) {
-                setSubscriptionEnd(newData.stripe_current_period_end);
-              }
             } else if (newData.plan === "trial") {
               setSubscribed(false);
               setTier(null);
+            } else {
+              setSubscribed(false);
+              setTier(getTierFromProductId(null, newData.stripe_plan_price_id));
             }
           }
         }
@@ -234,11 +233,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     };
   }, [tenantId]);
 
-  const canAccess = (feature: PlanFeature) =>
-    canAccessFeature(plan, tier, trialActive, feature);
+  // Grace period: a lapsed paid subscription keeps the workspace active for a few
+  // days past its period end (see isInGracePeriod), then access is revoked.
+  const inGracePeriod = isInGracePeriod({ subscribed, trialActive, subscriptionStatus, subscriptionEnd, graceDays: GRACE_DAYS });
 
-  // Workspace is active if subscribed OR on valid trial. 'none' plan = inactive.
-  const workspaceActive = plan !== "none" && (subscribed || trialActive);
+  // The recovered tier grants paid features only while subscribed or in grace;
+  // after grace (or if never subscribed) it must not leak access.
+  const effectiveTier = (subscribed || inGracePeriod) ? tier : null;
+  const canAccess = (feature: PlanFeature) =>
+    canAccessFeature(plan, effectiveTier, trialActive, feature);
+
+  // Active if subscribed, on a valid trial, or within the post-expiry grace period.
+  const workspaceActive = subscribed || trialActive || inGracePeriod;
 
   return (
     <SubscriptionContext.Provider

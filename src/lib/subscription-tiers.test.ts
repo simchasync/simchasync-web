@@ -1,5 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { SUBSCRIPTION_TIERS, getTierFromProductId, canAccessFeature, teamMemberLimit } from "./subscription-tiers";
+import { SUBSCRIPTION_TIERS, getTierFromProductId, canAccessFeature, teamMemberLimit, isInGracePeriod } from "./subscription-tiers";
+
+describe("isInGracePeriod", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const endedAgo = (days: number) => new Date(Date.now() - days * DAY).toISOString();
+
+  it("grants a grace window after a canceled subscription's period end", () => {
+    expect(isInGracePeriod({ subscribed: false, trialActive: false, subscriptionStatus: "canceled", subscriptionEnd: endedAgo(2) })).toBe(true);
+    expect(isInGracePeriod({ subscribed: false, trialActive: false, subscriptionStatus: "past_due", subscriptionEnd: endedAgo(4) })).toBe(true);
+  });
+
+  it("revokes once the grace window (5 days) has passed", () => {
+    expect(isInGracePeriod({ subscribed: false, trialActive: false, subscriptionStatus: "canceled", subscriptionEnd: endedAgo(6) })).toBe(false);
+  });
+
+  it("does not apply to active, trial, or never-subscribed workspaces", () => {
+    expect(isInGracePeriod({ subscribed: true, trialActive: false, subscriptionStatus: "active", subscriptionEnd: endedAgo(1) })).toBe(false);
+    expect(isInGracePeriod({ subscribed: false, trialActive: true, subscriptionStatus: null, subscriptionEnd: null })).toBe(false);
+    expect(isInGracePeriod({ subscribed: false, trialActive: false, subscriptionStatus: null, subscriptionEnd: null })).toBe(false);
+  });
+});
 
 describe("getTierFromProductId", () => {
   it("detects tiers by product id", () => {
