@@ -6,6 +6,10 @@ const ACTION_ROUTING: Record<string, string> = {
   search_tenants: "admin-tenants",
   update_tenant_notes: "admin-tenants",
   impersonate_tenant: "admin-tenants",
+  tenant_detail: "admin-tenants",
+  delete_member: "admin-tenants",
+  delete_colleague: "admin-tenants",
+  delete_tenant: "admin-tenants",
   // admin-billing
   extend_trial: "admin-billing",
   change_plan: "admin-billing",
@@ -20,6 +24,7 @@ const ACTION_ROUTING: Record<string, string> = {
   list_all_users: "admin-users",
   // admin-roles
   assign_admin_role: "admin-roles",
+  create_admin: "admin-roles",
   remove_admin_role: "admin-roles",
   list_admin_users: "admin-roles",
   find_user_by_email: "admin-roles",

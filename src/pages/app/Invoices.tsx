@@ -192,17 +192,24 @@ export default function Invoices() {
     if (!content) return;
     const win = window.open("", "_blank");
     if (!win) return;
+    // Carry the app's stylesheets so the printed/downloaded invoice renders with
+    // the same Tailwind styling as the modal preview (outerHTML keeps the root
+    // element's classes too).
+    const appStyles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join("\n");
     win.document.write(`
       <html><head><title>Invoice</title>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+      ${appStyles}
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DM Sans', sans-serif; }
-        body { padding: 20px; }
+        body { padding: 20px; background: #fff; margin: 0; }
         @media print { body { padding: 0; } }
-      </style></head><body>${content.innerHTML}</body></html>
+      </style></head><body>${content.outerHTML}</body></html>
     `);
     win.document.close();
-    setTimeout(() => { win.print(); }, 500);
+    // Give the copied stylesheets a moment to load before printing.
+    setTimeout(() => { win.focus(); win.print(); }, 700);
   };
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };

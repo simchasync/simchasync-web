@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { User, Building2, Camera, CreditCard, CalendarDays, Copy, ExternalLink, Check, RefreshCw, Link2, FileText, Crown, Info, ChevronDown, Loader2, XCircle, Paintbrush, Trash2, AlertTriangle, Share2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptionDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
@@ -28,9 +27,25 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { tenantId, userTenants, switchTenant } = useTenantId();
   const queryClient = useQueryClient();
-  const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, refreshSubscription, pollUntilSubscribed } = useSubscription();
+  const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, canAccess, refreshSubscription, pollUntilSubscribed } = useSubscription();
   const [syncingSubscription, setSyncingSubscription] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  // Open the Stripe customer portal, where the user can update payment details,
+  // switch plan, or cancel — replacing the standalone cancel action.
+  const handleBillingPortal = async () => {
+    if (!tenantId) return;
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", { body: { tenant_id: tenantId } });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+      else throw new Error("No billing portal URL returned.");
+    } catch (err) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Couldn't open the billing portal.", variant: "destructive" });
+      setPortalLoading(false);
+    }
+  };
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const s = t.app.settings;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,9 +79,7 @@ export default function SettingsPage() {
 
   // Stripe Connect state
   const [connectingStripe, setConnectingStripe] = useState(false);
-  const [calendarCopied, setCalendarCopied] = useState(false);
   const [bookingCopied, setBookingCopied] = useState(false);
-  const [showCalendarHelp, setShowCalendarHelp] = useState(false);
   const [showGcalHelp, setShowGcalHelp] = useState(false);
 
   const { data: profile } = useQuery({
@@ -323,33 +336,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleGenerateCalendarToken = async () => {
-    try {
-      const token = crypto.randomUUID();
-      const { error } = await supabase.from("tenants").update({ calendar_token: token }).eq("id", tenantId!);
-      if (error) throw error;
-      refetchTenant();
-      toast({ title: s.calendarSync + " ✓" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
-
-  // Token lives in the URL by design: this is an ICS subscription feed and
-  // calendar clients can only GET a plain URL. The token is a revocable random
-  // UUID (regenerate above to invalidate old links).
-  const calendarUrl = tenant?.calendar_token
-    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-export?tenant_id=${tenantId}&token=${tenant.calendar_token}`
-    : null;
-
-  const copyCalendarUrl = () => {
-    if (calendarUrl) {
-      navigator.clipboard.writeText(calendarUrl);
-      setCalendarCopied(true);
-      toast({ title: s.calendarLinkCopied });
-      setTimeout(() => setCalendarCopied(false), 2000);
-    }
-  };
 
   const shareBookingUrl = async (bookingUrl: string) => {
     try {
@@ -412,6 +398,10 @@ export default function SettingsPage() {
             <div>
               <Label htmlFor="settings-phone">{t.app.clients.phone}</Label>
               <Input id="settings-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="settings-email">{t.app.clients.email ?? "Email"}</Label>
+              <Input id="settings-email" type="email" value={user?.email ?? profile?.email ?? ""} readOnly disabled className="opacity-80" />
             </div>
           </div>
           <Button
@@ -499,14 +489,13 @@ export default function SettingsPage() {
                   {subscribed ? "Manage Subscription" : trialActive ? "View Plans" : "Choose a Plan"}
                 </Link>
               </Button>
-              {subscribed && !canceling && (
-                <Button variant="ghost" onClick={() => setCancelDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Cancel Subscription
+              {subscribed && (
+                <Button variant="outline" onClick={handleBillingPortal} disabled={portalLoading}>
+                  {portalLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
+                  Billing Portal
                 </Button>
               )}
             </div>
-            <CancelSubscriptionDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen} />
           </CardContent>
         </Card>
       )}
@@ -623,109 +612,8 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Calendar Sync Section — ICS subscription link (other calendar apps) */}
-      {isOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display text-lg">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              {s.calendarOtherApps}
-            </CardTitle>
-            <CardDescription>{s.calendarSyncDesc}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {calendarUrl ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-                  <code className="flex-1 text-xs truncate text-muted-foreground">{calendarUrl}</code>
-                  <Button variant="ghost" size="icon" onClick={copyCalendarUrl}>
-                    {calendarCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleGenerateCalendarToken}>
-                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                    {s.regenerateCalendarLink}
-                  </Button>
-                  <Collapsible open={showCalendarHelp} onOpenChange={setShowCalendarHelp}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground">
-                        <Info className="mr-1.5 h-3.5 w-3.5" />
-                        Instructions
-                        <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform ${showCalendarHelp ? "rotate-180" : ""}`} />
-                      </Button>
-                    </CollapsibleTrigger>
-                  </Collapsible>
-                </div>
-                <Collapsible open={showCalendarHelp} onOpenChange={setShowCalendarHelp}>
-                  <CollapsibleContent>
-                    <div className="rounded-lg border bg-muted/30 p-4 space-y-4 text-sm">
-                      <p className="text-muted-foreground">Copy the link above, then follow the steps for your calendar app. Events sync one-way from SimchaSync to your calendar.</p>
-
-                      <div className="space-y-1.5">
-                        <p className="font-semibold flex items-center gap-1.5">📅 Google Calendar</p>
-                        <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground ml-1">
-                          <li>Open <span className="font-medium text-foreground">Google Calendar</span> on your computer</li>
-                          <li>Click the <span className="font-medium text-foreground">+</span> next to "Other calendars" in the left sidebar</li>
-                          <li>Select <span className="font-medium text-foreground">From URL</span></li>
-                          <li>Paste the link and click <span className="font-medium text-foreground">Add calendar</span></li>
-                        </ol>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <p className="font-semibold flex items-center gap-1.5">🍎 Apple Calendar (Mac)</p>
-                        <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground ml-1">
-                          <li>Open <span className="font-medium text-foreground">Calendar</span> app</li>
-                          <li>Go to <span className="font-medium text-foreground">File → New Calendar Subscription</span></li>
-                          <li>Paste the link and click <span className="font-medium text-foreground">Subscribe</span></li>
-                        </ol>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <p className="font-semibold flex items-center gap-1.5">📱 Apple Calendar (iPhone/iPad)</p>
-                        <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground ml-1">
-                          <li>Go to <span className="font-medium text-foreground">Settings → Calendar → Accounts</span></li>
-                          <li>Tap <span className="font-medium text-foreground">Add Account → Other</span></li>
-                          <li>Tap <span className="font-medium text-foreground">Add Subscribed Calendar</span></li>
-                          <li>Paste the link and tap <span className="font-medium text-foreground">Next → Save</span></li>
-                        </ol>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <p className="font-semibold flex items-center gap-1.5">📱 Google Calendar (Phone/Tablet)</p>
-                        <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground ml-1">
-                          <li>Open your mobile browser and go to <span className="font-medium text-foreground">calendar.google.com</span></li>
-                          <li>Tap the <span className="font-medium text-foreground">⚙️ Settings</span> gear icon</li>
-                          <li>Tap <span className="font-medium text-foreground">Add calendar → From URL</span></li>
-                          <li>Paste the link and tap <span className="font-medium text-foreground">Add calendar</span></li>
-                          <li>The calendar will sync to your Google Calendar app automatically</li>
-                        </ol>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <p className="font-semibold flex items-center gap-1.5">📧 Outlook</p>
-                        <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground ml-1">
-                          <li>Open <span className="font-medium text-foreground">Outlook Calendar</span></li>
-                          <li>Click <span className="font-medium text-foreground">Add calendar → Subscribe from web</span></li>
-                          <li>Paste the link and click <span className="font-medium text-foreground">Import</span></li>
-                        </ol>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-            ) : (
-              <Button onClick={handleGenerateCalendarToken} className="bg-gradient-gold text-primary-foreground">
-                <CalendarDays className="mr-2 h-4 w-4" />
-                {s.generateCalendarLink}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Public Booking Link */}
-      {isOwner && tenant && (
+      {/* Public Booking Link — booking page is a Pro/Premium feature */}
+      {isOwner && tenant && canAccess("booking_page") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">

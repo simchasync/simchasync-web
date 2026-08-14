@@ -28,6 +28,28 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      case "create_admin": {
+        const { email, password, role } = body;
+        const validRoles = ["admin", "billing_admin", "support_agent"];
+        if (!email || !password || !validRoles.includes(role)) return new Response(JSON.stringify({ error: "Missing email/password or invalid role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (String(password).length < 8) return new Response(JSON.stringify({ error: "Password must be at least 8 characters" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        // Create the auth user (email pre-confirmed so they can sign in immediately).
+        let userId: string | undefined;
+        const { data: created, error: createErr } = await adminClient.auth.admin.createUser({ email, password, email_confirm: true });
+        userId = created?.user?.id;
+        if (!userId) {
+          // Email may already belong to a user — grant the role to that account instead.
+          const { data: existing } = await adminClient.from("profiles").select("user_id").ilike("email", email).maybeSingle();
+          if (existing?.user_id) userId = existing.user_id as string;
+          else throw createErr ?? new Error("Could not create user");
+        }
+        await adminClient.from("profiles").upsert({ user_id: userId, email, full_name: String(email).split("@")[0] }, { onConflict: "user_id" });
+        const { error: roleErr } = await adminClient.from("user_roles").upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+        if (roleErr) throw roleErr;
+        await auditLog(adminClient, auth.user.id, "create_admin", undefined, userId, { role, email });
+        return new Response(JSON.stringify({ success: true, user_id: userId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       case "remove_admin_role": {
         const { target_user_id, role } = body;
         if (!target_user_id || !role) return new Response(JSON.stringify({ error: "Missing params" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

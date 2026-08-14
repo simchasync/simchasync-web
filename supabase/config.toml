@@ -48,6 +48,10 @@ verify_jwt = false
 [functions.invite-team-member]
 verify_jwt = false
 
+# Verifies the caller's JWT internally (must own the ticket)
+[functions.notify-new-ticket]
+verify_jwt = false
+
 # Verifies the caller's JWT internally (must be owner/booking_manager of the event's tenant)
 [functions.colleague-booking-request]
 verify_jwt = false

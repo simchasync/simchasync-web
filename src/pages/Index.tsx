@@ -7,7 +7,7 @@ import {
   useReducedMotion,
   type MotionValue,
 } from "motion/react";
-import { useRef, useState, useEffect, useId } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import BrandLogo from "@/components/BrandLogo";
@@ -697,23 +697,14 @@ function Testimonials() {
   );
 }
 
-// ── Pricing (with monthly / yearly toggle) ────────────────────────────────────
+// ── Pricing ───────────────────────────────────────────────────────────────────
 
 type Plan = { name: string; price: string; period: string; desc: string; features: string[]; cta: string; popular?: boolean; contactHref?: string };
-
-function priceFor(price: string, yearly: boolean): string {
-  const n = parseFloat(price.replace(/[^0-9.]/g, ""));
-  if (!Number.isFinite(n)) return price;
-  const val = yearly ? Math.max(Math.round(n * 0.8) - 0.01, 0) : n;
-  return `$${val.toFixed(2)}`;
-}
 
 function PricingSection({ plans }: { plans: Plan[] }) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const [yearly, setYearly] = useState(false);
-  const toggleId = useId();
 
   return (
     <section id="pricing" ref={ref} className="relative bg-[#050505] overflow-hidden scroll-mt-24" style={{ padding: "clamp(5rem,10vw,7rem) clamp(1.5rem,5vw,3rem)" }}>
@@ -730,32 +721,14 @@ function PricingSection({ plans }: { plans: Plan[] }) {
         <p className="text-[15px] text-white/70 font-sans font-light m-0">Start with a free 30-day trial. Full access, no credit card required.</p>
       </motion.div>
 
-      <div className="relative z-10 flex items-center justify-center gap-3 mb-12">
-        <span className={`text-sm font-sans ${!yearly ? "text-white" : "text-white/45"}`}>Monthly</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={yearly}
-          aria-label="Toggle yearly billing"
-          id={toggleId}
-          onClick={() => setYearly((y) => !y)}
-          className={`relative h-7 w-[52px] rounded-full border transition-colors ${FOCUS}`}
-          style={{ background: "rgba(255,255,255,0.12)", borderColor: "rgba(237,208,138,0.3)" }}
-        >
-          <span className="absolute top-[3px] h-[21px] w-[21px] rounded-full transition-all" style={{ left: yearly ? "27px" : "3px", background: GOLD }} />
-        </button>
-        <span className={`text-sm font-sans ${yearly ? "text-white" : "text-white/45"}`}>Yearly</span>
-        <span className="rounded-full px-2 py-0.5 text-[11px] font-bold font-sans" style={{ background: "rgba(43,226,166,0.14)", color: "#2BE2A6" }}>Save 20%</span>
-      </div>
-
-      <div className="relative z-10 mx-auto grid gap-6 max-w-[420px] md:max-w-[860px] md:grid-cols-2 xl:max-w-[1360px] xl:grid-cols-4">
+      <div className="relative z-10 mx-auto grid gap-6 max-w-[420px] lg:max-w-[1060px] lg:grid-cols-3">
         {plans.map((plan, i) => (
           <motion.div
             key={plan.name}
             initial={reduce ? false : { opacity: 0, y: 40 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 + i * 0.1, ease: EASE }}
-            className={`relative flex flex-col ${plan.popular ? "landing-glass-strong xl:scale-[1.035]" : "landing-glass"}`}
+            className={`relative flex flex-col ${plan.popular ? "landing-glass-strong lg:scale-[1.035]" : "landing-glass"}`}
             style={{
               borderRadius: 24,
               padding: "34px 28px 28px",
@@ -772,9 +745,8 @@ function PricingSection({ plans }: { plans: Plan[] }) {
             <p className="text-[13px] text-white/70 font-sans font-light m-0 min-h-[38px]">{plan.desc}</p>
 
             <div className="mt-4 mb-6 pb-6 flex items-end" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="font-serif italic text-white font-bold" style={{ fontSize: plan.contactHref ? "2.2rem" : "2.9rem", lineHeight: 0.95 }}>{plan.contactHref ? plan.price : priceFor(plan.price, yearly)}</span>
+              <span className="font-serif italic text-white font-bold" style={{ fontSize: plan.contactHref ? "2.2rem" : "2.9rem", lineHeight: 0.95 }}>{plan.price}</span>
               {!plan.contactHref && <span className="text-[14px] text-white/55 font-sans ml-1.5 mb-1">/mo</span>}
-              {!plan.contactHref && yearly && <span className="ml-auto mb-1 rounded-full px-2 py-0.5 text-[10px] font-semibold font-sans" style={{ background: "rgba(43,226,166,0.14)", color: "#2BE2A6" }}>billed yearly</span>}
             </div>
 
             <ul className="flex-1 flex flex-col gap-3 m-0 p-0 list-none mb-7">

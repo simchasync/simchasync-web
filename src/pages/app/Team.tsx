@@ -391,7 +391,8 @@ export default function Team() {
     );
   }
 
-  const teammateRoles: TenantRole[] = ["owner", "booking_manager", "social_media_manager"];
+  // Social Media is parked, so the social_media_manager role is no longer offered.
+  const teammateRoles: TenantRole[] = ["owner", "booking_manager"];
   const canLeave = !isOwner && currentUserRole;
 
   return (

@@ -109,6 +109,7 @@ beforeEach(() => {
   mockUseTenantId.mockReturnValue({ tenantId: "tenant-1", userTenants: [{ tenant_id: "tenant-1" }], switchTenant: vi.fn() });
   mockUseSubscription.mockReturnValue({
     tier: "full", trialActive: false, trialDaysLeft: 0, subscribed: true, subscriptionEnd: null, canceling: false,
+    canAccess: () => true,
     refreshSubscription: vi.fn(), pollUntilSubscribed: vi.fn().mockResolvedValue(true),
   });
   mockUseGoogleCalendar.mockReturnValue({
@@ -188,19 +189,6 @@ describe("SettingsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Disconnect/i }));
     expect(disconnect).toHaveBeenCalled();
-  });
-
-  it("generates and copies the ICS calendar link", async () => {
-    mockRpc.mockResolvedValue({ data: null, error: null });
-    renderSettings();
-    const generateButton = await screen.findByRole("button", { name: /Generate Calendar Link/i });
-
-    fireEvent.click(generateButton);
-
-    await waitFor(() => {
-      const builder = buildersForTable("tenants").find((b) => b.update.mock.calls.length > 0 && "calendar_token" in b.update.mock.calls[0][0]);
-      expect(builder).toBeTruthy();
-    });
   });
 
   it("copies the public booking link", async () => {

@@ -28,6 +28,7 @@ type Builder = {
   eq: ReturnType<typeof vi.fn>;
   order: ReturnType<typeof vi.fn>;
   insert: ReturnType<typeof vi.fn>;
+  single: ReturnType<typeof vi.fn>;
   then: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) => Promise<unknown>;
 };
 
@@ -44,6 +45,7 @@ function makeBuilder(table: string): Builder {
   builder.eq = vi.fn(() => builder);
   builder.order = vi.fn(() => builder);
   builder.insert = vi.fn(() => builder);
+  builder.single = vi.fn(() => builder);
   builder.then = (resolve, reject) => Promise.resolve(resolvedByTable[table]).then(resolve, reject);
   return builder;
 }

@@ -6,6 +6,34 @@ import {
   auditLog, enrichMembersWithProfiles,
 } from "../_shared/admin-helpers.ts";
 
+// Colleagues shown alongside members in the admin tenant view: the address-book
+// `colleagues` table plus internal per-booking collaborators (event_colleagues,
+// type "internal"), keyed by tenant id.
+async function colleaguesByTenant(adminClient: any, tenantIds: string[]): Promise<Record<string, any[]>> {
+  const map: Record<string, any[]> = {};
+  if (tenantIds.length === 0) return map;
+
+  const { data: book } = await adminClient
+    .from("colleagues")
+    .select("id, full_name, email, role_instrument, tenant_id")
+    .in("tenant_id", tenantIds);
+  for (const c of book || []) {
+    (map[c.tenant_id] ||= []).push({ id: c.id, kind: "colleague", name: c.full_name, email: c.email, role: c.role_instrument });
+  }
+
+  const { data: internal } = await adminClient
+    .from("event_colleagues")
+    .select("id, name, email, role_instrument, events!inner(tenant_id)")
+    .eq("colleague_type", "internal")
+    .in("events.tenant_id", tenantIds);
+  for (const c of internal || []) {
+    const tid = (c.events as any)?.tenant_id;
+    if (tid) (map[tid] ||= []).push({ id: c.id, kind: "internal_colleague", name: c.name, email: c.email, role: c.role_instrument });
+  }
+
+  return map;
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = adminCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -33,7 +61,8 @@ Deno.serve(async (req: Request) => {
           const enrichedMembers = await enrichMembersWithProfiles(adminClient, allMembers || []);
           const membersByTenant: Record<string, any[]> = {};
           for (const m of enrichedMembers) { if (!membersByTenant[m.tenant_id]) membersByTenant[m.tenant_id] = []; membersByTenant[m.tenant_id].push(m); }
-          enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [] }));
+          const collByTenant = await colleaguesByTenant(adminClient, tenantIds);
+          enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [], colleagues: collByTenant[t.id] || [] }));
         }
         return new Response(JSON.stringify({ tenants: enrichedTenants, total: count || 0, page, page_size }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -57,7 +86,8 @@ Deno.serve(async (req: Request) => {
         const enrichedMembers = await enrichMembersWithProfiles(adminClient, allMembers || []);
         const membersByTenant: Record<string, any[]> = {};
         for (const m of enrichedMembers) { if (!membersByTenant[m.tenant_id]) membersByTenant[m.tenant_id] = []; membersByTenant[m.tenant_id].push(m); }
-        const enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [] }));
+        const collByTenant = await colleaguesByTenant(adminClient, allIds);
+        const enrichedTenants = (tenants || []).map((t: any) => ({ ...t, tenant_members: membersByTenant[t.id] || [], colleagues: collByTenant[t.id] || [] }));
         return new Response(JSON.stringify({ tenants: enrichedTenants, total: enrichedTenants.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
@@ -86,6 +116,78 @@ Deno.serve(async (req: Request) => {
         const { count: clientsCount } = await adminClient.from("clients").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id);
         await auditLog(adminClient, auth.user.id, "impersonate_tenant", tenant_id);
         return new Response(JSON.stringify({ tenant, members, eventsCount: eventsCount || 0, recentEvents: recentEvents || [], invoicesCount: invoicesCount || 0, recentInvoices: recentInvoices || [], clientsCount: clientsCount || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "tenant_detail": {
+        if (!isAdmin(userRoles) && !isSupportAgent(userRoles) && !isBillingAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { tenant_id } = body;
+        if (!tenant_id) return new Response(JSON.stringify({ error: "Missing tenant_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: tenant } = await adminClient.from("tenants").select("*").eq("id", tenant_id).single();
+        if (!tenant) return new Response(JSON.stringify({ error: "Tenant not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const c = (r: any) => r?.count || 0;
+        const [landing, packages, eventsCount, invoicesCount, clientsCount, agentsCount, inquiriesCount, colleaguesCount, recentEvents, recentInvoices] = await Promise.all([
+          adminClient.from("tenant_landing_pages").select("tagline, about, services_description, logo_url, hero_image_url, updated_at").eq("tenant_id", tenant_id).maybeSingle(),
+          adminClient.from("tenant_packages").select("id, name, price, is_popular, sort_order").eq("tenant_id", tenant_id).order("sort_order"),
+          adminClient.from("events").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("clients").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("agents").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("booking_requests").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("colleagues").select("id", { count: "exact", head: true }).eq("tenant_id", tenant_id),
+          adminClient.from("events").select("id, event_date, event_type, venue, total_price, payment_status, clients:client_id(name)").eq("tenant_id", tenant_id).order("event_date", { ascending: false }).limit(8),
+          adminClient.from("invoices").select("id, amount, status, created_at, clients:client_id(name)").eq("tenant_id", tenant_id).order("created_at", { ascending: false }).limit(8),
+        ]);
+        await auditLog(adminClient, auth.user.id, "view_tenant_detail", tenant_id);
+        return new Response(JSON.stringify({
+          tenant,
+          bookingPage: { slug: tenant.slug, configured: !!landing.data, ...(landing.data || {}), packages: packages.data || [] },
+          counts: { events: c(eventsCount), invoices: c(invoicesCount), clients: c(clientsCount), agents: c(agentsCount), inquiries: c(inquiriesCount), colleagues: c(colleaguesCount) },
+          recentEvents: recentEvents.data || [],
+          recentInvoices: recentInvoices.data || [],
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "delete_member": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { member_id } = body;
+        if (!member_id) return new Response(JSON.stringify({ error: "Missing member_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { error } = await adminClient.from("tenant_members").delete().eq("id", member_id);
+        if (error) throw error;
+        await auditLog(adminClient, auth.user.id, "delete_member", undefined, undefined, { member_id });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "delete_colleague": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { colleague_id, kind } = body;
+        if (!colleague_id) return new Response(JSON.stringify({ error: "Missing colleague_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const table = kind === "internal_colleague" ? "event_colleagues" : "colleagues";
+        const { error } = await adminClient.from(table).delete().eq("id", colleague_id);
+        if (error) throw error;
+        await auditLog(adminClient, auth.user.id, "delete_colleague", undefined, undefined, { colleague_id, kind });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "delete_tenant": {
+        if (!isAdmin(userRoles)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { tenant_id } = body;
+        if (!tenant_id) return new Response(JSON.stringify({ error: "Missing tenant_id" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        // Owners of this workspace — their login is removed too if it becomes orphaned.
+        const { data: owners } = await adminClient.from("tenant_members").select("user_id").eq("tenant_id", tenant_id).eq("role", "owner");
+        const ownerIds = [...new Set((owners || []).map((o: any) => o.user_id).filter(Boolean))];
+        // Deleting the tenant cascades all its data (events, invoices, clients, members, subscriptions, …).
+        const { error } = await adminClient.from("tenants").delete().eq("id", tenant_id);
+        if (error) throw error;
+        // Remove each former owner's login only if they no longer belong to any workspace.
+        for (const uid of ownerIds) {
+          const { count } = await adminClient.from("tenant_members").select("id", { count: "exact", head: true }).eq("user_id", uid);
+          if (!count) {
+            try { await adminClient.auth.admin.deleteUser(uid); }
+            catch (delErr) { console.error("[admin-tenants] delete owner auth failed:", delErr); }
+          }
+        }
+        await auditLog(adminClient, auth.user.id, "delete_tenant", tenant_id);
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       default:

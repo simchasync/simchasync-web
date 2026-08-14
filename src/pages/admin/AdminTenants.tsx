@@ -23,7 +23,7 @@ import {
 import {
   Search, Plus, ChevronDown, ChevronRight, Users, CalendarDays, Key,
   Loader2, Building2, RefreshCw, CreditCard, Clock, Eye, AlertCircle,
-  ChevronLeft,
+  ChevronLeft, Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -144,6 +144,19 @@ export default function AdminTenants() {
     },
     enabled: isSearching,
     staleTime: 10_000,
+  });
+
+  // Full workspace detail (booking page, stats, recent activity) for the expanded tenant.
+  const { data: detail, isLoading: detailLoading } = useQuery({
+    queryKey: ["admin-tenant-detail", expandedTenant],
+    queryFn: async () => {
+      const { data, error } = await adminAction("tenant_detail", { tenant_id: expandedTenant });
+      if (error) throw new Error(error.message || "Failed to load workspace detail");
+      if (data?.error) throw new Error(data.error);
+      return data as any;
+    },
+    enabled: !!expandedTenant,
+    staleTime: 15_000,
   });
 
   const isLoading = isSearching ? searchLoading : listLoading;
@@ -452,6 +465,83 @@ export default function AdminTenants() {
                                   </div>
                                 )}
 
+                                {/* Full workspace detail (fetched on expand) */}
+                                {detailLoading && !detail ? (
+                                  <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+                                ) : detail ? (
+                                  <>
+                                    {/* Stats */}
+                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                      {[
+                                        ["Events", detail.counts.events],
+                                        ["Invoices", detail.counts.invoices],
+                                        ["Clients", detail.counts.clients],
+                                        ["Agents", detail.counts.agents],
+                                        ["Inquiries", detail.counts.inquiries],
+                                        ["Colleagues", detail.counts.colleagues],
+                                      ].map(([label, val]) => (
+                                        <div key={label as string} className="rounded-lg border bg-background p-2 text-center">
+                                          <div className="text-lg font-semibold">{val as number}</div>
+                                          <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {/* Booking page */}
+                                    <div>
+                                      <Label className="text-xs font-medium mb-2 block">Booking Page</Label>
+                                      <div className="rounded-lg border bg-background p-3 space-y-1.5 text-xs">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="text-muted-foreground">Public URL</span>
+                                          {detail.bookingPage.slug
+                                            ? <a href={`/book/${detail.bookingPage.slug}`} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate">/book/{detail.bookingPage.slug}</a>
+                                            : <span>—</span>}
+                                        </div>
+                                        <div className="flex items-center justify-between"><span className="text-muted-foreground">Configured</span><span>{detail.bookingPage.configured ? "Yes" : "No"}</span></div>
+                                        {detail.bookingPage.tagline && <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">Tagline</span><span className="truncate max-w-[60%] text-right">{detail.bookingPage.tagline}</span></div>}
+                                        <div className="flex items-center justify-between"><span className="text-muted-foreground">Packages</span><span>{(detail.bookingPage.packages || []).length}</span></div>
+                                        {(detail.bookingPage.packages || []).length > 0 && (
+                                          <div className="flex flex-wrap gap-1 pt-1">
+                                            {detail.bookingPage.packages.map((p: any) => (
+                                              <Badge key={p.id} variant="outline" className="text-[10px]">{p.name}{p.price ? ` · $${p.price}` : ""}{p.is_popular ? " ★" : ""}</Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Recent events */}
+                                    {detail.recentEvents.length > 0 && (
+                                      <div>
+                                        <Label className="text-xs font-medium mb-2 block">Recent Events</Label>
+                                        <div className="space-y-1">
+                                          {detail.recentEvents.map((e: any) => (
+                                            <div key={e.id} className="flex items-center justify-between gap-2 rounded border bg-background px-3 py-2 text-xs">
+                                              <span className="truncate">{e.event_date} · {e.event_type}{e.venue ? ` · ${e.venue}` : ""}{e.clients?.name ? ` · ${e.clients.name}` : ""}</span>
+                                              <span className="shrink-0">${e.total_price ?? 0} · {e.payment_status}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Recent invoices */}
+                                    {detail.recentInvoices.length > 0 && (
+                                      <div>
+                                        <Label className="text-xs font-medium mb-2 block">Recent Invoices</Label>
+                                        <div className="space-y-1">
+                                          {detail.recentInvoices.map((inv: any) => (
+                                            <div key={inv.id} className="flex items-center justify-between gap-2 rounded border bg-background px-3 py-2 text-xs">
+                                              <span className="truncate">{inv.clients?.name ?? "—"} · {new Date(inv.created_at).toLocaleDateString()}</span>
+                                              <span className="shrink-0">${inv.amount ?? 0} · {inv.status}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
+                                ) : null}
+
                                 {/* Members */}
                                 <div>
                                   <Label className="text-xs font-medium mb-2 block">Members ({members.length})</Label>
@@ -479,12 +569,85 @@ export default function AdminTenants() {
                                                 </Button>
                                               )
                                             )}
+                                            {isAdmin && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 text-xs text-destructive hover:text-destructive"
+                                                disabled={actionMutation.isPending}
+                                                onClick={() => {
+                                                  if (window.confirm(`Remove ${profile?.full_name || profile?.email || "this member"} from the workspace? This cannot be undone.`)) {
+                                                    actionMutation.mutate({ action: "delete_member", member_id: m.id });
+                                                  }
+                                                }}
+                                                title="Remove member"
+                                              >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            )}
                                           </div>
                                         </div>
                                       );
                                     })}
                                   </div>
                                 </div>
+
+                                {/* Colleagues (address-book + internal per-booking) */}
+                                {(t.colleagues || []).length > 0 && (
+                                  <div>
+                                    <Label className="text-xs font-medium mb-2 block">Colleagues ({(t.colleagues || []).length})</Label>
+                                    <div className="space-y-2">
+                                      {(t.colleagues || []).map((c: any) => (
+                                        <div key={`${c.kind}-${c.id}`} className="flex items-center justify-between rounded-lg border bg-background p-3">
+                                          <div>
+                                            <div className="text-sm font-medium">{c.name || "No name"}</div>
+                                            <div className="text-xs text-muted-foreground">{c.email || c.role || "—"}</div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {c.kind === "internal_colleague" ? "internal colleague" : "colleague"}
+                                            </Badge>
+                                            {isAdmin && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 text-xs text-destructive hover:text-destructive"
+                                                disabled={actionMutation.isPending}
+                                                onClick={() => {
+                                                  if (window.confirm(`Delete colleague ${c.name || c.email || ""}? This cannot be undone.`)) {
+                                                    actionMutation.mutate({ action: "delete_colleague", colleague_id: c.id, kind: c.kind });
+                                                  }
+                                                }}
+                                                title="Delete colleague"
+                                              >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {isAdmin && (
+                                  <div className="border-t pt-3">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 text-xs text-destructive hover:text-destructive"
+                                      disabled={actionMutation.isPending}
+                                      onClick={() => {
+                                        if (window.confirm(`PERMANENTLY delete the workspace "${t.name}" and ALL its data (events, invoices, clients, members, colleagues)? Owner logins with no other workspace are also deleted. This cannot be undone.`)) {
+                                          actionMutation.mutate({ action: "delete_tenant", tenant_id: t.id });
+                                        }
+                                      }}
+                                      title="Delete workspace"
+                                    >
+                                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete workspace
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

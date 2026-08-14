@@ -122,7 +122,10 @@ export default function AdminUsers() {
                       <TableCell className="text-sm text-muted-foreground">{u.created_at ? format(new Date(u.created_at), "MMM d, yyyy") : "—"}</TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); deactivateMutation.mutate({ userId: u.user_id, ban: true }); }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Activate" disabled={deactivateMutation.isPending} onClick={(e) => { e.stopPropagation(); deactivateMutation.mutate({ userId: u.user_id, ban: false }); }}>
+                            <UserCheck className="h-4 w-4 text-emerald-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Deactivate" disabled={deactivateMutation.isPending} onClick={(e) => { e.stopPropagation(); deactivateMutation.mutate({ userId: u.user_id, ban: true }); }}>
                             <Ban className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>

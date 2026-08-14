@@ -1062,7 +1062,7 @@ export default function Bookings() {
                   </div>
                 )}
                 <div className="rounded-xl border bg-muted/30 p-4">
-                  <SongsSection eventId={editing.id} canWrite={canWrite} />
+                  <SongsSection eventId={editing.id} canWrite={canWrite} eventType={form.event_type} />
                 </div>
                 <div className="rounded-xl border bg-muted/30 p-4">
                   <AttachmentsSection eventId={editing.id} canWrite={canWrite} />

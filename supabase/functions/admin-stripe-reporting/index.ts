@@ -49,10 +49,19 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const days = body.days || 30;
-    const since = Math.floor(Date.now() / 1000) - days * 86400;
+    // A custom start/end range takes precedence over the day preset.
+    let since: number;
+    let until: number | undefined;
+    if (body.start && body.end) {
+      since = Math.floor(new Date(body.start).getTime() / 1000);
+      until = Math.floor(new Date(body.end).getTime() / 1000) + 86399; // include the whole end day
+    } else {
+      since = Math.floor(Date.now() / 1000) - days * 86400;
+    }
+    const createdFilter = until ? { gte: since, lte: until } : { gte: since };
 
     const charges: Stripe.Charge[] = [];
-    for await (const charge of stripe.charges.list({ created: { gte: since }, limit: 100 })) {
+    for await (const charge of stripe.charges.list({ created: createdFilter, limit: 100 })) {
       charges.push(charge);
     }
 
@@ -74,11 +83,18 @@ Deno.serve(async (req) => {
       return sum + (item?.price.unit_amount || 0);
     }, 0);
 
-    const revenueByPlan: Record<string, number> = { lite: 0, full: 0, other: 0 };
+    const revenueByPlan: Record<string, number> = { lite: 0, full: 0, premium: 0, other: 0 };
     for (const sub of subscriptions) {
       const amount = sub.items.data[0]?.price.unit_amount || 0;
       const plan = getPlanFromPrice(amount);
       revenueByPlan[plan] = (revenueByPlan[plan] || 0) + amount;
+    }
+
+    // Actual revenue EARNED in the period, split by tier (from succeeded charges).
+    const earnedByPlan: Record<string, number> = { lite: 0, full: 0, premium: 0, other: 0 };
+    for (const charge of charges.filter((c) => c.status === "succeeded")) {
+      const plan = getPlanFromPrice(charge.amount);
+      earnedByPlan[plan] = (earnedByPlan[plan] || 0) + charge.amount;
     }
 
     const newSubs: Stripe.Subscription[] = [];
@@ -103,8 +119,11 @@ Deno.serve(async (req) => {
       new_subscriptions: newSubsCount,
       canceled: canceledCount,
       revenue_by_plan: revenueByPlan,
+      earned_by_plan: earnedByPlan,
       daily_revenue: dailyRevenue,
       period_days: days,
+      period_start: new Date(since * 1000).toISOString().split("T")[0],
+      period_end: new Date((until ?? Math.floor(Date.now() / 1000)) * 1000).toISOString().split("T")[0],
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -88,14 +88,18 @@ export default function Support() {
 
   const createMutation = useMutation({
     mutationFn: async (values: typeof form) => {
-      const { error } = await supabase.from("support_tickets").insert({
+      const { data, error } = await supabase.from("support_tickets").insert({
         tenant_id: tenantId!,
         user_id: user!.id,
         subject: values.subject,
         description: values.description,
         priority: values.priority as any,
-      });
+      }).select("id").single();
       if (error) throw error;
+      // Email the support team about the new ticket (best-effort).
+      if (data?.id) {
+        supabase.functions.invoke("notify-new-ticket", { body: { ticket_id: data.id } }).catch(() => {});
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["support-tickets"] });

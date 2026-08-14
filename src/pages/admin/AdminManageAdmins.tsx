@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserCog, Plus, Trash2, Loader2, Search, Clock } from "lucide-react";
+import { UserCog, Plus, Trash2, Loader2, Search, Clock, Key } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -29,6 +29,11 @@ export default function AdminManageAdmins() {
   const [selectedRole, setSelectedRole] = useState<string>("support_agent");
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("admin");
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
 
   const { data: adminUsers, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -75,6 +80,32 @@ export default function AdminManageAdmins() {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast({ title: "Role removed ✓" });
     },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await adminAction("create_admin", { email: newEmail.trim(), password: newPassword, role: newRole });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "Admin created ✓" });
+      setNewEmail(""); setNewPassword("");
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const resetPwMutation = useMutation({
+    mutationFn: async ({ target_user_id, new_password }: { target_user_id: string; new_password: string }) => {
+      const { data, error } = await adminAction("reset_password", { target_user_id, new_password });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => { toast({ title: "Password reset ✓" }); setResetUserId(null); setResetPassword(""); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -176,6 +207,44 @@ export default function AdminManageAdmins() {
         </CardContent>
       </Card>
 
+      {/* Create Admin */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Plus className="h-5 w-5 text-primary" />
+            Create Admin
+          </CardTitle>
+          <CardDescription>Create a brand-new admin account with an email and password</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs text-muted-foreground">Email</label>
+              <Input type="email" placeholder="admin@example.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs text-muted-foreground">Password (min 8)</label>
+              <Input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            </div>
+            <Select value={newRole} onValueChange={setNewRole}>
+              <SelectTrigger className="w-44 h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(ROLE_INFO).map(([key, info]) => (
+                  <SelectItem key={key} value={key}>{info.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending || !newEmail.trim() || newPassword.length < 8}
+              className="bg-gradient-gold text-primary-foreground"
+            >
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Current Admins */}
       <Card>
         <CardHeader>
@@ -212,15 +281,28 @@ export default function AdminManageAdmins() {
                         {ROLE_INFO[ar.role]?.label || ar.role}
                       </Badge>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => removeMutation.mutate({ target_user_id: ar.user_id, role: ar.role })}
-                      disabled={removeMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {resetUserId === ar.user_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input type="password" placeholder="New password (min 8)" className="h-8 w-44 text-xs" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+                          <Button size="sm" variant="outline" className="h-8 text-xs" disabled={resetPassword.length < 8 || resetPwMutation.isPending} onClick={() => resetPwMutation.mutate({ target_user_id: ar.user_id, new_password: resetPassword })}>Set</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setResetUserId(null); setResetPassword(""); }}>✕</Button>
+                        </div>
+                      ) : (
+                        <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setResetUserId(ar.user_id); setResetPassword(""); }}>
+                          <Key className="mr-1 h-3.5 w-3.5" /> Reset PW
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeMutation.mutate({ target_user_id: ar.user_id, role: ar.role })}
+                        disabled={removeMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
