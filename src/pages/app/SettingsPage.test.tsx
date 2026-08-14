@@ -109,6 +109,7 @@ beforeEach(() => {
   mockUseTenantId.mockReturnValue({ tenantId: "tenant-1", userTenants: [{ tenant_id: "tenant-1" }], switchTenant: vi.fn() });
   mockUseSubscription.mockReturnValue({
     tier: "full", trialActive: false, trialDaysLeft: 0, subscribed: true, subscriptionEnd: null, canceling: false,
+    canAccess: () => true,
     refreshSubscription: vi.fn(), pollUntilSubscribed: vi.fn().mockResolvedValue(true),
   });
   mockUseGoogleCalendar.mockReturnValue({

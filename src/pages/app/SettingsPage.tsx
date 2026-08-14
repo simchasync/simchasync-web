@@ -27,7 +27,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { tenantId, userTenants, switchTenant } = useTenantId();
   const queryClient = useQueryClient();
-  const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, refreshSubscription, pollUntilSubscribed } = useSubscription();
+  const { tier, trialActive, trialDaysLeft, subscribed, subscriptionEnd, canceling, canAccess, refreshSubscription, pollUntilSubscribed } = useSubscription();
   const [syncingSubscription, setSyncingSubscription] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -612,8 +612,8 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Public Booking Link */}
-      {isOwner && tenant && (
+      {/* Public Booking Link — booking page is a Pro/Premium feature */}
+      {isOwner && tenant && canAccess("booking_page") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-lg">
