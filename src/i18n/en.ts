@@ -15,7 +15,7 @@ export const en = {
         { title: "Smart Bookings", desc: "Manage events with Hebrew dates, venues, contracts, and voice memos." },
         { title: "Client CRM", desc: "Track client history, preferences, and outstanding balances." },
         { title: "Invoices & Payments", desc: "Generate invoices, send via email/SMS, and collect payments with Stripe." },
-        { title: "AI-Powered", desc: "Let an AI assistant answer questions on your booking page — with more AI-powered tools coming to the platform." },
+        { title: "AI-Powered", desc: "Let an AI assistant answer questions on your booking page — with more AI-powered tools coming soon to the platform." },
         { title: "Team Collaboration", desc: "Invite band members, assign roles, and track costs per event." },
         { title: "Social Media Hub — Coming Soon", desc: "Schedule posts, track engagement, and manage comments across platforms. (Coming Soon)" },
         { title: "Hebrew Date Support", desc: "Automatic Hebrew date calculation with full RTL Hebrew language support." },
