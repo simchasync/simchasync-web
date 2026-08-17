@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // A "new signup" is a genuinely new user, counted once we actually have a
-    // phone: email signups have it immediately; Google users provide it on the
-    // /auth/phone step (which re-runs onboarding).
+    // A "new signup" is ONLY the first time we ever see this user — i.e. when we
+    // create their profile. Every later sign-in (including Google re-logins) hits
+    // the existingProfile branch and must NOT notify.
     let isNewSignup = false;
     if (!existingProfile) {
       const { error: profileInsertError } = await admin.from("profiles").insert({
@@ -81,13 +81,12 @@ Deno.serve(async (req) => {
         has_used_trial: false,
       });
       if (profileInsertError) throw profileInsertError;
-      isNewSignup = !!metaPhone;
-    } else if (!existingProfile.phone && metaPhone) {
-      // Existing profile that just gained a phone (Google user finishing the
-      // phone step) — sync profiles.phone so it shows in the admin panel, and
-      // treat this as the signup moment.
-      await admin.from("profiles").update({ phone: metaPhone }).eq("user_id", user.id);
       isNewSignup = true;
+    } else if (!existingProfile.phone && metaPhone) {
+      // Returning user whose phone just became available (e.g. a Google user
+      // finishing the /auth/phone step) — keep profiles.phone in sync for the
+      // admin panel, but this is NOT a new signup, so don't notify.
+      await admin.from("profiles").update({ phone: metaPhone }).eq("user_id", user.id);
     }
 
     // Notify the team so they can reach out to the new user. Fire-and-forget:
