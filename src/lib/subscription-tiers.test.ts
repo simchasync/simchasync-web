@@ -47,14 +47,16 @@ describe("getTierFromProductId", () => {
 
 describe("canAccessFeature", () => {
   it("mirrors Lite during an active trial — advanced features stay locked", () => {
-    expect(canAccessFeature("trial", null, true, "expenses_profit")).toBe(false);
     expect(canAccessFeature("trial", null, true, "stripe_connect")).toBe(false);
     expect(canAccessFeature("trial", null, true, "team_invites")).toBe(false);
     expect(canAccessFeature("trial", null, true, "booking_page")).toBe(false);
   });
 
-  it("denies after the trial expires", () => {
-    expect(canAccessFeature("trial", null, false, "expenses_profit")).toBe(false);
+  it("allows Expenses & Profit on every plan (no plan distinction)", () => {
+    expect(canAccessFeature("trial", null, true, "expenses_profit")).toBe(true);
+    expect(canAccessFeature("trial", null, false, "expenses_profit")).toBe(true);
+    expect(canAccessFeature("lite", "lite", false, "expenses_profit")).toBe(true);
+    expect(canAccessFeature("full", "full", false, "expenses_profit")).toBe(true);
   });
 
   it("grants Pro (full) and Premium the paid features", () => {
@@ -64,7 +66,6 @@ describe("canAccessFeature", () => {
   });
 
   it("denies Lite the gated features (incl. team invites)", () => {
-    expect(canAccessFeature("lite", "lite", false, "expenses_profit")).toBe(false);
     expect(canAccessFeature("lite", "lite", false, "stripe_connect")).toBe(false);
     expect(canAccessFeature("lite", "lite", false, "team_invites")).toBe(false);
   });
