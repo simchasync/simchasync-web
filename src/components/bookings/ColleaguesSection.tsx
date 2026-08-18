@@ -51,6 +51,8 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
   const [selectedColleague, setSelectedColleague] = useState<any>(null);
   const [autoAssign, setAutoAssign] = useState(true);
   const [colleagueType, setColleagueType] = useState<"internal" | "external">("internal");
+  const [assignPrice, setAssignPrice] = useState("0");
+  const [assignPayment, setAssignPayment] = useState<"paid_by_me" | "paid_by_organizer">("paid_by_me");
   const [newContact, setNewContact] = useState({ full_name: "", role_instrument: "", phone: "", email: "", notes: "", default_price: "0" });
 
   const { data: eventColleagues = [] } = useQuery({
@@ -241,6 +243,7 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["event-colleagues", eventId] });
+      qc.invalidateQueries({ queryKey: ["event-colleagues-costs", eventId] });
       qc.invalidateQueries({ queryKey: ["colleagues", tenantId] });
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
 
@@ -300,6 +303,7 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["event-colleagues", eventId] });
+      qc.invalidateQueries({ queryKey: ["event-colleagues-costs", eventId] });
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
       toast({ title: "Colleague removed" });
     },
@@ -315,6 +319,7 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["event-colleagues", eventId] });
+      qc.invalidateQueries({ queryKey: ["event-colleagues-costs", eventId] });
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
     },
   });
@@ -352,9 +357,12 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["colleagues", tenantId] });
       setAddDialogOpen(false);
-      setNewContact({ full_name: "", role_instrument: "", phone: "", email: "", notes: "", default_price: "0" });
-      // Open the assignment dialog for the newly created colleague
+      // Open the assignment dialog for the newly created colleague, pre-filling
+      // the cost from the default price the user just entered.
       setSelectedColleague(data);
+      setAssignPrice(String(newContact.default_price || data?.default_price || 0));
+      setAssignPayment("paid_by_me");
+      setNewContact({ full_name: "", role_instrument: "", phone: "", email: "", notes: "", default_price: "0" });
       setAssignDialogOpen(true);
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -364,6 +372,8 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     setSelectedColleague(colleague);
     setAutoAssign(true);
     setColleagueType("internal");
+    setAssignPrice(String(colleague?.default_price ?? 0));
+    setAssignPayment("paid_by_me");
     setAssignDialogOpen(true);
   };
 
@@ -380,8 +390,8 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
       phone: selectedColleague.phone || "",
       email: selectedColleague.email || "",
       notes: selectedColleague.notes || "",
-      price: String(selectedColleague.default_price || 0),
-      payment_responsibility: "paid_by_me",
+      price: assignPrice,
+      payment_responsibility: assignPayment,
       colleague_id: selectedColleague.id,
       user_id: isExt ? null : (selectedColleague.user_id ?? null), // GUARD: Never pass user_id for external
       colleague_type: isExt ? "external" : "internal",
@@ -449,6 +459,32 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
                 {colleagueType === "internal"
                   ? "Will be added to your workspace and can view booking details."
                   : "A booking request will be sent to their workspace. No workspace access granted."}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Colleague Cost ($)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={assignPrice}
+                onChange={(e) => setAssignPrice(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Who pays this cost?</Label>
+              <Select value={assignPayment} onValueChange={(v: "paid_by_me" | "paid_by_organizer") => setAssignPayment(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid_by_me">Paid by Me</SelectItem>
+                  <SelectItem value="paid_by_organizer">Paid by Organizer</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {assignPayment === "paid_by_me"
+                  ? "This amount is added to the booking's expenses."
+                  : "The event organizer pays this — it isn't counted in your expenses."}
               </p>
             </div>
 
