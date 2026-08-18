@@ -126,10 +126,6 @@ export function canAccessFeature(
   // Customer Inquiries is available on every plan (Lite/starter and up, and
   // during the trial) — it lives on the Bookings page, not behind a paid gate.
   if (feature === "customer_inquiries") return true;
-  // Expenses & Profit (incl. colleague/musician costs a user pays) is available
-  // on every plan so those costs always roll into the booking's totals — no plan
-  // distinction. Colleague "paid by me" amounts must accumulate for any user.
-  if (feature === "expenses_profit") return true;
   // The free trial mirrors the Lite plan: core features only, advanced ones
   // (stripe_connect, expenses_profit, team_invites, booking_page) stay locked
   // until the user subscribes to Pro/Premium.
