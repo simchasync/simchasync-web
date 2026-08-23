@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -309,11 +309,11 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, field, value }: { id: string; field: EditableColleagueField; value: string | number }) => {
+  const saveMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: Partial<Record<EditableColleagueField, string | number>> }) => {
       const { error } = await supabase
         .from("event_colleagues")
-        .update({ [field]: value } as TablesUpdate<"event_colleagues">)
+        .update(values as TablesUpdate<"event_colleagues">)
         .eq("id", id);
       if (error) throw error;
     },
@@ -321,7 +321,9 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
       qc.invalidateQueries({ queryKey: ["event-colleagues", eventId] });
       qc.invalidateQueries({ queryKey: ["event-colleagues-costs", eventId] });
       qc.invalidateQueries({ queryKey: ["events", tenantId] });
+      toast({ title: "Colleague saved" });
     },
+    onError: (e: Error) => toast({ title: "Couldn't save colleague", description: e.message, variant: "destructive" }),
   });
 
   // Accept/reject mutation for assigned colleagues
@@ -431,7 +433,7 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
               canWrite={canWrite}
               currentUserId={currentUserId}
               onDelete={(id) => deleteMutation.mutate(id)}
-              onUpdate={(id, field, value) => updateMutation.mutate({ id, field, value })}
+              onSave={(id, values) => saveMutation.mutate({ id, values })}
               onRespond={(id, status) => respondMutation.mutate({ id, status })}
             />
           ))}
@@ -558,19 +560,19 @@ export default function ColleaguesSection({ eventId, canWrite, tenantId }: Colle
 
 /* ---------- Colleague Card ---------- */
 
-function ColleagueCard({
+export function ColleagueCard({
   ec,
   canWrite,
   currentUserId,
   onDelete,
-  onUpdate,
+  onSave,
   onRespond,
 }: {
   ec: any;
   canWrite: boolean;
   currentUserId?: string;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, field: EditableColleagueField, value: string | number) => void;
+  onSave: (id: string, values: Partial<Record<EditableColleagueField, string | number>>) => void;
   onRespond: (id: string, status: "accepted" | "rejected") => void;
 }) {
   const status = ec.invite_status ?? "auto_assigned";
@@ -580,6 +582,45 @@ function ColleagueCard({
   const StatusIcon = config.icon;
   // GUARD: External collaborators NEVER have user_id linked, so isOwnInvite is always false for them
   const isOwnInvite = !isExternalCollab && ec.user_id === currentUserId && status === "pending";
+
+  // Local draft so edits (price, payment, etc.) show immediately and don't snap
+  // back to the server value before Save. Controlled inputs — no fire-and-forget.
+  const serverValues = {
+    name: ec.name ?? "",
+    role_instrument: ec.role_instrument ?? "",
+    phone: ec.phone ?? "",
+    email: ec.email ?? "",
+    price: String(ec.price ?? 0),
+    payment_responsibility: ec.payment_responsibility ?? "paid_by_me",
+    notes: ec.notes ?? "",
+  };
+  const [draft, setDraft] = useState(serverValues);
+  // Re-sync when a different row renders here, or when the server value changes
+  // after a successful save (keyed on the row id + its stored values).
+  useEffect(() => {
+    setDraft({
+      name: ec.name ?? "",
+      role_instrument: ec.role_instrument ?? "",
+      phone: ec.phone ?? "",
+      email: ec.email ?? "",
+      price: String(ec.price ?? 0),
+      payment_responsibility: ec.payment_responsibility ?? "paid_by_me",
+      notes: ec.notes ?? "",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ec.id, ec.name, ec.role_instrument, ec.phone, ec.email, ec.price, ec.payment_responsibility, ec.notes]);
+
+  const set = (field: EditableColleagueField, value: string) => setDraft((d) => ({ ...d, [field]: value }));
+
+  // Persist a single field as soon as the user commits it (blur for text fields,
+  // selection for the payment dropdown). Local state above keeps the value on
+  // screen; this writes it through and surfaces any error via the parent toast.
+  const commit = (field: EditableColleagueField, rawValue: string) => {
+    const value: string | number = field === "price" ? Number(rawValue) || 0 : rawValue;
+    const current: string | number = field === "price" ? Number(serverValues.price) || 0 : serverValues[field];
+    if (value === current) return; // unchanged — nothing to save
+    onSave(ec.id, { [field]: value });
+  };
 
   return (
     <div className="rounded-lg border p-3 space-y-2">
@@ -619,7 +660,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Name</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" defaultValue={ec.name || ""} onBlur={(e) => onUpdate(ec.id, "name", e.target.value)} />
+            <Input className="h-7 text-xs" value={draft.name} onChange={(e) => set("name", e.target.value)} onBlur={(e) => commit("name", e.target.value)} />
           ) : (
             <p className="font-medium">{ec.name || "—"}</p>
           )}
@@ -627,7 +668,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Role / Instrument</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" defaultValue={ec.role_instrument || ""} onBlur={(e) => onUpdate(ec.id, "role_instrument", e.target.value)} />
+            <Input className="h-7 text-xs" value={draft.role_instrument} onChange={(e) => set("role_instrument", e.target.value)} onBlur={(e) => commit("role_instrument", e.target.value)} />
           ) : (
             <p className="font-medium">{ec.role_instrument || "—"}</p>
           )}
@@ -635,7 +676,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Phone</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" defaultValue={ec.phone || ""} onBlur={(e) => onUpdate(ec.id, "phone", e.target.value)} />
+            <Input className="h-7 text-xs" value={draft.phone} onChange={(e) => set("phone", e.target.value)} onBlur={(e) => commit("phone", e.target.value)} />
           ) : (
             <p className="font-medium">{ec.phone || "—"}</p>
           )}
@@ -643,7 +684,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Email</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" defaultValue={ec.email || ""} onBlur={(e) => onUpdate(ec.id, "email", e.target.value)} />
+            <Input className="h-7 text-xs" value={draft.email} onChange={(e) => set("email", e.target.value)} onBlur={(e) => commit("email", e.target.value)} />
           ) : (
             <p className="font-medium">{ec.email || "—"}</p>
           )}
@@ -651,7 +692,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Price ($)</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" type="number" min="0" defaultValue={ec.price || 0} onBlur={(e) => onUpdate(ec.id, "price", Number(e.target.value))} />
+            <Input className="h-7 text-xs" type="number" min="0" value={draft.price} onChange={(e) => set("price", e.target.value)} onBlur={(e) => commit("price", e.target.value)} />
           ) : (
             <p className="font-medium">${ec.price || 0}</p>
           )}
@@ -659,7 +700,7 @@ function ColleagueCard({
         <div>
           <Label className="text-xs text-muted-foreground">Payment</Label>
           {canWrite ? (
-            <Select value={ec.payment_responsibility} onValueChange={(v) => onUpdate(ec.id, "payment_responsibility", v)}>
+            <Select value={draft.payment_responsibility} onValueChange={(v) => { set("payment_responsibility", v); commit("payment_responsibility", v); }}>
               <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="paid_by_me">Paid by Me</SelectItem>
@@ -673,7 +714,7 @@ function ColleagueCard({
         <div className="sm:col-span-2 md:col-span-3">
           <Label className="text-xs text-muted-foreground">Notes</Label>
           {canWrite ? (
-            <Input className="h-7 text-xs" defaultValue={ec.notes || ""} onBlur={(e) => onUpdate(ec.id, "notes", e.target.value)} />
+            <Input className="h-7 text-xs" value={draft.notes} onChange={(e) => set("notes", e.target.value)} onBlur={(e) => commit("notes", e.target.value)} />
           ) : (
             <p className="font-medium">{ec.notes || "—"}</p>
           )}
